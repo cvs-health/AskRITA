@@ -37,6 +37,8 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+copyright: Ask RITA (Reasoning Interface for Text-to-Analytics)
+
 extra:
   generator: false
   social:
