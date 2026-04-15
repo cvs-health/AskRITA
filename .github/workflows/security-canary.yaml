@@ -58,9 +58,9 @@ jobs:
       - name: Create Trivy secret canary fixture
         run: |
           mkdir -p .security-canary
-          cat > .security-canary/.env <<'EOF'
-          GITHUB_TOKEN=ghp_123456789012345678901234567890123456
-          EOF
+          TOKEN_PREFIX="ghp"
+          TOKEN_BODY="$(printf 'A%.0s' {1..36})"
+          printf 'GITHUB_TOKEN=%s_%s\n' "$TOKEN_PREFIX" "$TOKEN_BODY" > .security-canary/.env
 
       - name: Expect Trivy to fail on a known secret pattern
         id: trivy_secret_scan
