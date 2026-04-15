@@ -240,12 +240,12 @@ class MiniInteractEvaluator:
         report.error_count = sum(1 for r in eval_results if r.error)
 
         if eval_results:
-            report.overall_reward = sum(
-                r.reward_score for r in eval_results
-            ) / len(eval_results)
-            report.avg_test_pass_rate = sum(
-                r.pass_rate for r in eval_results
-            ) / len(eval_results)
+            report.overall_reward = sum(r.reward_score for r in eval_results) / len(
+                eval_results
+            )
+            report.avg_test_pass_rate = sum(r.pass_rate for r in eval_results) / len(
+                eval_results
+            )
 
         # Per-database breakdown
         db_groups: Dict[str, List[TaskEvaluationResult]] = {}
@@ -302,9 +302,13 @@ class MiniInteractEvaluator:
                 return result
 
             if test_cases:
-                self._score_via_test_cases(result, test_cases, pred_results, db_path, cr)
+                self._score_via_test_cases(
+                    result, test_cases, pred_results, db_path, cr
+                )
             elif task.sol_sql:
-                self._score_via_execution_accuracy(result, pred_results, task.sol_sql, db_path, cr)
+                self._score_via_execution_accuracy(
+                    result, pred_results, task.sol_sql, db_path, cr
+                )
 
         except Exception as e:
             result.error = str(e)
@@ -314,7 +318,8 @@ class MiniInteractEvaluator:
         return result
 
     def _score_via_test_cases(
-        self, result: TaskEvaluationResult,
+        self,
+        result: TaskEvaluationResult,
         test_cases: List[Dict[str, Any]],
         pred_results: Optional[List[tuple]],
         db_path: str,
@@ -334,7 +339,8 @@ class MiniInteractEvaluator:
             result.reward_score = 0.0
 
     def _score_via_execution_accuracy(
-        self, result: TaskEvaluationResult,
+        self,
+        result: TaskEvaluationResult,
         pred_results: Optional[List[tuple]],
         gold_sql: str,
         db_path: str,
@@ -384,11 +390,14 @@ class MiniInteractEvaluator:
         if tc_type == "value_check" and tc_expected is not None:
             passed = self._check_value_in_results(pred_results, tc_expected)
             return TestCaseResult(
-                test_case_id=tc_id, passed=passed,
-                expected=str(tc_expected), actual=actual_str,
+                test_case_id=tc_id,
+                passed=passed,
+                expected=str(tc_expected),
+                actual=actual_str,
             )
         return TestCaseResult(
-            test_case_id=tc_id, passed=False,
+            test_case_id=tc_id,
+            passed=False,
             error=f"Unknown test case type: {tc_type}",
         )
 
@@ -403,12 +412,14 @@ class MiniInteractEvaluator:
         expected_res, err, _ = _execute_sql_safe(tc_sql, db_path, self.timeout)
         if err:
             return TestCaseResult(
-                test_case_id=tc_id, passed=False,
+                test_case_id=tc_id,
+                passed=False,
                 error=f"Test case SQL error: {err}",
             )
         passed = self._compare_results(pred_results, expected_res)
         return TestCaseResult(
-            test_case_id=tc_id, passed=passed,
+            test_case_id=tc_id,
+            passed=passed,
             expected=str(expected_res)[:200] if expected_res else None,
             actual=str(pred_results)[:200] if pred_results else None,
         )
@@ -444,9 +455,7 @@ class MiniInteractEvaluator:
         if cleanup:
             err = _execute_statements(cleanup, db_path, self.timeout)
             if err:
-                logger.warning(
-                    "Cleanup failed for task %s: %s", task.instance_id, err
-                )
+                logger.warning("Cleanup failed for task %s: %s", task.instance_id, err)
 
     def save_report(
         self,
@@ -497,8 +506,10 @@ class MiniInteractEvaluator:
                 start_color="FCE4D6", end_color="FCE4D6", fill_type="solid"
             ),
             "thin_border": Border(
-                left=Side(style="thin"), right=Side(style="thin"),
-                top=Side(style="thin"), bottom=Side(style="thin"),
+                left=Side(style="thin"),
+                right=Side(style="thin"),
+                top=Side(style="thin"),
+                bottom=Side(style="thin"),
             ),
             "Alignment": Alignment,
             "Font": Font,
@@ -529,7 +540,8 @@ class MiniInteractEvaluator:
         row = 1
         ws.merge_cells("A1:B1")
         cell = ws.cell(
-            row=row, column=1,
+            row=row,
+            column=1,
             value="BIRD Mini-Interact — askRITA Evaluation Report",
         )
         cell.font = font_cls(bold=True, size=16, color="2F5496")
@@ -538,7 +550,9 @@ class MiniInteractEvaluator:
 
         if run_config:
             for key, val in run_config.items():
-                ws.cell(row=row, column=1, value=key).font = font_cls(bold=True, size=11)
+                ws.cell(row=row, column=1, value=key).font = font_cls(
+                    bold=True, size=11
+                )
                 ws.cell(row=row, column=2, value=str(val))
                 row += 1
             row += 1
@@ -574,8 +588,15 @@ class MiniInteractEvaluator:
         align_cls = styles["Alignment"]
 
         task_headers = [
-            "Instance ID", "Database", "Predicted SQL", "Reward",
-            "Tests Passed", "Tests Total", "Pass Rate", "Debug Used", "Error",
+            "Instance ID",
+            "Database",
+            "Predicted SQL",
+            "Reward",
+            "Tests Passed",
+            "Tests Total",
+            "Pass Rate",
+            "Debug Used",
+            "Error",
         ]
         col_widths = [20, 25, 60, 10, 12, 12, 12, 10, 40]
         for i, w in enumerate(col_widths, 1):
@@ -589,9 +610,15 @@ class MiniInteractEvaluator:
 
         for i, r in enumerate(eval_results, start=2):
             vals = [
-                r.instance_id, r.selected_database, r.predicted_sql,
-                r.reward_score, r.test_cases_passed, r.test_cases_total,
-                round(r.pass_rate, 4), r.debug_used, r.error or "",
+                r.instance_id,
+                r.selected_database,
+                r.predicted_sql,
+                r.reward_score,
+                r.test_cases_passed,
+                r.test_cases_total,
+                round(r.pass_rate, 4),
+                r.debug_used,
+                r.error or "",
             ]
             for col, val in enumerate(vals, 1):
                 c = ws.cell(row=i, column=col, value=val)
@@ -610,8 +637,13 @@ class MiniInteractEvaluator:
         align_cls = styles["Alignment"]
 
         conv_headers = [
-            "Instance ID", "Database", "Query", "Turns", "SQL Generated",
-            "Latency (s)", "Conversation",
+            "Instance ID",
+            "Database",
+            "Query",
+            "Turns",
+            "SQL Generated",
+            "Latency (s)",
+            "Conversation",
         ]
         conv_widths = [20, 20, 50, 8, 60, 12, 80]
         for i, w in enumerate(conv_widths, 1):
@@ -629,8 +661,12 @@ class MiniInteractEvaluator:
                 for t in cr.conversation_turns
             )
             vals = [
-                cr.instance_id, cr.selected_database, cr.amb_user_query,
-                cr.num_turns, cr.predicted_sql, round(cr.latency_seconds, 2),
+                cr.instance_id,
+                cr.selected_database,
+                cr.amb_user_query,
+                cr.num_turns,
+                cr.predicted_sql,
+                round(cr.latency_seconds, 2),
                 conv_text,
             ]
             for col, val in enumerate(vals, 1):

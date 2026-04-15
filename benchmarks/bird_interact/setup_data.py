@@ -105,9 +105,7 @@ class MiniInteractDataManager:
         os.makedirs(self.data_dir, exist_ok=True)
 
         if self._is_ready():
-            logger.info(
-                "Mini-Interact dataset already available at %s", self.repo_dir
-            )
+            logger.info("Mini-Interact dataset already available at %s", self.repo_dir)
             return True
 
         return self._download_from_huggingface()
@@ -195,9 +193,7 @@ class MiniInteractDataManager:
             f.write("\n".join(merged_lines) + "\n")
 
         self._tasks = []
-        logger.info(
-            "Merged %d GT entries into %s", len(gt_map), self.tasks_file
-        )
+        logger.info("Merged %d GT entries into %s", len(gt_map), self.tasks_file)
 
     def _load_gt_map(self, gt_path: str) -> Dict[str, Dict[str, Any]]:
         """Load ground-truth entries keyed by instance_id."""
@@ -213,12 +209,16 @@ class MiniInteractDataManager:
                     gt_map[iid] = entry
         return gt_map
 
-    _GT_MERGE_KEYS = ("sol_sql", "test_cases", "preprocess_sql",
-                      "clean_up_sql", "clean_up_sqls", "external_knowledge")
+    _GT_MERGE_KEYS = (
+        "sol_sql",
+        "test_cases",
+        "preprocess_sql",
+        "clean_up_sql",
+        "clean_up_sqls",
+        "external_knowledge",
+    )
 
-    def _merge_gt_into_tasks(
-        self, gt_map: Dict[str, Dict[str, Any]]
-    ) -> List[str]:
+    def _merge_gt_into_tasks(self, gt_map: Dict[str, Dict[str, Any]]) -> List[str]:
         """Merge GT fields into public task lines and return merged JSONL strings."""
         merged_lines: List[str] = []
         with open(self.tasks_file, "r") as f:
@@ -257,9 +257,7 @@ class MiniInteractDataManager:
             if os.path.exists(p):
                 return p
         # Glob fallback
-        for root, _dirs, files in os.walk(
-            os.path.join(self.repo_dir)
-        ):
+        for root, _dirs, files in os.walk(os.path.join(self.repo_dir)):
             for fname in files:
                 if fname.endswith((".sqlite", ".db")) and db_name in root:
                     return os.path.join(root, fname)
@@ -326,7 +324,8 @@ class MiniInteractDataManager:
             env["GIT_LFS_SKIP_SMUDGE"] = "0"
             subprocess.run(
                 [
-                    "git", "clone",
+                    "git",
+                    "clone",
                     f"https://huggingface.co/datasets/{MINI_INTERACT_HF_REPO}",
                     self.repo_dir,
                 ],

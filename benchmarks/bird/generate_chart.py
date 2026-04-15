@@ -24,10 +24,10 @@ produces a matplotlib grouped bar chart image at docs/assets/benchmark_chart.png
 and updates the README with a results table + embedded image.
 """
 
-import re
-import os
-import json
 import glob
+import json
+import os
+import re
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -68,14 +68,16 @@ def collect_results():
             report = json.load(f)
         name = os.path.basename(d.rstrip("/")).rsplit("_", 2)[0]
         ea = report["execution_accuracy"]
-        model_data.append({
-            "key": name,
-            "overall": ea["overall"],
-            "simple": ea["simple"],
-            "moderate": ea["moderate"],
-            "challenging": ea["challenging"],
-            "total": report.get("total", 500),
-        })
+        model_data.append(
+            {
+                "key": name,
+                "overall": ea["overall"],
+                "simple": ea["simple"],
+                "moderate": ea["moderate"],
+                "challenging": ea["challenging"],
+                "total": report.get("total", 500),
+            }
+        )
     model_data.sort(key=lambda m: m["overall"], reverse=True)
     return model_data
 
@@ -98,26 +100,41 @@ def generate_chart(model_data: list) -> str:
     for i, cat in enumerate(categories):
         positions = x + offsets[i] * bar_width
         bars = ax.bar(
-            positions, data[cat], bar_width,
-            label=cat, color=CATEGORY_COLORS[cat], edgecolor="white", linewidth=0.5,
+            positions,
+            data[cat],
+            bar_width,
+            label=cat,
+            color=CATEGORY_COLORS[cat],
+            edgecolor="white",
+            linewidth=0.5,
         )
         for bar in bars:
             height = bar.get_height()
             ax.text(
-                bar.get_x() + bar.get_width() / 2, height + 0.8,
-                f"{height:.1f}", ha="center", va="bottom", fontsize=8, fontweight="bold",
+                bar.get_x() + bar.get_width() / 2,
+                height + 0.8,
+                f"{height:.1f}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+                fontweight="bold",
             )
 
     ax.set_ylabel("Execution Accuracy (EX %)", fontsize=12, fontweight="bold")
     ax.set_title(
         "BIRD Mini-Dev Benchmark — Execution Accuracy by Difficulty",
-        fontsize=14, fontweight="bold", pad=15,
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
     )
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=11, rotation=25, ha="right")
     ax.set_ylim(0, 95)
     ax.legend(
-        title="Difficulty", loc="upper right", fontsize=10, title_fontsize=11,
+        title="Difficulty",
+        loc="upper right",
+        fontsize=10,
+        title_fontsize=11,
         framealpha=0.9,
     )
     ax.grid(axis="y", alpha=0.3, linestyle="--")
@@ -171,7 +188,9 @@ def update_readme(section: str):
         new_content = pattern.sub(section + "\n", content)
         print("Updated existing chart in README.md")
     else:
-        new_content = content.replace("## Core Features", section + "\n## Core Features")
+        new_content = content.replace(
+            "## Core Features", section + "\n## Core Features"
+        )
         print("Inserted new chart into README.md")
 
     with open(README_PATH, "w") as f:

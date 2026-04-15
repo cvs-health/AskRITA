@@ -15,6 +15,7 @@
 # This file uses the following unmodified third-party packages,
 # each retaining its original copyright and license:
 #   presidio-analyzer (MIT)
+#   spacy (MIT)
 
 """
 PHI/PII Detection module using Microsoft Presidio analyzer.

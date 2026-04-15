@@ -23,6 +23,7 @@ Covers:
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 from askrita.utils.pii_detector import PRESIDIO_AVAILABLE
 
 # ============================================================================

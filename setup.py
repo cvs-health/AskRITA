@@ -30,7 +30,7 @@ Minimal setup.py for CI/CD compatibility.
     This file provides minimal metadata for legacy CI systems.
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # Read version and metadata from pyproject.toml via Poetry
 setup(

@@ -124,14 +124,19 @@ class BIRDBenchmarkRunner:
         completed_ids = set()
         if resume_from and os.path.exists(resume_from):
             completed_ids = self._load_completed_ids(resume_from)
-            logger.info("Resuming: skipping %d already-completed questions", len(completed_ids))
+            logger.info(
+                "Resuming: skipping %d already-completed questions", len(completed_ids)
+            )
 
         self._results = []
         total = len(questions)
 
         logger.info(
             "Starting BIRD benchmark: %d questions, provider=%s, model=%s, evidence=%s",
-            total, self.llm_provider, self.llm_model, self.include_evidence,
+            total,
+            self.llm_provider,
+            self.llm_model,
+            self.include_evidence,
         )
 
         for idx, question in enumerate(questions):
@@ -140,7 +145,11 @@ class BIRDBenchmarkRunner:
 
             logger.info(
                 "[%d/%d] Processing question %d (db=%s, difficulty=%s)",
-                idx + 1, total, question.question_id, question.db_id, question.difficulty,
+                idx + 1,
+                total,
+                question.question_id,
+                question.db_id,
+                question.difficulty,
             )
 
             result = self._run_single_question(question)
@@ -152,11 +161,14 @@ class BIRDBenchmarkRunner:
             if result.success:
                 logger.info(
                     "  -> SQL generated in %.1fs (retries=%d)",
-                    result.latency_seconds, result.retry_count,
+                    result.latency_seconds,
+                    result.retry_count,
                 )
             else:
                 logger.warning(
-                    "  -> FAILED: %s (%.1fs)", result.error, result.latency_seconds,
+                    "  -> FAILED: %s (%.1fs)",
+                    result.error,
+                    result.latency_seconds,
                 )
 
             # Checkpoint every 25 questions
@@ -169,7 +181,8 @@ class BIRDBenchmarkRunner:
         success_count = sum(1 for r in self._results if r.success)
         logger.info(
             "Benchmark complete: %d/%d questions produced SQL (%.1f%%)",
-            success_count, len(self._results),
+            success_count,
+            len(self._results),
             100.0 * success_count / max(len(self._results), 1),
         )
 
@@ -371,10 +384,7 @@ class BIRDBenchmarkRunner:
         prepended to the question, matching BIRD's "with oracle knowledge" setting.
         """
         if self.include_evidence and question.evidence and question.evidence.strip():
-            return (
-                f"{question.question}\n\n"
-                f"Additional context: {question.evidence}"
-            )
+            return f"{question.question}\n\n" f"Additional context: {question.evidence}"
         return question.question
 
     def _extract_sql(self, state) -> str:
@@ -434,19 +444,21 @@ class BIRDBenchmarkRunner:
         """Save detailed results with latency, errors, and metadata."""
         detailed = []
         for r in self._results:
-            detailed.append({
-                "question_id": r.question_id,
-                "db_id": r.db_id,
-                "question": r.question,
-                "evidence": r.evidence,
-                "gold_sql": r.gold_sql,
-                "predicted_sql": r.predicted_sql,
-                "difficulty": r.difficulty,
-                _KEY_SUCCESS: r.success,
-                "error": r.error,
-                "latency_seconds": round(r.latency_seconds, 3),
-                _KEY_RETRY_COUNT: r.retry_count,
-            })
+            detailed.append(
+                {
+                    "question_id": r.question_id,
+                    "db_id": r.db_id,
+                    "question": r.question,
+                    "evidence": r.evidence,
+                    "gold_sql": r.gold_sql,
+                    "predicted_sql": r.predicted_sql,
+                    "difficulty": r.difficulty,
+                    _KEY_SUCCESS: r.success,
+                    "error": r.error,
+                    "latency_seconds": round(r.latency_seconds, 3),
+                    _KEY_RETRY_COUNT: r.retry_count,
+                }
+            )
 
         results_path = os.path.join(self.output_dir, "detailed_results.json")
         with open(results_path, "w") as f:
@@ -461,7 +473,10 @@ class BIRDBenchmarkRunner:
             Dictionary with counts, success rates, and latency stats.
         """
         if not self._results:
-            return {_KEY_TOTAL: 0, "message": "No results yet. Run the benchmark first."}
+            return {
+                _KEY_TOTAL: 0,
+                "message": "No results yet. Run the benchmark first.",
+            }
 
         total = len(self._results)
         success = sum(1 for r in self._results if r.success)

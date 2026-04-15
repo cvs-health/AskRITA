@@ -140,24 +140,49 @@ class EvaluationReport:
 
     def print_report(self):
         """Print a formatted evaluation report matching BIRD's output style."""
-        counts = [self.simple_count, self.moderate_count, self.challenging_count, self.total]
-        ex_scores = [self.simple_ex, self.moderate_ex, self.challenging_ex, self.ex_accuracy]
-        f1_scores = [self.simple_f1, self.moderate_f1, self.challenging_f1, self.soft_f1]
+        counts = [
+            self.simple_count,
+            self.moderate_count,
+            self.challenging_count,
+            self.total,
+        ]
+        ex_scores = [
+            self.simple_ex,
+            self.moderate_ex,
+            self.challenging_ex,
+            self.ex_accuracy,
+        ]
+        f1_scores = [
+            self.simple_f1,
+            self.moderate_f1,
+            self.challenging_f1,
+            self.soft_f1,
+        ]
 
         print("\n" + "=" * 90)
         print("BIRD Benchmark Evaluation Results")
         print("=" * 90)
-        print(f"{'':20} {'simple':>15} {'moderate':>15} {'challenging':>15} {'total':>15}")
-        print(f"{'count':20} {counts[0]:>15} {counts[1]:>15} {counts[2]:>15} {counts[3]:>15}")
+        print(
+            f"{'':20} {'simple':>15} {'moderate':>15} {'challenging':>15} {'total':>15}"
+        )
+        print(
+            f"{'count':20} {counts[0]:>15} {counts[1]:>15} {counts[2]:>15} {counts[3]:>15}"
+        )
         print("-" * 90)
-        print(f"{'EX (%)':20} {ex_scores[0]:>15.2f} {ex_scores[1]:>15.2f} {ex_scores[2]:>15.2f} {ex_scores[3]:>15.2f}")
-        print(f"{'Soft F1 (%)':20} {f1_scores[0]:>15.2f} {f1_scores[1]:>15.2f} {f1_scores[2]:>15.2f} {f1_scores[3]:>15.2f}")
+        print(
+            f"{'EX (%)':20} {ex_scores[0]:>15.2f} {ex_scores[1]:>15.2f} {ex_scores[2]:>15.2f} {ex_scores[3]:>15.2f}"
+        )
+        print(
+            f"{'Soft F1 (%)':20} {f1_scores[0]:>15.2f} {f1_scores[1]:>15.2f} {f1_scores[2]:>15.2f} {f1_scores[3]:>15.2f}"
+        )
         print("-" * 90)
         print(f"Errors: {self.error_count}  |  Timeouts: {self.timeout_count}")
         print("=" * 90 + "\n")
 
 
-def _execute_sql_safe(sql: str, db_path: str, timeout: float = 30.0) -> Tuple[Optional[List[tuple]], Optional[str], float]:
+def _execute_sql_safe(
+    sql: str, db_path: str, timeout: float = 30.0
+) -> Tuple[Optional[List[tuple]], Optional[str], float]:
     """Execute SQL against a SQLite database with timeout protection.
 
     Returns:
@@ -189,7 +214,9 @@ def _calculate_ex(predicted_results: List[tuple], gold_results: List[tuple]) -> 
     return 0
 
 
-def _calculate_soft_f1(predicted_results: List[tuple], gold_results: List[tuple]) -> float:
+def _calculate_soft_f1(
+    predicted_results: List[tuple], gold_results: List[tuple]
+) -> float:
     """Calculate Soft F1 score between predicted and gold result sets.
 
     For each row, counts matched cells, predicted-only cells, and gold-only cells.
@@ -235,7 +262,9 @@ def _evaluate_single(args: tuple) -> EvaluationResult:
     """Evaluate a single prediction (designed for multiprocessing)."""
     question_id, db_id, difficulty, predicted_sql, gold_sql, db_path, timeout = args
 
-    pred_results, pred_error, pred_time = _execute_sql_safe(predicted_sql, db_path, timeout)
+    pred_results, pred_error, pred_time = _execute_sql_safe(
+        predicted_sql, db_path, timeout
+    )
     gold_results, gold_error, gold_time = _execute_sql_safe(gold_sql, db_path, timeout)
 
     if pred_error or pred_results is None:
@@ -390,11 +419,21 @@ class BIRDEvaluator:
             pred_sql = self._extract_pred_sql(predictions, idx)
             db_id = gold_db_ids[idx]
             db_path = os.path.join(self.db_root_path, db_id, f"{db_id}.sqlite")
-            difficulty = difficulties[idx] if idx < len(difficulties) else _DIFFICULTY_SIMPLE
+            difficulty = (
+                difficulties[idx] if idx < len(difficulties) else _DIFFICULTY_SIMPLE
+            )
 
-            eval_args.append((
-                idx, db_id, difficulty, pred_sql, gold_sqls[idx], db_path, self.timeout
-            ))
+            eval_args.append(
+                (
+                    idx,
+                    db_id,
+                    difficulty,
+                    pred_sql,
+                    gold_sqls[idx],
+                    db_path,
+                    self.timeout,
+                )
+            )
 
         report, _ = self._run_evaluation(eval_args)
         return report
@@ -420,17 +459,26 @@ class BIRDEvaluator:
             gold = gold_sqls[r.question_id] if gold_sqls else r.gold_sql
             db_path = os.path.join(self.db_root_path, r.db_id, f"{r.db_id}.sqlite")
 
-            eval_args.append((
-                r.question_id, r.db_id, r.difficulty,
-                r.predicted_sql, gold, db_path, self.timeout
-            ))
+            eval_args.append(
+                (
+                    r.question_id,
+                    r.db_id,
+                    r.difficulty,
+                    r.predicted_sql,
+                    gold,
+                    db_path,
+                    self.timeout,
+                )
+            )
 
         report, eval_results = self._run_evaluation(eval_args)
         if return_details:
             return report, eval_results
         return report
 
-    def _run_evaluation(self, eval_args: List[tuple]) -> Tuple[EvaluationReport, List[EvaluationResult]]:
+    def _run_evaluation(
+        self, eval_args: List[tuple]
+    ) -> Tuple[EvaluationReport, List[EvaluationResult]]:
         """Run evaluation across all questions, optionally in parallel."""
         logger.info("Evaluating %d predictions...", len(eval_args))
 
@@ -508,7 +556,9 @@ class BIRDEvaluator:
 
         row = 1
         ws_summary.merge_cells("A1:E1")
-        cell = ws_summary.cell(row=row, column=1, value="BIRD Benchmark — askRITA Evaluation Report")
+        cell = ws_summary.cell(
+            row=row, column=1, value="BIRD Benchmark — askRITA Evaluation Report"
+        )
         cell.font = Font(bold=True, size=16, color="2F5496")
         cell.alignment = Alignment(horizontal=_EXCEL_CENTER)
         row += 2
@@ -530,9 +580,27 @@ class BIRDEvaluator:
         row += 1
 
         data_rows = [
-            ("Count", report.simple_count, report.moderate_count, report.challenging_count, report.total),
-            (_COL_EX_PCT, f"{report.simple_ex:.2f}", f"{report.moderate_ex:.2f}", f"{report.challenging_ex:.2f}", f"{report.ex_accuracy:.2f}"),
-            (_COL_SOFT_F1_PCT, f"{report.simple_f1:.2f}", f"{report.moderate_f1:.2f}", f"{report.challenging_f1:.2f}", f"{report.soft_f1:.2f}"),
+            (
+                "Count",
+                report.simple_count,
+                report.moderate_count,
+                report.challenging_count,
+                report.total,
+            ),
+            (
+                _COL_EX_PCT,
+                f"{report.simple_ex:.2f}",
+                f"{report.moderate_ex:.2f}",
+                f"{report.challenging_ex:.2f}",
+                f"{report.ex_accuracy:.2f}",
+            ),
+            (
+                _COL_SOFT_F1_PCT,
+                f"{report.simple_f1:.2f}",
+                f"{report.moderate_f1:.2f}",
+                f"{report.challenging_f1:.2f}",
+                f"{report.soft_f1:.2f}",
+            ),
             ("Errors", "", "", "", report.error_count),
             ("Timeouts", "", "", "", report.timeout_count),
         ]
@@ -548,6 +616,7 @@ class BIRDEvaluator:
     def _write_detail_sheet(self, ws_detail, results, styles):
         """Populate the Per-Question Results sheet."""
         import openpyxl
+
         header_font = styles[_EXCEL_HEADER_FONT]
         header_fill = styles[_EXCEL_HEADER_FILL]
         good_fill = styles["good_fill"]
@@ -556,8 +625,14 @@ class BIRDEvaluator:
         Alignment = styles[_EXCEL_ALIGNMENT]
 
         detail_headers = [
-            "Question ID", "Database", "Difficulty", "EX Score", "Soft F1",
-            "Predicted SQL", "Gold SQL", "Error",
+            "Question ID",
+            "Database",
+            "Difficulty",
+            "EX Score",
+            "Soft F1",
+            "Predicted SQL",
+            "Gold SQL",
+            "Error",
         ]
         col_widths = [12, 25, 14, 10, 10, 60, 60, 40]
         for i, w in enumerate(col_widths, 1):
@@ -571,8 +646,14 @@ class BIRDEvaluator:
 
         for i, r in enumerate(sorted(results, key=lambda x: x.question_id), start=2):
             vals = [
-                r.question_id, r.db_id, r.difficulty, r.ex_score,
-                round(r.soft_f1_score, 4), r.predicted_sql, r.gold_sql, r.error or "",
+                r.question_id,
+                r.db_id,
+                r.difficulty,
+                r.ex_score,
+                round(r.soft_f1_score, 4),
+                r.predicted_sql,
+                r.gold_sql,
+                r.error or "",
             ]
             for col, val in enumerate(vals, 1):
                 c = ws_detail.cell(row=i, column=col, value=val)
@@ -584,6 +665,7 @@ class BIRDEvaluator:
     def _write_db_sheet(self, ws_db, results, styles):
         """Populate the Per-Database Results sheet."""
         import openpyxl
+
         header_font = styles[_EXCEL_HEADER_FONT]
         header_fill = styles[_EXCEL_HEADER_FILL]
         thin_border = styles[_EXCEL_THIN_BORDER]
@@ -607,7 +689,9 @@ class BIRDEvaluator:
         for i, (db_id, db_results) in enumerate(sorted(db_groups.items()), start=2):
             count = len(db_results)
             ex = 100.0 * sum(r.ex_score for r in db_results) / count if count else 0
-            f1 = 100.0 * sum(r.soft_f1_score for r in db_results) / count if count else 0
+            f1 = (
+                100.0 * sum(r.soft_f1_score for r in db_results) / count if count else 0
+            )
             errs = sum(1 for r in db_results if r.error)
             vals = [db_id, count, round(ex, 2), round(f1, 2), errs]
             for col, val in enumerate(vals, 1):
@@ -662,7 +746,9 @@ class BIRDEvaluator:
 
         r = 1
         ws_cmp.merge_cells("A1:E1")
-        t = ws_cmp.cell(row=r, column=1, value="Baseline vs askRITA (BIRD Mini-Dev SQLite)")
+        t = ws_cmp.cell(
+            row=r, column=1, value="Baseline vs askRITA (BIRD Mini-Dev SQLite)"
+        )
         t.font = Font(bold=True, size=14, color="2F5496")
         t.alignment = Alignment(horizontal=_EXCEL_CENTER)
         r += 2
@@ -736,7 +822,7 @@ class BIRDEvaluator:
         """
         try:
             import openpyxl
-            from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
         except ImportError:
             logger.warning(
                 "openpyxl not installed — skipping spreadsheet export. "
@@ -748,13 +834,21 @@ class BIRDEvaluator:
 
         styles = {
             _EXCEL_HEADER_FONT: Font(bold=True, size=13, color="FFFFFF"),
-            _EXCEL_HEADER_FILL: PatternFill(start_color="2F5496", end_color="2F5496", fill_type="solid"),
+            _EXCEL_HEADER_FILL: PatternFill(
+                start_color="2F5496", end_color="2F5496", fill_type="solid"
+            ),
             "subheader_font": Font(bold=True, size=11),
-            "good_fill": PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid"),
-            "neutral_fill": PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid"),
+            "good_fill": PatternFill(
+                start_color="C6EFCE", end_color="C6EFCE", fill_type="solid"
+            ),
+            "neutral_fill": PatternFill(
+                start_color="FCE4D6", end_color="FCE4D6", fill_type="solid"
+            ),
             _EXCEL_THIN_BORDER: Border(
-                left=Side(style="thin"), right=Side(style="thin"),
-                top=Side(style="thin"), bottom=Side(style="thin"),
+                left=Side(style="thin"),
+                right=Side(style="thin"),
+                top=Side(style="thin"),
+                bottom=Side(style="thin"),
             ),
             _EXCEL_ALIGNMENT: Alignment,
             "Font": Font,

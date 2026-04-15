@@ -99,9 +99,7 @@ def _compute_stratified_quotas(counts_by_db: Dict[str, int], n: int) -> Dict[str
     # Largest remainder among DBs that still have headroom
     while deficit > 0:
         candidates = [
-            (ideal[d] - quotas[d], d)
-            for d in dbs
-            if quotas[d] < counts_by_db[d]
+            (ideal[d] - quotas[d], d) for d in dbs if quotas[d] < counts_by_db[d]
         ]
         if not candidates:
             break
@@ -211,9 +209,7 @@ class BIRDDatasetManager:
             1
             for d in os.listdir(self.db_dir)
             if os.path.isdir(os.path.join(self.db_dir, d))
-            and os.path.exists(
-                os.path.join(self.db_dir, d, f"{d}.sqlite")
-            )
+            and os.path.exists(os.path.join(self.db_dir, d, f"{d}.sqlite"))
         )
         return db_count >= len(BIRD_DATABASES)
 
@@ -255,11 +251,17 @@ class BIRDDatasetManager:
             }
             questions.append(question_entry)
             gold_lines.append(f"{item['SQL']}\t{item['db_id']}")
-            jsonl_lines.append(json.dumps({
-                _FIELD_QUESTION_ID: idx,
-                _FIELD_DB_ID: item[_FIELD_DB_ID],
-                _FIELD_DIFFICULTY: item.get(_FIELD_DIFFICULTY, _DIFFICULTY_SIMPLE),
-            }))
+            jsonl_lines.append(
+                json.dumps(
+                    {
+                        _FIELD_QUESTION_ID: idx,
+                        _FIELD_DB_ID: item[_FIELD_DB_ID],
+                        _FIELD_DIFFICULTY: item.get(
+                            _FIELD_DIFFICULTY, _DIFFICULTY_SIMPLE
+                        ),
+                    }
+                )
+            )
 
         with open(self.questions_file, "w") as f:
             json.dump(questions, f, indent=2)
@@ -270,9 +272,7 @@ class BIRDDatasetManager:
         with open(self.difficulty_file, "w") as f:
             f.write("\n".join(jsonl_lines) + "\n")
 
-        logger.info(
-            "Saved %d questions to %s", len(questions), self.questions_file
-        )
+        logger.info("Saved %d questions to %s", len(questions), self.questions_file)
 
         if not os.path.isdir(self.db_dir) or not self._databases_present():
             logger.warning(
@@ -326,10 +326,14 @@ class BIRDDatasetManager:
                 line = line.strip()
                 if line:
                     entry = json.loads(line)
-                    difficulty_map[entry[_FIELD_QUESTION_ID]] = entry.get(_FIELD_DIFFICULTY, _DIFFICULTY_SIMPLE)
+                    difficulty_map[entry[_FIELD_QUESTION_ID]] = entry.get(
+                        _FIELD_DIFFICULTY, _DIFFICULTY_SIMPLE
+                    )
         return difficulty_map
 
-    def load_questions(self, db_filter: Optional[str] = None, limit: Optional[int] = None) -> List[BIRDQuestion]:
+    def load_questions(
+        self, db_filter: Optional[str] = None, limit: Optional[int] = None
+    ) -> List[BIRDQuestion]:
         """Load BIRD questions from the dataset.
 
         Args:
@@ -352,16 +356,20 @@ class BIRDDatasetManager:
             if db_filter and q[_FIELD_DB_ID] != db_filter:
                 continue
 
-            difficulty = difficulty_map.get(idx, q.get(_FIELD_DIFFICULTY, _DIFFICULTY_SIMPLE))
+            difficulty = difficulty_map.get(
+                idx, q.get(_FIELD_DIFFICULTY, _DIFFICULTY_SIMPLE)
+            )
 
-            questions.append(BIRDQuestion(
-                question_id=idx,
-                db_id=q[_FIELD_DB_ID],
-                question=q[_FIELD_QUESTION],
-                evidence=q.get(_FIELD_EVIDENCE, ""),
-                gold_sql=q["SQL"],
-                difficulty=difficulty,
-            ))
+            questions.append(
+                BIRDQuestion(
+                    question_id=idx,
+                    db_id=q[_FIELD_DB_ID],
+                    question=q[_FIELD_QUESTION],
+                    evidence=q.get(_FIELD_EVIDENCE, ""),
+                    gold_sql=q["SQL"],
+                    difficulty=difficulty,
+                )
+            )
 
             if limit and len(questions) >= limit:
                 break
@@ -390,7 +398,9 @@ class BIRDDatasetManager:
             Tuple of (questions, allocation map ``db_id`` -> count in sample).
         """
         all_questions = self.load_questions(db_filter=None, limit=None)
-        sampled, allocation = stratified_sample_questions(all_questions, total, seed=seed)
+        sampled, allocation = stratified_sample_questions(
+            all_questions, total, seed=seed
+        )
         logger.info(
             "Stratified sample: %d questions across %d databases (seed=%s)",
             len(sampled),
@@ -444,7 +454,9 @@ class BIRDDatasetManager:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
+        )
         tables = [row[0] for row in cursor.fetchall()]
 
         schema_parts = [f"Database: {db_id}", f"Tables: {len(tables)}", ""]

@@ -51,7 +51,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from benchmarks.bird.evaluate import BIRDEvaluator
-from benchmarks.bird.runner import BIRDBenchmarkRunner, BenchmarkResult
+from benchmarks.bird.runner import BenchmarkResult, BIRDBenchmarkRunner
 from benchmarks.bird.setup_data import BIRDDatasetManager
 
 
@@ -69,8 +69,7 @@ def setup_logging(verbose: bool = False):
     _handler = logging.StreamHandler(sys.stdout)
     _handler.setFormatter(
         SafeLogFormatter(
-            fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-            datefmt="%H:%M:%S"
+            fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%H:%M:%S"
         )
     )
     logging.basicConfig(level=level, handlers=[_handler])
@@ -128,7 +127,9 @@ def _collect_llm_overrides(args) -> dict:
     return overrides
 
 
-def _build_run_config(args, run_name, timestamp, generation_time, sampling_mode, questions_meta) -> dict:
+def _build_run_config(
+    args, run_name, timestamp, generation_time, sampling_mode, questions_meta
+) -> dict:
     """Build the run_config metadata dict written to the spreadsheet and summary JSON."""
     return {
         "Run Name": run_name,
@@ -136,7 +137,9 @@ def _build_run_config(args, run_name, timestamp, generation_time, sampling_mode,
         "Provider": args.provider,
         "Model": args.model,
         "Evidence (Oracle Knowledge)": "Yes" if not args.no_evidence else "No",
-        "Database Filter": "All (stratified)" if args.stratified else (args.db_filter or "All"),
+        "Database Filter": (
+            "All (stratified)" if args.stratified else (args.db_filter or "All")
+        ),
         "Sampling mode": sampling_mode,
         "Questions": questions_meta,
         "Total Time (s)": round(generation_time, 1),
@@ -154,7 +157,9 @@ def _load_questions(args, dataset):
             total=args.stratified_size,
             seed=args.stratified_seed,
         )
-        print(f"Loaded {len(questions)} stratified questions (seed={args.stratified_seed})")
+        print(
+            f"Loaded {len(questions)} stratified questions (seed={args.stratified_seed})"
+        )
         print("Per-database allocation:")
         for db_id in sorted(stratified_allocation.keys()):
             print(f"  {db_id}: {stratified_allocation[db_id]}")
@@ -240,9 +245,11 @@ def run_benchmark(args):
         existing_dirs = []
         if os.path.exists(args.output_dir):
             for d in os.listdir(args.output_dir):
-                if d.startswith(base_run_name) and os.path.isdir(os.path.join(args.output_dir, d)):
+                if d.startswith(base_run_name) and os.path.isdir(
+                    os.path.join(args.output_dir, d)
+                ):
                     existing_dirs.append(os.path.join(args.output_dir, d))
-        
+
         if existing_dirs:
             latest_dir = sorted(existing_dirs)[-1]
             checkpoint = os.path.join(latest_dir, "predictions_checkpoint.json")
@@ -272,7 +279,9 @@ def run_benchmark(args):
     summary = runner.get_results_summary()
     print(f"\nSQL Generation Summary:")
     print(f"  Total questions: {summary['total']}")
-    print(f"  SQL generated:   {summary['success']} ({summary['sql_generation_rate']}%)")
+    print(
+        f"  SQL generated:   {summary['success']} ({summary['sql_generation_rate']}%)"
+    )
     print(f"  Failed:          {summary['failed']}")
     print(f"  Avg latency:     {summary['avg_latency_seconds']}s")
     print(f"  Total time:      {generation_time:.0f}s")
@@ -296,7 +305,9 @@ def run_benchmark(args):
     evaluator.save_report(report, report_path)
 
     sampling_mode, questions_meta = _build_sampling_meta(args, stratified_allocation)
-    run_config = _build_run_config(args, run_name, timestamp, generation_time, sampling_mode, questions_meta)
+    run_config = _build_run_config(
+        args, run_name, timestamp, generation_time, sampling_mode, questions_meta
+    )
 
     summary_path = os.path.join(output_dir, "run_summary.json")
     summary_payload: Dict[str, Any] = {
@@ -397,40 +408,66 @@ Examples:
 
     # Mode
     parser.add_argument(
-        "--evaluate-only", action="store_true",
+        "--evaluate-only",
+        action="store_true",
         help="Only evaluate an existing predictions file (skip generation)",
     )
 
     # LLM configuration
-    parser.add_argument("--provider", type=str, default="openai",
-                        choices=["openai", "azure_openai", "vertex_ai", "bedrock"],
-                        help="LLM provider (default: openai)")
-    parser.add_argument("--model", type=str, default="gpt-4o",
-                        help="LLM model name (default: gpt-4o)")
-    parser.add_argument("--api-key", type=str, default=None,
-                        help="API key (defaults to env var)")
-    parser.add_argument("--api-base", type=str, default=None,
-                        help="API base URL / Azure endpoint")
-    parser.add_argument("--api-version", type=str, default=None,
-                        help="API version (Azure)")
-    parser.add_argument("--deployment-name", type=str, default=None,
-                        help="Deployment name (Azure)")
-    parser.add_argument("--project-id", type=str, default=None,
-                        help="GCP Project ID (Vertex AI)")
-    parser.add_argument("--location", type=str, default="us-central1",
-                        help="GCP Location (Vertex AI)")
-    parser.add_argument("--credentials-path", type=str, default=None,
-                        help="Path to GCP Service Account JSON (Vertex AI)")
-    parser.add_argument("--gcloud-cli-auth", action="store_true",
-                        help="Use gcloud CLI auth (Vertex AI)")
-    parser.add_argument("--ca-bundle", type=str, default=None,
-                        help="Path to CA bundle PEM file (e.g., Zscaler cert)")
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default="openai",
+        choices=["openai", "azure_openai", "vertex_ai", "bedrock"],
+        help="LLM provider (default: openai)",
+    )
+    parser.add_argument(
+        "--model", type=str, default="gpt-4o", help="LLM model name (default: gpt-4o)"
+    )
+    parser.add_argument(
+        "--api-key", type=str, default=None, help="API key (defaults to env var)"
+    )
+    parser.add_argument(
+        "--api-base", type=str, default=None, help="API base URL / Azure endpoint"
+    )
+    parser.add_argument(
+        "--api-version", type=str, default=None, help="API version (Azure)"
+    )
+    parser.add_argument(
+        "--deployment-name", type=str, default=None, help="Deployment name (Azure)"
+    )
+    parser.add_argument(
+        "--project-id", type=str, default=None, help="GCP Project ID (Vertex AI)"
+    )
+    parser.add_argument(
+        "--location", type=str, default="us-central1", help="GCP Location (Vertex AI)"
+    )
+    parser.add_argument(
+        "--credentials-path",
+        type=str,
+        default=None,
+        help="Path to GCP Service Account JSON (Vertex AI)",
+    )
+    parser.add_argument(
+        "--gcloud-cli-auth", action="store_true", help="Use gcloud CLI auth (Vertex AI)"
+    )
+    parser.add_argument(
+        "--ca-bundle",
+        type=str,
+        default=None,
+        help="Path to CA bundle PEM file (e.g., Zscaler cert)",
+    )
 
     # Benchmark scope
-    parser.add_argument("--db-filter", type=str, default=None,
-                        help="Only run questions for this database (e.g., 'financial')")
-    parser.add_argument("--limit", type=int, default=None,
-                        help="Max number of questions to process")
+    parser.add_argument(
+        "--db-filter",
+        type=str,
+        default=None,
+        help="Only run questions for this database (e.g., 'financial')",
+    )
+    parser.add_argument(
+        "--limit", type=int, default=None, help="Max number of questions to process"
+    )
     parser.add_argument(
         "--stratified",
         action="store_true",
@@ -451,36 +488,72 @@ Examples:
         default=42,
         help="RNG seed for stratified sampling (default: 42)",
     )
-    parser.add_argument("--no-evidence", action="store_true",
-                        help="Don't include BIRD evidence/external knowledge in prompts")
+    parser.add_argument(
+        "--no-evidence",
+        action="store_true",
+        help="Don't include BIRD evidence/external knowledge in prompts",
+    )
 
     # Execution settings
-    parser.add_argument("--max-retries", type=int, default=2,
-                        help="Max SQL generation retries per question (default: 2)")
-    parser.add_argument("--timeout", type=int, default=120,
-                        help="Timeout per question in seconds (default: 120)")
-    parser.add_argument("--resume", action="store_true",
-                        help="Resume from checkpoint if available")
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=2,
+        help="Max SQL generation retries per question (default: 2)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=120,
+        help="Timeout per question in seconds (default: 120)",
+    )
+    parser.add_argument(
+        "--resume", action="store_true", help="Resume from checkpoint if available"
+    )
 
     # Evaluation settings
-    parser.add_argument("--eval-timeout", type=float, default=30.0,
-                        help="SQL execution timeout for evaluation (default: 30s)")
-    parser.add_argument("--eval-workers", type=int, default=4,
-                        help="Parallel workers for evaluation (default: 4)")
+    parser.add_argument(
+        "--eval-timeout",
+        type=float,
+        default=30.0,
+        help="SQL execution timeout for evaluation (default: 30s)",
+    )
+    parser.add_argument(
+        "--eval-workers",
+        type=int,
+        default=4,
+        help="Parallel workers for evaluation (default: 4)",
+    )
 
     # Paths
-    parser.add_argument("--data-dir", type=str, default="./benchmarks/bird/data",
-                        help="BIRD dataset directory")
-    parser.add_argument("--output-dir", type=str, default="./benchmarks/bird/output",
-                        help="Output directory for results")
-    parser.add_argument("--predictions", type=str, default=None,
-                        help="Path to predictions file (for --evaluate-only)")
-    parser.add_argument("--local-data", action="store_true",
-                        help="Use local data only (don't download from HuggingFace)")
+    parser.add_argument(
+        "--data-dir",
+        type=str,
+        default="./benchmarks/bird/data",
+        help="BIRD dataset directory",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="./benchmarks/bird/output",
+        help="Output directory for results",
+    )
+    parser.add_argument(
+        "--predictions",
+        type=str,
+        default=None,
+        help="Path to predictions file (for --evaluate-only)",
+    )
+    parser.add_argument(
+        "--local-data",
+        action="store_true",
+        help="Use local data only (don't download from HuggingFace)",
+    )
 
     # General
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Enable verbose logging")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
+    )
 
     args = parser.parse_args()
     setup_logging(args.verbose)
@@ -488,7 +561,9 @@ Examples:
     if args.stratified and args.db_filter:
         parser.error("--stratified cannot be combined with --db-filter")
     if args.stratified and args.limit is not None:
-        parser.error("--stratified cannot be combined with --limit (use --stratified-size)")
+        parser.error(
+            "--stratified cannot be combined with --limit (use --stratified-size)"
+        )
 
     if args.evaluate_only:
         if not args.predictions:

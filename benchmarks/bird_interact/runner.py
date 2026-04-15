@@ -152,9 +152,7 @@ class MiniInteractRunner:
             List of ConversationResult for each task processed.
         """
         if tasks is None:
-            tasks = self.dataset_manager.load_tasks(
-                limit=limit, db_filter=db_filter
-            )
+            tasks = self.dataset_manager.load_tasks(limit=limit, db_filter=db_filter)
 
         completed_ids = set()
         if resume_from and os.path.exists(resume_from):
@@ -166,7 +164,10 @@ class MiniInteractRunner:
 
         logger.info(
             "Starting Mini-Interact benchmark: %d tasks, provider=%s, model=%s, patience=%d",
-            total, self.llm_provider, self.llm_model, self.patience,
+            total,
+            self.llm_provider,
+            self.llm_model,
+            self.patience,
         )
 
         for idx, task in enumerate(tasks):
@@ -175,8 +176,11 @@ class MiniInteractRunner:
 
             logger.info(
                 "[%d/%d] Processing task %s (db=%s, ambiguities=%d)",
-                idx + 1, total, task.instance_id,
-                task.selected_database, task.ambiguity_count,
+                idx + 1,
+                total,
+                task.instance_id,
+                task.selected_database,
+                task.ambiguity_count,
             )
 
             result = self._run_single_task(task)
@@ -188,11 +192,15 @@ class MiniInteractRunner:
             if result.success:
                 logger.info(
                     "  -> SQL generated in %.1fs (%d turns, debug=%s)",
-                    result.latency_seconds, result.num_turns, result.debug_used,
+                    result.latency_seconds,
+                    result.num_turns,
+                    result.debug_used,
                 )
             else:
                 logger.warning(
-                    "  -> FAILED: %s (%.1fs)", result.error, result.latency_seconds,
+                    "  -> FAILED: %s (%.1fs)",
+                    result.error,
+                    result.latency_seconds,
                 )
 
             if (idx + 1) % 10 == 0:
@@ -204,7 +212,8 @@ class MiniInteractRunner:
         success_count = sum(1 for r in self._results if r.success)
         logger.info(
             "Benchmark complete: %d/%d tasks produced SQL (%.1f%%)",
-            success_count, len(self._results),
+            success_count,
+            len(self._results),
             100.0 * success_count / max(len(self._results), 1),
         )
 
@@ -238,13 +247,15 @@ class MiniInteractRunner:
                 sql = self._extract_sql_from_response(system_response)
                 has_sql = sql is not None
 
-                turns.append(ConversationTurn(
-                    turn_number=turn_num,
-                    role="system",
-                    content=system_response,
-                    contains_sql=has_sql,
-                    extracted_sql=sql,
-                ))
+                turns.append(
+                    ConversationTurn(
+                        turn_number=turn_num,
+                        role="system",
+                        content=system_response,
+                        contains_sql=has_sql,
+                        extracted_sql=sql,
+                    )
+                )
 
                 if has_sql:
                     predicted_sql = sql
@@ -267,11 +278,13 @@ class MiniInteractRunner:
                     task_context=sim_context,
                 )
 
-                turns.append(ConversationTurn(
-                    turn_number=turn_num,
-                    role="user",
-                    content=sim_response.user_message,
-                ))
+                turns.append(
+                    ConversationTurn(
+                        turn_number=turn_num,
+                        role="user",
+                        content=sim_response.user_message,
+                    )
+                )
 
                 conversation_history = (
                     f"{conversation_history}\n\n"
@@ -327,11 +340,13 @@ class MiniInteractRunner:
         ]
 
         if knowledge_text:
-            parts.extend([
-                "",
-                "Additional context:",
-                knowledge_text,
-            ])
+            parts.extend(
+                [
+                    "",
+                    "Additional context:",
+                    knowledge_text,
+                ]
+            )
 
         return "\n".join(parts)
 
@@ -368,9 +383,7 @@ class MiniInteractRunner:
 
     def _extract_clarification(self, response: str) -> Optional[str]:
         """Extract a clarification question from the system response."""
-        match = re.search(
-            r"<question>(.*?)</question>", response, re.DOTALL
-        )
+        match = re.search(r"<question>(.*?)</question>", response, re.DOTALL)
         if match:
             return match.group(1).strip()
 
@@ -564,9 +577,7 @@ class MiniInteractRunner:
         total = len(self._results)
         success = sum(1 for r in self._results if r.success)
         latencies = [r.latency_seconds for r in self._results if r.success]
-        avg_turns = (
-            sum(r.num_turns for r in self._results) / total if total else 0
-        )
+        avg_turns = sum(r.num_turns for r in self._results) / total if total else 0
 
         by_db: Dict[str, Dict[str, int]] = {}
         for r in self._results:
@@ -581,9 +592,7 @@ class MiniInteractRunner:
             "success": success,
             "failed": total - success,
             "sql_generation_rate": round(100.0 * success / max(total, 1), 2),
-            "avg_latency_seconds": round(
-                sum(latencies) / max(len(latencies), 1), 3
-            ),
+            "avg_latency_seconds": round(sum(latencies) / max(len(latencies), 1), 3),
             "avg_turns": round(avg_turns, 2),
             "by_database": by_db,
             "llm_provider": self.llm_provider,

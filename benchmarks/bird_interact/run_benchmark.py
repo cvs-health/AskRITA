@@ -198,7 +198,9 @@ def run_benchmark(args: argparse.Namespace) -> None:
     summary = runner.get_results_summary()
     print(f"\nSQL Generation Summary:")
     print(f"  Total tasks:     {summary['total']}")
-    print(f"  SQL generated:   {summary['success']} ({summary['sql_generation_rate']}%)")
+    print(
+        f"  SQL generated:   {summary['success']} ({summary['sql_generation_rate']}%)"
+    )
     print(f"  Failed:          {summary['failed']}")
     print(f"  Avg turns:       {summary['avg_turns']}")
     print(f"  Avg latency:     {summary['avg_latency_seconds']}s")
@@ -287,16 +289,18 @@ def evaluate_only(args: argparse.Namespace) -> None:
             if not line:
                 continue
             entry = json.loads(line)
-            conversation_results.append(ConversationResult(
-                instance_id=entry["instance_id"],
-                selected_database=entry["selected_database"],
-                amb_user_query=entry.get("amb_user_query", ""),
-                predicted_sql=entry["predicted_sql"],
-                num_turns=entry.get("num_turns", 0),
-                debug_used=entry.get("debug_used", False),
-                latency_seconds=entry.get("latency_seconds", 0),
-                success=entry.get("success", False),
-            ))
+            conversation_results.append(
+                ConversationResult(
+                    instance_id=entry["instance_id"],
+                    selected_database=entry["selected_database"],
+                    amb_user_query=entry.get("amb_user_query", ""),
+                    predicted_sql=entry["predicted_sql"],
+                    num_turns=entry.get("num_turns", 0),
+                    debug_used=entry.get("debug_used", False),
+                    latency_seconds=entry.get("latency_seconds", 0),
+                    success=entry.get("success", False),
+                )
+            )
 
     evaluator = MiniInteractEvaluator(
         dataset_manager=dataset,
@@ -340,68 +344,123 @@ Examples:
 
     # Mode
     parser.add_argument(
-        "--evaluate-only", action="store_true",
+        "--evaluate-only",
+        action="store_true",
         help="Only evaluate existing results (skip generation)",
     )
 
     # LLM configuration (system)
-    parser.add_argument("--provider", type=str, default="openai",
-                        choices=["openai", "azure_openai", "vertex_ai", "bedrock"],
-                        help="LLM provider for askRITA system (default: openai)")
-    parser.add_argument("--model", type=str, default="gpt-4o",
-                        help="LLM model for askRITA system (default: gpt-4o)")
-    parser.add_argument("--api-key", type=str, default=None,
-                        help="API key (defaults to env var)")
-    parser.add_argument("--api-base", type=str, default=None,
-                        help="API base URL / Azure endpoint")
-    parser.add_argument("--api-version", type=str, default=None,
-                        help="API version (Azure)")
-    parser.add_argument("--deployment-name", type=str, default=None,
-                        help="Deployment name (Azure)")
-    parser.add_argument("--ca-bundle", type=str, default=None,
-                        help="Path to CA bundle PEM file (e.g., Zscaler cert)")
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default="openai",
+        choices=["openai", "azure_openai", "vertex_ai", "bedrock"],
+        help="LLM provider for askRITA system (default: openai)",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="gpt-4o",
+        help="LLM model for askRITA system (default: gpt-4o)",
+    )
+    parser.add_argument(
+        "--api-key", type=str, default=None, help="API key (defaults to env var)"
+    )
+    parser.add_argument(
+        "--api-base", type=str, default=None, help="API base URL / Azure endpoint"
+    )
+    parser.add_argument(
+        "--api-version", type=str, default=None, help="API version (Azure)"
+    )
+    parser.add_argument(
+        "--deployment-name", type=str, default=None, help="Deployment name (Azure)"
+    )
+    parser.add_argument(
+        "--ca-bundle",
+        type=str,
+        default=None,
+        help="Path to CA bundle PEM file (e.g., Zscaler cert)",
+    )
 
     # User simulator
-    parser.add_argument("--user-sim-model", type=str, default="gpt-4o",
-                        help="LLM model for user simulator (default: gpt-4o)")
+    parser.add_argument(
+        "--user-sim-model",
+        type=str,
+        default="gpt-4o",
+        help="LLM model for user simulator (default: gpt-4o)",
+    )
 
     # Benchmark scope
-    parser.add_argument("--limit", type=int, default=None,
-                        help="Max number of tasks to process")
-    parser.add_argument("--db-filter", type=str, default=None,
-                        help="Only run tasks for this database")
-    parser.add_argument("--patience", type=int, default=3,
-                        help="Extra turns beyond ambiguity count (default: 3)")
+    parser.add_argument(
+        "--limit", type=int, default=None, help="Max number of tasks to process"
+    )
+    parser.add_argument(
+        "--db-filter", type=str, default=None, help="Only run tasks for this database"
+    )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=3,
+        help="Extra turns beyond ambiguity count (default: 3)",
+    )
 
     # Ground truth
-    parser.add_argument("--gt-path", type=str, default=None,
-                        help="Path to GT JSONL file (from BIRD team)")
+    parser.add_argument(
+        "--gt-path",
+        type=str,
+        default=None,
+        help="Path to GT JSONL file (from BIRD team)",
+    )
 
     # Execution settings
-    parser.add_argument("--max-retries", type=int, default=2,
-                        help="Max SQL generation retries (default: 2)")
-    parser.add_argument("--timeout", type=int, default=300,
-                        help="Timeout per task in seconds (default: 300)")
-    parser.add_argument("--resume", action="store_true",
-                        help="Resume from checkpoint if available")
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=2,
+        help="Max SQL generation retries (default: 2)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=300,
+        help="Timeout per task in seconds (default: 300)",
+    )
+    parser.add_argument(
+        "--resume", action="store_true", help="Resume from checkpoint if available"
+    )
 
     # Evaluation settings
-    parser.add_argument("--eval-timeout", type=float, default=30.0,
-                        help="SQL execution timeout for evaluation (default: 30s)")
+    parser.add_argument(
+        "--eval-timeout",
+        type=float,
+        default=30.0,
+        help="SQL execution timeout for evaluation (default: 30s)",
+    )
 
     # Paths
-    parser.add_argument("--data-dir", type=str,
-                        default="./benchmarks/bird_interact/data",
-                        help="Mini-Interact dataset directory")
-    parser.add_argument("--output-dir", type=str,
-                        default="./benchmarks/bird_interact/output",
-                        help="Output directory for results")
-    parser.add_argument("--results", type=str, default=None,
-                        help="Path to results JSONL file (for --evaluate-only)")
+    parser.add_argument(
+        "--data-dir",
+        type=str,
+        default="./benchmarks/bird_interact/data",
+        help="Mini-Interact dataset directory",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="./benchmarks/bird_interact/output",
+        help="Output directory for results",
+    )
+    parser.add_argument(
+        "--results",
+        type=str,
+        default=None,
+        help="Path to results JSONL file (for --evaluate-only)",
+    )
 
     # General
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Enable verbose logging")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
+    )
 
     args = parser.parse_args()
     setup_logging(args.verbose)

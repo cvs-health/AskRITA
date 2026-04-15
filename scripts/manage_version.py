@@ -51,7 +51,10 @@ def _resolve_poetry_version_cmd(cmd_args):
     parts = cmd_args.split()
     if len(parts) == 3 and parts[0] == _TOOL_POETRY and parts[1] == "version":
         version_arg = parts[2]
-        if version_arg in [_BUMP_MAJOR, _BUMP_MINOR, _BUMP_PATCH] or version_arg.replace(".", "").replace("-", "").isalnum():
+        if (
+            version_arg in [_BUMP_MAJOR, _BUMP_MINOR, _BUMP_PATCH]
+            or version_arg.replace(".", "").replace("-", "").isalnum()
+        ):
             return [_TOOL_POETRY, "version", version_arg]
         raise ValueError(f"Invalid version argument: {version_arg}")
     raise ValueError(f"Invalid poetry command: {cmd_args}")
@@ -87,7 +90,7 @@ def _resolve_cmd_args(cmd_args):
 def _cmd_display(cmd_args):
     """Return a printable representation of cmd_args (list or string)."""
     if isinstance(cmd_args, list):
-        return ' '.join(cmd_args)
+        return " ".join(cmd_args)
     return cmd_args
 
 
@@ -97,8 +100,11 @@ def run_command(cmd_args, cwd=None):
         if isinstance(cmd_args, str):
             cmd_args = _resolve_cmd_args(cmd_args)
         result = subprocess.run(
-            cmd_args, cwd=cwd or PROJECT_ROOT,
-            capture_output=True, text=True, check=True
+            cmd_args,
+            cwd=cwd or PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
@@ -118,9 +124,9 @@ def get_current_version():
     except:
         # Fallback to reading from pyproject.toml
         pyproject_path = PROJECT_ROOT / "pyproject.toml"
-        with open(pyproject_path, 'r') as f:
+        with open(pyproject_path, "r") as f:
             for line in f:
-                if line.strip().startswith('version = '):
+                if line.strip().startswith("version = "):
                     return line.split('"')[1]
         return "unknown"
 
@@ -195,7 +201,8 @@ def set_version(version):
 def _update_single_file(file_info, project_root):
     """Apply a version regex replacement to one file. Returns True if the file was changed."""
     import re
-    file_path = file_info['path'].resolve()
+
+    file_path = file_info["path"].resolve()
     try:
         file_path.relative_to(project_root.resolve())
     except ValueError:
@@ -205,11 +212,11 @@ def _update_single_file(file_info, project_root):
         print(f"⚠️  File not found: {file_path}")
         return False
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
-        new_content = re.sub(file_info['pattern'], file_info['replacement'], content)
+        new_content = re.sub(file_info["pattern"], file_info["replacement"], content)
         if new_content != content:
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 f.write(new_content)
             print(f"📝 Updated {file_info['description']}: {file_path.name}")
             return True
@@ -225,28 +232,31 @@ def update_files(version):
     import re
 
     # Sanitize version input - only allow semver format
-    if not re.match(r'^\d+\.\d+\.\d+$', version):
-        print(f"❌ Invalid version format: {version}. Must be semantic version (e.g., 1.2.3)")
+    if not re.match(r"^\d+\.\d+\.\d+$", version):
+        print(
+            f"❌ Invalid version format: {version}. Must be semantic version (e.g., 1.2.3)"
+        )
         return
 
     # Predefined safe file paths (no user input)
     files_to_update = [
         {
-            'path': PROJECT_ROOT / "setup.py",
-            'pattern': r'version="[^"]*"',
-            'replacement': f'version="{version}"',
-            'description': 'setup.py version'
+            "path": PROJECT_ROOT / "setup.py",
+            "pattern": r'version="[^"]*"',
+            "replacement": f'version="{version}"',
+            "description": "setup.py version",
         },
         {
-            'path': PROJECT_ROOT / "askrita" / "__init__.py",
-            'pattern': r'__version__ = "[^"]*"',
-            'replacement': f'__version__ = "{version}"',
-            'description': 'Package __init__.py version'
-        }
+            "path": PROJECT_ROOT / "askrita" / "__init__.py",
+            "pattern": r'__version__ = "[^"]*"',
+            "replacement": f'__version__ = "{version}"',
+            "description": "Package __init__.py version",
+        },
     ]
 
     updated_count = sum(
-        1 for file_info in files_to_update
+        1
+        for file_info in files_to_update
         if _update_single_file(file_info, PROJECT_ROOT)
     )
 
@@ -267,32 +277,30 @@ Examples:
   %(prog)s patch         # Bump patch version (0.1.0 -> 0.1.1)
   %(prog)s set 1.2.3     # Set specific version
         """,
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     parser.add_argument(
-        'action',
-        choices=['show', _BUMP_MAJOR, _BUMP_MINOR, _BUMP_PATCH, 'set'],
-        help='Version action to perform'
+        "action",
+        choices=["show", _BUMP_MAJOR, _BUMP_MINOR, _BUMP_PATCH, "set"],
+        help="Version action to perform",
     )
 
     parser.add_argument(
-        'version',
-        nargs='?',
-        help='Specific version to set (only for "set" action)'
+        "version", nargs="?", help='Specific version to set (only for "set" action)'
     )
 
     parser.add_argument(
-        '--tool',
+        "--tool",
         choices=[_TOOL_POETRY, _TOOL_BUMP2VERSION],
         default=_TOOL_POETRY,
-        help='Tool to use for version bumping (default: poetry)'
+        help="Tool to use for version bumping (default: poetry)",
     )
 
     parser.add_argument(
-        '--no-commit',
-        action='store_true',
-        help='Skip git commit when using bump2version'
+        "--no-commit",
+        action="store_true",
+        help="Skip git commit when using bump2version",
     )
 
     args = parser.parse_args()
@@ -300,9 +308,9 @@ Examples:
     # Change to project root
     print(f"📁 Working in: {PROJECT_ROOT}")
 
-    if args.action == 'show':
+    if args.action == "show":
         show_version()
-    elif args.action == 'set':
+    elif args.action == "set":
         if not args.version:
             print("❌ Version required for 'set' action")
             sys.exit(1)

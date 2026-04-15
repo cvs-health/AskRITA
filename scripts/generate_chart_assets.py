@@ -40,11 +40,12 @@ import sys
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import matplotlib.animation as animation
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "docs" / "assets" / "charts"
@@ -64,6 +65,7 @@ GREY = "#9aa0a6"
 def _set_gif_loop_once(gif_path: Path):
     """Re-save a GIF with loop=1 so it plays once and stops on the last frame."""
     from PIL import Image
+
     img = Image.open(str(gif_path))
     frames = []
     durations = []
@@ -101,8 +103,9 @@ def _save(fig, name: str, anim=None):
     if anim is not None:
         writer = animation.PillowWriter(fps=20)
         writer.args_key = "pillow_args"
-        anim.save(str(gif_path), writer=writer, dpi=100,
-                  savefig_kwargs={"facecolor": "white"})
+        anim.save(
+            str(gif_path), writer=writer, dpi=100, savefig_kwargs={"facecolor": "white"}
+        )
         _set_gif_loop_once(gif_path)
         print(f"  saved {gif_path.relative_to(OUTPUT_DIR.parent.parent.parent)}")
 
@@ -113,17 +116,24 @@ def _save(fig, name: str, anim=None):
 # 1. BAR CHART  (horizontal) — bar-chart.md  lines 78-84
 # ---------------------------------------------------------------------------
 def gen_bar():
-    categories = ["Retail Store", "Walk-in Clinic", "Wellness Center",
-                   "Premium Services", "Digital Services"]
+    categories = [
+        "Retail Store",
+        "Walk-in Clinic",
+        "Wellness Center",
+        "Premium Services",
+        "Digital Services",
+    ]
     values = [8.4, 8.7, 8.2, 7.9, 7.1]
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
     fig.patch.set_facecolor("white")
 
-    bars = ax.barh(categories, [0]*len(values), color=BLUE)
+    bars = ax.barh(categories, [0] * len(values), color=BLUE)
     ax.set_xlim(0, 10)
     ax.set_xlabel("Satisfaction Score (1-10)")
-    ax.set_title("Customer Satisfaction by Service Area", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Customer Satisfaction by Service Area", fontsize=14, fontweight="bold"
+    )
     ax.invert_yaxis()
 
     def update(frame):
@@ -132,7 +142,9 @@ def gen_bar():
             bar.set_width(v * frac)
         return bars
 
-    anim = animation.FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     update(TOTAL_FRAMES)
     _save(fig, "sample_bar", anim)
 
@@ -147,7 +159,7 @@ def gen_column():
     fig, ax = plt.subplots(figsize=(8, 4.5))
     fig.patch.set_facecolor("white")
 
-    bars = ax.bar(months, [0]*len(values), color=BLUE)
+    bars = ax.bar(months, [0] * len(values), color=BLUE)
     ax.set_ylim(0, max(values) * 1.15)
     ax.set_xlabel("Month")
     ax.set_ylabel("Response Count")
@@ -159,7 +171,9 @@ def gen_column():
             bar.set_height(v * frac)
         return bars
 
-    anim = animation.FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     update(TOTAL_FRAMES)
     _save(fig, "sample_column", anim)
 
@@ -168,27 +182,43 @@ def gen_column():
 # 3. LINE CHART — line-chart.md  lines 85-98
 # ---------------------------------------------------------------------------
 def gen_line():
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
     nps = [68, 71, 74, 72, 76, 78, 75, 79, 82, 80, 84, 86]
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
     fig.patch.set_facecolor("white")
-    line, = ax.plot([], [], color=BLUE, linewidth=3, marker="o", markersize=5)
+    (line,) = ax.plot([], [], color=BLUE, linewidth=3, marker="o", markersize=5)
     ax.set_xlim(-0.5, len(months) - 0.5)
     ax.set_ylim(60, 95)
     ax.set_xticks(range(len(months)))
     ax.set_xticklabels(months, rotation=45, ha="right")
     ax.set_xlabel("Month")
     ax.set_ylabel("NPS Score")
-    ax.set_title("Customer Satisfaction Trend Over Time", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Customer Satisfaction Trend Over Time", fontsize=14, fontweight="bold"
+    )
 
     def update(frame):
         n = max(1, int(len(nps) * min(1.0, frame / (TOTAL_FRAMES * 0.7))))
         line.set_data(range(n), nps[:n])
         return [line]
 
-    anim = animation.FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     update(TOTAL_FRAMES)
     _save(fig, "sample_line", anim)
 
@@ -197,7 +227,13 @@ def gen_line():
 # 4. PIE CHART — pie-chart.md  lines 77-83
 # ---------------------------------------------------------------------------
 def gen_pie():
-    labels = ["Very Satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very Dissatisfied"]
+    labels = [
+        "Very Satisfied",
+        "Satisfied",
+        "Neutral",
+        "Dissatisfied",
+        "Very Dissatisfied",
+    ]
     values = [4250, 3890, 1120, 680, 260]
     colors = ["#28a745", "#6cb33f", "#ffc107", "#fd7e14", "#dc3545"]
 
@@ -209,8 +245,12 @@ def gen_pie():
         frac = min(1.0, frame / (TOTAL_FRAMES * 0.7))
         angle = 360 * frac
         wedges, texts, autotexts = ax.pie(
-            values, labels=labels, colors=colors, autopct="%1.0f%%",
-            startangle=90, counterclock=False,
+            values,
+            labels=labels,
+            colors=colors,
+            autopct="%1.0f%%",
+            startangle=90,
+            counterclock=False,
             pctdistance=0.75,
             textprops={"fontsize": 9},
         )
@@ -222,7 +262,9 @@ def gen_pie():
             elif theta1 - 90 > angle:
                 w.set_visible(False)
 
-        ax.set_title("Customer Satisfaction Distribution", fontsize=14, fontweight="bold")
+        ax.set_title(
+            "Customer Satisfaction Distribution", fontsize=14, fontweight="bold"
+        )
 
     # For the animated version, use a simpler fade-in approach
     fig2, ax2 = plt.subplots(figsize=(7, 5))
@@ -234,8 +276,12 @@ def gen_pie():
         alpha = frac
         ax2.clear()
         wedges, texts, autotexts = ax2.pie(
-            values, labels=labels, colors=colors, autopct="%1.0f%%",
-            startangle=90, counterclock=False,
+            values,
+            labels=labels,
+            colors=colors,
+            autopct="%1.0f%%",
+            startangle=90,
+            counterclock=False,
             pctdistance=0.75,
             textprops={"fontsize": 9},
         )
@@ -245,14 +291,23 @@ def gen_pie():
             t.set_alpha(alpha)
         for t in autotexts:
             t.set_alpha(alpha)
-        ax2.set_title("Customer Satisfaction Distribution", fontsize=14, fontweight="bold")
+        ax2.set_title(
+            "Customer Satisfaction Distribution", fontsize=14, fontweight="bold"
+        )
 
     # Static version
     fig_s, ax_s = plt.subplots(figsize=(7, 5))
     fig_s.patch.set_facecolor("white")
-    ax_s.pie(values, labels=labels, colors=colors, autopct="%1.0f%%",
-             startangle=90, counterclock=False, pctdistance=0.75,
-             textprops={"fontsize": 9})
+    ax_s.pie(
+        values,
+        labels=labels,
+        colors=colors,
+        autopct="%1.0f%%",
+        startangle=90,
+        counterclock=False,
+        pctdistance=0.75,
+        textprops={"fontsize": 9},
+    )
     ax_s.set_title("Customer Satisfaction Distribution", fontsize=14, fontweight="bold")
 
     # Build animation with growing wedges
@@ -270,19 +325,39 @@ def gen_pie():
         else:
             c = colors
             l = labels
-        ax_a.pie(partial, labels=l, colors=c, autopct="%1.0f%%" if frac > 0.3 else "",
-                 startangle=90, counterclock=False, pctdistance=0.75,
-                 textprops={"fontsize": 9})
-        ax_a.set_title("Customer Satisfaction Distribution", fontsize=14, fontweight="bold")
+        ax_a.pie(
+            partial,
+            labels=l,
+            colors=c,
+            autopct="%1.0f%%" if frac > 0.3 else "",
+            startangle=90,
+            counterclock=False,
+            pctdistance=0.75,
+            textprops={"fontsize": 9},
+        )
+        ax_a.set_title(
+            "Customer Satisfaction Distribution", fontsize=14, fontweight="bold"
+        )
 
-    anim = animation.FuncAnimation(fig_a, update_pie, frames=TOTAL_FRAMES, interval=INTERVAL_MS)
+    anim = animation.FuncAnimation(
+        fig_a, update_pie, frames=TOTAL_FRAMES, interval=INTERVAL_MS
+    )
     update_pie(TOTAL_FRAMES)
 
-    fig_s.savefig(str(OUTPUT_DIR / "sample_pie.png"), dpi=120, bbox_inches="tight", facecolor="white")
+    fig_s.savefig(
+        str(OUTPUT_DIR / "sample_pie.png"),
+        dpi=120,
+        bbox_inches="tight",
+        facecolor="white",
+    )
     print(f"  saved docs/assets/charts/sample_pie.png")
     _writer = animation.PillowWriter(fps=20)
-    anim.save(str(OUTPUT_DIR / "sample_pie.gif"), writer=_writer, dpi=100,
-              savefig_kwargs={"facecolor": "white"})
+    anim.save(
+        str(OUTPUT_DIR / "sample_pie.gif"),
+        writer=_writer,
+        dpi=100,
+        savefig_kwargs={"facecolor": "white"},
+    )
     _set_gif_loop_once(OUTPUT_DIR / "sample_pie.gif")
     print(f"  saved docs/assets/charts/sample_pie.gif")
     plt.close("all")
@@ -292,10 +367,8 @@ def gen_pie():
 # 5. SCATTER CHART — scatter-chart.md  lines 81-97
 # ---------------------------------------------------------------------------
 def gen_scatter():
-    x_vals = [2.3, 3.1, 1.8, 4.2, 2.9, 3.7, 1.5, 5.1,
-              2.7, 3.9, 2.1, 4.8, 1.9, 3.4, 4.5]
-    y_vals = [8.7, 8.2, 9.1, 7.5, 8.4, 7.8, 9.3, 6.9,
-              8.6, 7.3, 8.9, 7.1, 9.0, 8.0, 7.2]
+    x_vals = [2.3, 3.1, 1.8, 4.2, 2.9, 3.7, 1.5, 5.1, 2.7, 3.9, 2.1, 4.8, 1.9, 3.4, 4.5]
+    y_vals = [8.7, 8.2, 9.1, 7.5, 8.4, 7.8, 9.3, 6.9, 8.6, 7.3, 8.9, 7.1, 9.0, 8.0, 7.2]
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
     fig.patch.set_facecolor("white")
@@ -304,13 +377,17 @@ def gen_scatter():
     ax.set_ylim(6, 10)
     ax.set_xlabel("Average Response Time (minutes)")
     ax.set_ylabel("Customer Satisfaction Score (1-10)")
-    ax.set_title("Response Time vs Customer Satisfaction", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Response Time vs Customer Satisfaction", fontsize=14, fontweight="bold"
+    )
 
     # Trend line
     z = np.polyfit(x_vals, y_vals, 1)
     p = np.poly1d(z)
     trend_x = np.linspace(0.5, 5.5, 100)
-    trend_line, = ax.plot([], [], color=ORANGE, linewidth=2, linestyle="--", alpha=0.8)
+    (trend_line,) = ax.plot(
+        [], [], color=ORANGE, linewidth=2, linestyle="--", alpha=0.8
+    )
 
     def update(frame):
         n = max(1, int(len(x_vals) * min(1.0, frame / (TOTAL_FRAMES * 0.6))))
@@ -322,7 +399,9 @@ def gen_scatter():
             trend_line.set_data(trend_x[:cutoff], p(trend_x[:cutoff]))
         return [scat, trend_line]
 
-    anim = animation.FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     update(TOTAL_FRAMES)
     _save(fig, "sample_scatter", anim)
 
@@ -342,14 +421,18 @@ def gen_histogram():
     ax.set_xlim(1, 10)
     ax.set_xlabel("Satisfaction Score (1-10)")
     ax.set_ylabel("Number of Responses")
-    ax.set_title("Customer Satisfaction Score Distribution", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Customer Satisfaction Score Distribution", fontsize=14, fontweight="bold"
+    )
 
     counts, _ = np.histogram(scores, bins=bins)
     max_count = counts.max()
     ax.set_ylim(0, max_count * 1.15)
     bar_edges = bins[:-1]
     bar_width = 0.5
-    bar_containers = ax.bar(bar_edges, [0]*len(counts), width=bar_width, align="edge", color=BLUE)
+    bar_containers = ax.bar(
+        bar_edges, [0] * len(counts), width=bar_width, align="edge", color=BLUE
+    )
 
     def update(frame):
         frac = min(1.0, frame / (TOTAL_FRAMES * 0.7))
@@ -357,7 +440,9 @@ def gen_histogram():
             bar.set_height(c * frac)
         return list(bar_containers)
 
-    anim = animation.FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     update(TOTAL_FRAMES)
     _save(fig, "sample_histogram", anim)
 
@@ -374,22 +459,32 @@ def gen_combo():
     fig.patch.set_facecolor("white")
 
     x = np.arange(len(segments))
-    bars = ax1.bar(x, [0]*len(segments), width=0.55, color="#1f77b4", label="Response Count")
+    bars = ax1.bar(
+        x, [0] * len(segments), width=0.55, color="#1f77b4", label="Response Count"
+    )
     ax1.set_ylim(0, max(response_count) * 1.2)
     ax1.set_ylabel("Response Count", color="#1f77b4")
     ax1.set_xticks(x)
     ax1.set_xticklabels(segments)
-    ax1.set_title("Response Volume vs NPS Score by Business Segment", fontsize=13, fontweight="bold")
+    ax1.set_title(
+        "Response Volume vs NPS Score by Business Segment",
+        fontsize=13,
+        fontweight="bold",
+    )
     ax1.tick_params(axis="y", labelcolor="#1f77b4")
 
     ax2 = ax1.twinx()
-    line, = ax2.plot([], [], color=ORANGE, linewidth=3, marker="o", markersize=8, label="NPS Score")
+    (line,) = ax2.plot(
+        [], [], color=ORANGE, linewidth=3, marker="o", markersize=8, label="NPS Score"
+    )
     ax2.set_ylim(0, 100)
     ax2.set_ylabel("NPS Score", color=ORANGE)
     ax2.tick_params(axis="y", labelcolor=ORANGE)
 
-    handles = [mpatches.Patch(color="#1f77b4", label="Response Count"),
-               plt.Line2D([0], [0], color=ORANGE, linewidth=3, marker="o", label="NPS Score")]
+    handles = [
+        mpatches.Patch(color="#1f77b4", label="Response Count"),
+        plt.Line2D([0], [0], color=ORANGE, linewidth=3, marker="o", label="NPS Score"),
+    ]
     ax1.legend(handles=handles, loc="upper right")
 
     def update(frame):
@@ -400,7 +495,9 @@ def gen_combo():
         line.set_data(x[:n], [s * frac for s in nps_score[:n]])
         return list(bars) + [line]
 
-    anim = animation.FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     update(TOTAL_FRAMES)
     _save(fig, "sample_combo", anim)
 
@@ -423,47 +520,93 @@ def gen_sankey():
     # Experience Questions -> NPS Question: 680  |  -> Abandoned: 70
     # NPS Question -> Survey Completed: 620  |  -> Abandoned: 60
 
-    sankey = Sankey(ax=ax, unit="", format="%d", gap=0.5, scale=1.0/1000)
-    sankey.add(flows=[1000, -850, -150],
-               labels=["Survey\nInvitation", "Started", "Abandoned"],
-               orientations=[0, 0, -1],
-               facecolor="#4285f4", alpha=0.7)
-    sankey.add(flows=[850, -750, -100],
-               labels=[None, "Demographics", "Abandoned"],
-               orientations=[0, 0, -1],
-               prior=0, connect=(1, 0),
-               facecolor="#34a853", alpha=0.7)
-    sankey.add(flows=[750, -680, -70],
-               labels=[None, "Experience\nQuestions", "Abandoned"],
-               orientations=[0, 0, -1],
-               prior=1, connect=(1, 0),
-               facecolor="#fbbc04", alpha=0.7)
-    sankey.add(flows=[680, -620, -60],
-               labels=[None, "Completed", "Abandoned"],
-               orientations=[0, 0, -1],
-               prior=2, connect=(1, 0),
-               facecolor="#ff7f0e", alpha=0.7)
+    sankey = Sankey(ax=ax, unit="", format="%d", gap=0.5, scale=1.0 / 1000)
+    sankey.add(
+        flows=[1000, -850, -150],
+        labels=["Survey\nInvitation", "Started", "Abandoned"],
+        orientations=[0, 0, -1],
+        facecolor="#4285f4",
+        alpha=0.7,
+    )
+    sankey.add(
+        flows=[850, -750, -100],
+        labels=[None, "Demographics", "Abandoned"],
+        orientations=[0, 0, -1],
+        prior=0,
+        connect=(1, 0),
+        facecolor="#34a853",
+        alpha=0.7,
+    )
+    sankey.add(
+        flows=[750, -680, -70],
+        labels=[None, "Experience\nQuestions", "Abandoned"],
+        orientations=[0, 0, -1],
+        prior=1,
+        connect=(1, 0),
+        facecolor="#fbbc04",
+        alpha=0.7,
+    )
+    sankey.add(
+        flows=[680, -620, -60],
+        labels=[None, "Completed", "Abandoned"],
+        orientations=[0, 0, -1],
+        prior=2,
+        connect=(1, 0),
+        facecolor="#ff7f0e",
+        alpha=0.7,
+    )
 
     diagrams = sankey.finish()
     ax.set_title("Customer Journey Flow", fontsize=14, fontweight="bold")
     ax.axis("off")
 
-    fig.savefig(str(OUTPUT_DIR / "sample_sankey.png"), dpi=120, bbox_inches="tight", facecolor="white")
+    fig.savefig(
+        str(OUTPUT_DIR / "sample_sankey.png"),
+        dpi=120,
+        bbox_inches="tight",
+        facecolor="white",
+    )
     print(f"  saved docs/assets/charts/sample_sankey.png")
 
     # Fade-in animation
     fig_a, ax_a = plt.subplots(figsize=(10, 5.5))
     fig_a.patch.set_facecolor("white")
 
-    sankey2 = Sankey(ax=ax_a, unit="", format="%d", gap=0.5, scale=1.0/1000)
-    sankey2.add(flows=[1000, -850, -150], labels=["Survey\nInvitation", "Started", "Abandoned"],
-                orientations=[0, 0, -1], facecolor="#4285f4", alpha=0.7)
-    sankey2.add(flows=[850, -750, -100], labels=[None, "Demographics", "Abandoned"],
-                orientations=[0, 0, -1], prior=0, connect=(1, 0), facecolor="#34a853", alpha=0.7)
-    sankey2.add(flows=[750, -680, -70], labels=[None, "Experience\nQuestions", "Abandoned"],
-                orientations=[0, 0, -1], prior=1, connect=(1, 0), facecolor="#fbbc04", alpha=0.7)
-    sankey2.add(flows=[680, -620, -60], labels=[None, "Completed", "Abandoned"],
-                orientations=[0, 0, -1], prior=2, connect=(1, 0), facecolor="#ff7f0e", alpha=0.7)
+    sankey2 = Sankey(ax=ax_a, unit="", format="%d", gap=0.5, scale=1.0 / 1000)
+    sankey2.add(
+        flows=[1000, -850, -150],
+        labels=["Survey\nInvitation", "Started", "Abandoned"],
+        orientations=[0, 0, -1],
+        facecolor="#4285f4",
+        alpha=0.7,
+    )
+    sankey2.add(
+        flows=[850, -750, -100],
+        labels=[None, "Demographics", "Abandoned"],
+        orientations=[0, 0, -1],
+        prior=0,
+        connect=(1, 0),
+        facecolor="#34a853",
+        alpha=0.7,
+    )
+    sankey2.add(
+        flows=[750, -680, -70],
+        labels=[None, "Experience\nQuestions", "Abandoned"],
+        orientations=[0, 0, -1],
+        prior=1,
+        connect=(1, 0),
+        facecolor="#fbbc04",
+        alpha=0.7,
+    )
+    sankey2.add(
+        flows=[680, -620, -60],
+        labels=[None, "Completed", "Abandoned"],
+        orientations=[0, 0, -1],
+        prior=2,
+        connect=(1, 0),
+        facecolor="#ff7f0e",
+        alpha=0.7,
+    )
     diagrams2 = sankey2.finish()
     ax_a.set_title("Customer Journey Flow", fontsize=14, fontweight="bold")
     ax_a.axis("off")
@@ -478,10 +621,16 @@ def gen_sankey():
         for p in all_patches:
             p.set_alpha(frac * 0.7 if hasattr(p, "get_facecolor") else frac)
 
-    anim = animation.FuncAnimation(fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS)
+    anim = animation.FuncAnimation(
+        fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS
+    )
     _writer = animation.PillowWriter(fps=20)
-    anim.save(str(OUTPUT_DIR / "sample_sankey.gif"), writer=_writer, dpi=100,
-              savefig_kwargs={"facecolor": "white"})
+    anim.save(
+        str(OUTPUT_DIR / "sample_sankey.gif"),
+        writer=_writer,
+        dpi=100,
+        savefig_kwargs={"facecolor": "white"},
+    )
     _set_gif_loop_once(OUTPUT_DIR / "sample_sankey.gif")
     print(f"  saved docs/assets/charts/sample_sankey.gif")
     plt.close("all")
@@ -518,13 +667,37 @@ def gen_gauge():
     needle_angle = np.pi * (1 - value / 100)
 
     # Static
-    ax.annotate("", xy=(needle_angle, 0.95), xytext=(needle_angle, 0.0),
-                arrowprops=dict(arrowstyle="->", color="black", lw=2.5))
-    ax.text(np.pi / 2, 0.3, f"{value}", ha="center", va="center",
-            fontsize=28, fontweight="bold")
-    ax.text(np.pi / 2, 0.05, "NPS Score", ha="center", va="center", fontsize=12, color="gray")
+    ax.annotate(
+        "",
+        xy=(needle_angle, 0.95),
+        xytext=(needle_angle, 0.0),
+        arrowprops=dict(arrowstyle="->", color="black", lw=2.5),
+    )
+    ax.text(
+        np.pi / 2,
+        0.3,
+        f"{value}",
+        ha="center",
+        va="center",
+        fontsize=28,
+        fontweight="bold",
+    )
+    ax.text(
+        np.pi / 2,
+        0.05,
+        "NPS Score",
+        ha="center",
+        va="center",
+        fontsize=12,
+        color="gray",
+    )
 
-    fig.savefig(str(OUTPUT_DIR / "sample_gauge.png"), dpi=120, bbox_inches="tight", facecolor="white")
+    fig.savefig(
+        str(OUTPUT_DIR / "sample_gauge.png"),
+        dpi=120,
+        bbox_inches="tight",
+        facecolor="white",
+    )
     print(f"  saved docs/assets/charts/sample_gauge.png")
 
     # Animation: needle swings from 0 to 72
@@ -544,11 +717,24 @@ def gen_gauge():
     ax_a.set_thetamax(180)
     ax_a.set_axis_off()
 
-    needle = ax_a.annotate("", xy=(np.pi, 0.95), xytext=(np.pi, 0.0),
-                           arrowprops=dict(arrowstyle="->", color="black", lw=2.5))
-    val_text = ax_a.text(np.pi / 2, 0.3, "0", ha="center", va="center",
-                         fontsize=28, fontweight="bold")
-    ax_a.text(np.pi / 2, 0.05, "NPS Score", ha="center", va="center", fontsize=12, color="gray")
+    needle = ax_a.annotate(
+        "",
+        xy=(np.pi, 0.95),
+        xytext=(np.pi, 0.0),
+        arrowprops=dict(arrowstyle="->", color="black", lw=2.5),
+    )
+    val_text = ax_a.text(
+        np.pi / 2, 0.3, "0", ha="center", va="center", fontsize=28, fontweight="bold"
+    )
+    ax_a.text(
+        np.pi / 2,
+        0.05,
+        "NPS Score",
+        ha="center",
+        va="center",
+        fontsize=12,
+        color="gray",
+    )
 
     def update(frame):
         frac = min(1.0, frame / (TOTAL_FRAMES * 0.7))
@@ -558,10 +744,16 @@ def gen_gauge():
         needle.set_position((angle, 0.0))
         val_text.set_text(str(current))
 
-    anim = animation.FuncAnimation(fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS)
+    anim = animation.FuncAnimation(
+        fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS
+    )
     _writer = animation.PillowWriter(fps=20)
-    anim.save(str(OUTPUT_DIR / "sample_gauge.gif"), writer=_writer, dpi=100,
-              savefig_kwargs={"facecolor": "white"})
+    anim.save(
+        str(OUTPUT_DIR / "sample_gauge.gif"),
+        writer=_writer,
+        dpi=100,
+        savefig_kwargs={"facecolor": "white"},
+    )
     _set_gif_loop_once(OUTPUT_DIR / "sample_gauge.gif")
     print(f"  saved docs/assets/charts/sample_gauge.gif")
     plt.close("all")
@@ -573,8 +765,15 @@ def gen_gauge():
 # ---------------------------------------------------------------------------
 def gen_geo():
     states = {
-        "CA": 75, "TX": 68, "NY": 72, "FL": 65, "IL": 70,
-        "PA": 69, "OH": 66, "GA": 71, "NC": 67,
+        "CA": 75,
+        "TX": 68,
+        "NY": 72,
+        "FL": 65,
+        "IL": 70,
+        "PA": 69,
+        "OH": 66,
+        "GA": 71,
+        "NC": 67,
     }
 
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -589,7 +788,7 @@ def gen_geo():
     norm = plt.Normalize(60, 80)
     bar_colors = [cmap(norm(v)) for v in state_vals]
 
-    bars = ax.barh(state_names, [0]*len(state_vals), color=bar_colors)
+    bars = ax.barh(state_names, [0] * len(state_vals), color=bar_colors)
     ax.set_xlim(0, 85)
     ax.set_xlabel("NPS Score")
     ax.set_title("NPS Score by State", fontsize=14, fontweight="bold")
@@ -605,7 +804,9 @@ def gen_geo():
             bar.set_width(v * frac)
         return bars
 
-    anim = animation.FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     update(TOTAL_FRAMES)
     _save(fig, "sample_geo", anim)
 
@@ -645,8 +846,14 @@ def gen_calendar():
     fig.patch.set_facecolor("white")
 
     cmap = plt.cm.YlGn
-    im = ax.imshow(grid, aspect="auto", cmap=cmap, interpolation="nearest",
-                   vmin=volumes.min(), vmax=volumes.max())
+    im = ax.imshow(
+        grid,
+        aspect="auto",
+        cmap=cmap,
+        interpolation="nearest",
+        vmin=volumes.min(),
+        vmax=volumes.max(),
+    )
     ax.set_yticks(range(7))
     ax.set_yticklabels(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], fontsize=8)
 
@@ -667,13 +874,21 @@ def gen_calendar():
     fig_a.patch.set_facecolor("white")
 
     grid_anim = np.full_like(grid, np.nan)
-    im_a = ax_a.imshow(grid_anim, aspect="auto", cmap=cmap, interpolation="nearest",
-                       vmin=volumes.min(), vmax=volumes.max())
+    im_a = ax_a.imshow(
+        grid_anim,
+        aspect="auto",
+        cmap=cmap,
+        interpolation="nearest",
+        vmin=volumes.min(),
+        vmax=volumes.max(),
+    )
     ax_a.set_yticks(range(7))
     ax_a.set_yticklabels(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], fontsize=8)
     ax_a.set_xticks([w for w, _ in month_starts])
     ax_a.set_xticklabels([l for _, l in month_starts], fontsize=8)
-    ax_a.set_title("Daily Survey Response Volume - 2024", fontsize=14, fontweight="bold")
+    ax_a.set_title(
+        "Daily Survey Response Volume - 2024", fontsize=14, fontweight="bold"
+    )
     fig_a.colorbar(im_a, ax=ax_a, label="Response Count", pad=0.01, fraction=0.02)
 
     def update(frame):
@@ -682,13 +897,24 @@ def gen_calendar():
         im_a.set_data(grid_anim)
         return [im_a]
 
-    anim = animation.FuncAnimation(fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
 
-    fig.savefig(str(OUTPUT_DIR / "sample_calendar.png"), dpi=120, bbox_inches="tight", facecolor="white")
+    fig.savefig(
+        str(OUTPUT_DIR / "sample_calendar.png"),
+        dpi=120,
+        bbox_inches="tight",
+        facecolor="white",
+    )
     print(f"  saved docs/assets/charts/sample_calendar.png")
     _writer = animation.PillowWriter(fps=20)
-    anim.save(str(OUTPUT_DIR / "sample_calendar.gif"), writer=_writer, dpi=100,
-              savefig_kwargs={"facecolor": "white"})
+    anim.save(
+        str(OUTPUT_DIR / "sample_calendar.gif"),
+        writer=_writer,
+        dpi=100,
+        savefig_kwargs={"facecolor": "white"},
+    )
     _set_gif_loop_once(OUTPUT_DIR / "sample_calendar.gif")
     print(f"  saved docs/assets/charts/sample_calendar.gif")
     plt.close("all")
@@ -699,6 +925,7 @@ def gen_calendar():
 # ---------------------------------------------------------------------------
 def gen_timeline():
     from datetime import datetime, timedelta
+
     import matplotlib.dates as mdates
 
     events = [
@@ -718,8 +945,9 @@ def gen_timeline():
 
     bars_list = []
     for i, (label, start, end) in enumerate(events):
-        bar = ax.barh(i, 0, left=starts_num[i], height=0.5,
-                      color=colors_list[i], alpha=0.8)
+        bar = ax.barh(
+            i, 0, left=starts_num[i], height=0.5, color=colors_list[i], alpha=0.8
+        )
         bars_list.append((bar, durations_num[i]))
 
     ax.set_yticks(range(len(events)))
@@ -730,7 +958,9 @@ def gen_timeline():
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
     ax.xaxis.set_major_locator(mdates.MonthLocator())
 
-    all_dates = [mdates.date2num(e[1]) for e in events] + [mdates.date2num(e[2]) for e in events]
+    all_dates = [mdates.date2num(e[1]) for e in events] + [
+        mdates.date2num(e[2]) for e in events
+    ]
     ax.set_xlim(min(all_dates) - 5, max(all_dates) + 5)
 
     def update(frame):
@@ -740,7 +970,9 @@ def gen_timeline():
                 b.set_width(dur * frac)
         return []
 
-    anim = animation.FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     update(TOTAL_FRAMES)
     _save(fig, "sample_timeline", anim)
 
@@ -759,13 +991,27 @@ def gen_treemap():
         return
 
     # Leaf-level data from treemap-chart.md
-    labels = ["Retail Store", "Walk-in Clinic", "Wellness Center",
-              "Medicare", "Medicaid", "Commercial",
-              "Mobile App", "Website"]
+    labels = [
+        "Retail Store",
+        "Walk-in Clinic",
+        "Wellness Center",
+        "Medicare",
+        "Medicaid",
+        "Commercial",
+        "Mobile App",
+        "Website",
+    ]
     values = [2500, 1500, 1000, 1800, 700, 500, 1200, 800]
-    parents = ["Healthcare", "Healthcare", "Healthcare",
-               "Insurance", "Insurance", "Insurance",
-               "Digital", "Digital"]
+    parents = [
+        "Healthcare",
+        "Healthcare",
+        "Healthcare",
+        "Insurance",
+        "Insurance",
+        "Insurance",
+        "Digital",
+        "Digital",
+    ]
 
     parent_colors = {
         "Healthcare": "#4285f4",
@@ -784,14 +1030,29 @@ def gen_treemap():
     patches = []
     texts = []
     for r, lbl, val, clr in zip(rects, labels, values, colors):
-        rect = plt.Rectangle((r["x"], r["y"]), r["dx"], r["dy"],
-                              facecolor=clr, edgecolor="white", linewidth=2, alpha=0.85)
+        rect = plt.Rectangle(
+            (r["x"], r["y"]),
+            r["dx"],
+            r["dy"],
+            facecolor=clr,
+            edgecolor="white",
+            linewidth=2,
+            alpha=0.85,
+        )
         ax.add_patch(rect)
         patches.append(rect)
         cx = r["x"] + r["dx"] / 2
         cy = r["y"] + r["dy"] / 2
-        t = ax.text(cx, cy, f"{lbl}\n{val:,}", ha="center", va="center",
-                    fontsize=9, fontweight="bold", color="white")
+        t = ax.text(
+            cx,
+            cy,
+            f"{lbl}\n{val:,}",
+            ha="center",
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color="white",
+        )
         texts.append(t)
 
     ax.set_xlim(0, 100)
@@ -803,7 +1064,12 @@ def gen_treemap():
         ax.plot([], [], "s", color=color, markersize=10, label=parent)
     ax.legend(loc="upper right", framealpha=0.9)
 
-    fig.savefig(str(OUTPUT_DIR / "sample_treemap.png"), dpi=120, bbox_inches="tight", facecolor="white")
+    fig.savefig(
+        str(OUTPUT_DIR / "sample_treemap.png"),
+        dpi=120,
+        bbox_inches="tight",
+        facecolor="white",
+    )
     print(f"  saved docs/assets/charts/sample_treemap.png")
 
     # Animation: rects grow
@@ -817,14 +1083,29 @@ def gen_treemap():
     a_patches = []
     a_texts = []
     for r, lbl, val, clr in zip(rects, labels, values, colors):
-        rect = plt.Rectangle((r["x"] + r["dx"]/2, r["y"] + r["dy"]/2), 0, 0,
-                              facecolor=clr, edgecolor="white", linewidth=2, alpha=0.85)
+        rect = plt.Rectangle(
+            (r["x"] + r["dx"] / 2, r["y"] + r["dy"] / 2),
+            0,
+            0,
+            facecolor=clr,
+            edgecolor="white",
+            linewidth=2,
+            alpha=0.85,
+        )
         ax_a.add_patch(rect)
         a_patches.append((rect, r))
         cx = r["x"] + r["dx"] / 2
         cy = r["y"] + r["dy"] / 2
-        t = ax_a.text(cx, cy, "", ha="center", va="center",
-                      fontsize=9, fontweight="bold", color="white")
+        t = ax_a.text(
+            cx,
+            cy,
+            "",
+            ha="center",
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color="white",
+        )
         a_texts.append((t, f"{lbl}\n{val:,}"))
 
     for parent, color in parent_colors.items():
@@ -836,16 +1117,22 @@ def gen_treemap():
         for rect, r in a_patches:
             w = r["dx"] * frac
             h = r["dy"] * frac
-            rect.set_xy((r["x"] + (r["dx"] - w)/2, r["y"] + (r["dy"] - h)/2))
+            rect.set_xy((r["x"] + (r["dx"] - w) / 2, r["y"] + (r["dy"] - h) / 2))
             rect.set_width(w)
             rect.set_height(h)
         for t, full_text in a_texts:
             t.set_text(full_text if frac > 0.4 else "")
 
-    anim = animation.FuncAnimation(fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS)
+    anim = animation.FuncAnimation(
+        fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS
+    )
     _writer = animation.PillowWriter(fps=20)
-    anim.save(str(OUTPUT_DIR / "sample_treemap.gif"), writer=_writer, dpi=100,
-              savefig_kwargs={"facecolor": "white"})
+    anim.save(
+        str(OUTPUT_DIR / "sample_treemap.gif"),
+        writer=_writer,
+        dpi=100,
+        savefig_kwargs={"facecolor": "white"},
+    )
     _set_gif_loop_once(OUTPUT_DIR / "sample_treemap.gif")
     print(f"  saved docs/assets/charts/sample_treemap.gif")
     plt.close("all")
@@ -853,10 +1140,18 @@ def gen_treemap():
 
 def _gen_treemap_fallback():
     """Simple bar-based fallback if squarify is not installed."""
-    labels = ["Retail Store", "Walk-in Clinic", "Wellness Center",
-              "Medicare", "Medicaid", "Commercial", "Mobile App", "Website"]
+    labels = [
+        "Retail Store",
+        "Walk-in Clinic",
+        "Wellness Center",
+        "Medicare",
+        "Medicaid",
+        "Commercial",
+        "Mobile App",
+        "Website",
+    ]
     values = [2500, 1500, 1000, 1800, 700, 500, 1200, 800]
-    colors = [BLUE]*3 + [GREEN]*3 + [YELLOW]*2
+    colors = [BLUE] * 3 + [GREEN] * 3 + [YELLOW] * 2
 
     fig, ax = plt.subplots(figsize=(9, 5))
     fig.patch.set_facecolor("white")
@@ -873,14 +1168,27 @@ def _gen_treemap_fallback():
 # ---------------------------------------------------------------------------
 def gen_table():
     stores = [
-        {"id": "Store #1234", "loc": "Boston, MA", "nps": 78,
-         "trend": [65, 68, 71, 74, 76, 78], "resp": 1250, "sat": 8.4},
-        {"id": "Store #5678", "loc": "Austin, TX", "nps": 82,
-         "trend": [70, 73, 76, 78, 80, 82], "resp": 1450, "sat": 8.7},
+        {
+            "id": "Store #1234",
+            "loc": "Boston, MA",
+            "nps": 78,
+            "trend": [65, 68, 71, 74, 76, 78],
+            "resp": 1250,
+            "sat": 8.4,
+        },
+        {
+            "id": "Store #5678",
+            "loc": "Austin, TX",
+            "nps": 82,
+            "trend": [70, 73, 76, 78, 80, 82],
+            "resp": 1450,
+            "sat": 8.7,
+        },
     ]
 
-    fig, axes = plt.subplots(2, 1, figsize=(10, 4),
-                              gridspec_kw={"height_ratios": [1, 1]})
+    fig, axes = plt.subplots(
+        2, 1, figsize=(10, 4), gridspec_kw={"height_ratios": [1, 1]}
+    )
     fig.patch.set_facecolor("white")
     fig.suptitle("Store Performance Dashboard", fontsize=14, fontweight="bold", y=1.02)
 
@@ -894,18 +1202,26 @@ def gen_table():
 
     fig.tight_layout()
 
-    fig.savefig(str(OUTPUT_DIR / "sample_table.png"), dpi=120, bbox_inches="tight", facecolor="white")
+    fig.savefig(
+        str(OUTPUT_DIR / "sample_table.png"),
+        dpi=120,
+        bbox_inches="tight",
+        facecolor="white",
+    )
     print(f"  saved docs/assets/charts/sample_table.png")
 
     # Animation: trend lines draw in
-    fig_a, axes_a = plt.subplots(2, 1, figsize=(10, 4),
-                                  gridspec_kw={"height_ratios": [1, 1]})
+    fig_a, axes_a = plt.subplots(
+        2, 1, figsize=(10, 4), gridspec_kw={"height_ratios": [1, 1]}
+    )
     fig_a.patch.set_facecolor("white")
-    fig_a.suptitle("Store Performance Dashboard", fontsize=14, fontweight="bold", y=1.02)
+    fig_a.suptitle(
+        "Store Performance Dashboard", fontsize=14, fontweight="bold", y=1.02
+    )
 
     lines = []
     for ax, store in zip(axes_a, stores):
-        line, = ax.plot([], [], color=BLUE, linewidth=2, marker="o", markersize=4)
+        (line,) = ax.plot([], [], color=BLUE, linewidth=2, marker="o", markersize=4)
         ax.set_ylim(min(store["trend"]) - 5, max(store["trend"]) + 5)
         ax.set_xlim(-0.2, len(store["trend"]) - 0.8)
         ax.set_xticks([])
@@ -923,10 +1239,16 @@ def gen_table():
             line.set_data(range(n), trend[:n])
         return [l for l, _ in lines]
 
-    anim = animation.FuncAnimation(fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False)
+    anim = animation.FuncAnimation(
+        fig_a, update, frames=TOTAL_FRAMES, interval=INTERVAL_MS, blit=False
+    )
     _writer = animation.PillowWriter(fps=20)
-    anim.save(str(OUTPUT_DIR / "sample_table.gif"), writer=_writer, dpi=100,
-              savefig_kwargs={"facecolor": "white"})
+    anim.save(
+        str(OUTPUT_DIR / "sample_table.gif"),
+        writer=_writer,
+        dpi=100,
+        savefig_kwargs={"facecolor": "white"},
+    )
     _set_gif_loop_once(OUTPUT_DIR / "sample_table.gif")
     print(f"  saved docs/assets/charts/sample_table.gif")
     plt.close("all")
@@ -961,6 +1283,7 @@ def main():
         except Exception as e:
             print(f"  ERROR: {e}")
             import traceback
+
             traceback.print_exc()
         print()
 

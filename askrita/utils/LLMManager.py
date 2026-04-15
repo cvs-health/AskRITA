@@ -18,9 +18,11 @@
 #   azure-identity (MIT)
 #   httpx (BSD-3-Clause)
 #   langchain-aws (MIT)
+#   langchain-community (MIT)
 #   langchain-core (MIT)
 #   langchain-google-vertexai (MIT)
 #   langchain-openai (MIT)
+#   langgraph (MIT)
 #   pydantic (MIT)
 #   requests (Apache-2.0)
 

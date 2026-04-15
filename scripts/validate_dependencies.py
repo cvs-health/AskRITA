@@ -18,10 +18,10 @@ Dependency validation script for AskRITA.
 Checks that all required dependencies are properly installed and compatible.
 """
 
-import sys
 import importlib
 import subprocess
-from typing import List, Tuple, Dict
+import sys
+from typing import Dict, List, Tuple
 
 _STATUS_AVAILABLE = "\u2705 Available"
 
@@ -50,6 +50,7 @@ def check_core_dependencies() -> List[Tuple[str, bool, str]]:
 
     return results
 
+
 def check_cloud_dependencies() -> Dict[str, List[Tuple[str, bool, str]]]:
     """Check cloud provider specific dependencies."""
     cloud_deps = {
@@ -62,7 +63,7 @@ def check_cloud_dependencies() -> Dict[str, List[Tuple[str, bool, str]]]:
         "AWS Bedrock": [
             ("langchain_aws", "AWS LangChain"),
             ("boto3", "AWS SDK"),
-        ]
+        ],
     }
 
     results = {}
@@ -77,6 +78,7 @@ def check_cloud_dependencies() -> Dict[str, List[Tuple[str, bool, str]]]:
         results[provider] = provider_results
 
     return results
+
 
 def check_dev_dependencies() -> List[Tuple[str, bool, str]]:
     """Check development dependencies."""
@@ -97,6 +99,7 @@ def check_dev_dependencies() -> List[Tuple[str, bool, str]]:
 
     return results
 
+
 def get_package_version(package_name: str) -> str:
     """Get installed package version."""
     try:
@@ -104,14 +107,15 @@ def get_package_version(package_name: str) -> str:
             [sys.executable, "-m", "pip", "show", package_name],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
-        for line in result.stdout.split('\n'):
-            if line.startswith('Version:'):
-                return line.split(':', 1)[1].strip()
+        for line in result.stdout.split("\n"):
+            if line.startswith("Version:"):
+                return line.split(":", 1)[1].strip()
     except:
         pass
     return "Unknown"
+
 
 def main():
     """Main validation function."""
@@ -164,6 +168,7 @@ def main():
     print()
     print("💡 Installation Command:")
     print("  pip install askrita")
+
 
 if __name__ == "__main__":
     main()

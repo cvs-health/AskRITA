@@ -48,15 +48,17 @@ def _get_clause_type_labels() -> Dict[str, str]:
     """Return a mapping from sqlglot expression class name to SQL clause label."""
     if _CLAUSE_TYPE_LABELS:
         return _CLAUSE_TYPE_LABELS
-    _CLAUSE_TYPE_LABELS.update({
-        "Select": "SELECT",
-        "From": "FROM",
-        "Where": "WHERE",
-        "Group": "GROUP BY",
-        "Order": "ORDER BY",
-        "Join": "JOIN",
-        "Having": "HAVING",
-    })
+    _CLAUSE_TYPE_LABELS.update(
+        {
+            "Select": "SELECT",
+            "From": "FROM",
+            "Where": "WHERE",
+            "Group": "GROUP BY",
+            "Order": "ORDER BY",
+            "Join": "JOIN",
+            "Having": "HAVING",
+        }
+    )
     return _CLAUSE_TYPE_LABELS
 
 
@@ -355,6 +357,7 @@ class UserSimulator:
 
         if self.config.ca_bundle_path:
             import httpx
+
             http_client = httpx.Client(verify=self.config.ca_bundle_path)
             kwargs["http_client"] = http_client
 
