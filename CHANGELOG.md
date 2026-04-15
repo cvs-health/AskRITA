@@ -28,6 +28,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.13.13] - 2026-04-15
+
+### Added
+- **CI/CD Infrastructure Modernization**
+  - Replaced legacy security tools with automated `pip-audit` and `Trivy` scanning
+  - Refactored GitHub Actions to Use Trusted Publisher (OIDC) for PyPI releases
+  - Added dedicated documentation deployment workflow for GitHub Pages
+- **Project Governance & Maintenance**
+  - Added `.github/CODEOWNERS` for automated review routing
+  - Configured Consolidated Dependabot updates for Python and GitHub Actions
+  - Added repository `Makefile` for standardized local development and CI testing
+  - Added GitHub Issue templates for bug reports and feature requests
+
+### Changed
+- **Python 3.14 Support** 🚀
+  - Updated `pyproject.toml` to support Python versions `>=3.11,<3.15`
+  - Fixed `pygraphviz` installation issues via optional dependency grouping
+  - Resolved all linting and type-checking failures for Python 3.14
+- **License Compliance**
+  - Synchronized third-party license headers across the core codebase
+  - Audited all dependencies for Apache-2.0 compatibility
+
+### Fixed
+- Fixed `F402` (shadowed imports) and `E741` (ambiguous variable names) in core modules
+- Fixed `Missing return statement` type errors in `LLMManager` and `SQLAgentWorkflow`
+- Optimized documentation build pipeline to reduce installation overhead
+
 ## [0.13.0] - 2026-03-17
 
 ### Added
