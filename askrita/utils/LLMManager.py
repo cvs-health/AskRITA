@@ -28,7 +28,7 @@
 
 import logging
 import os
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, NoReturn, Optional, Type
 
 import httpx
 from langchain_aws import ChatBedrock
@@ -125,7 +125,7 @@ class LLMManager:
             "no module named" in error_msg and "langchain" in error_msg
         )
 
-    def _raise_init_error(self, exc: Exception) -> None:
+    def _raise_init_error(self, exc: Exception) -> NoReturn:
         """Translate a raw LLM init exception into a typed ConfigurationError or LLMError."""
         error_msg = str(exc).lower()
         llm_config = self.config.llm

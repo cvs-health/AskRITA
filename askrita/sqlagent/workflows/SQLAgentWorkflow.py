@@ -20,7 +20,7 @@
 """SQL Agent workflow orchestration using LangGraph state machines."""
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, NoReturn, Optional, Union
 
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
@@ -832,9 +832,13 @@ class SQLAgentWorkflow:
         import re
 
         if "\n" in columns_text:
-            raw_lines = [line.strip() for line in columns_text.split("\n") if line.strip()]
+            raw_lines = [
+                line.strip() for line in columns_text.split("\n") if line.strip()
+            ]
         else:
-            raw_lines = [line.strip() for line in columns_text.split(",") if line.strip()]
+            raw_lines = [
+                line.strip() for line in columns_text.split(",") if line.strip()
+            ]
 
         columns = {}
         col_pattern = re.compile(r"`?([^`\s]+)`?\s+([\w\[\]<>]+(?:\([^)]*\))?)")
@@ -1029,7 +1033,7 @@ class SQLAgentWorkflow:
             messages=result.get("messages", initial_state.messages or []),
         )
 
-    def _reraise_as_framework_error(self, exc: Exception) -> None:
+    def _reraise_as_framework_error(self, exc: Exception) -> NoReturn:
         """Convert an unexpected exception into a typed framework error and raise it."""
         error_msg = str(exc).lower()
         if "database" in error_msg or "connection" in error_msg:

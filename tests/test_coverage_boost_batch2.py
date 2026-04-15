@@ -23,6 +23,7 @@ Covers:
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from askrita.utils.pii_detector import PRESIDIO_AVAILABLE
 
 # ============================================================================
 # NoSQLDatabaseManager.py
@@ -244,6 +245,9 @@ def _make_pii_detector(extra_config=None):
     return detector
 
 
+@pytest.mark.skipif(
+    not PRESIDIO_AVAILABLE, reason="presidio-analyzer not available on Python 3.14+"
+)
 class TestPIIDetectorMissingPaths:
     def test_validate_config_sample_data_rows_too_small(self):
         """Line 142: sample_data_rows < 1 → ConfigurationError."""
