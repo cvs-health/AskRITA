@@ -1,0 +1,137 @@
+# © 2026 CVS Health and/or one of its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Data Classification Configuration - OpenAI
+# Complete configuration for customer feedback analysis using OpenAI
+
+# LLM Configuration
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  temperature: 0.1
+  max_tokens: 4000
+  top_p: 1.0
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+  # API key is read from OPENAI_API_KEY environment variable
+  # Set it with: export OPENAI_API_KEY="your-api-key-here"
+  timeout: 60
+
+# Data Processing Configuration
+data_processing:
+  input_file_path: "/path/to/your/input/data.xlsx"
+  output_file_path: "/path/to/your/output/processed_data.xlsx"
+  feedback_columns:
+    - "DESCRIPTION_ISSUE"
+    - "CUSTOMER_COMMENTS"  # Add more columns as needed
+  max_rows_to_process: 10000  # 0 means no limit
+  batch_size: 100
+  skip_empty_rows: true
+  output_format: "excel"  # Options: excel, csv, json
+  
+  # CSV-specific parameters (only used when input is CSV format)
+  csv_delimiter: ","           # Common: "," ";" "\t" "|"
+  csv_encoding: "utf-8"        # Common: "utf-8" "latin-1" "cp1252"
+  csv_header: 0                # 0 = first row as header, null = no header
+  csv_quotechar: '"'           # Character used to quote fields
+  csv_escapechar: null         # Character used to escape special chars
+  csv_decimal: "."             # Decimal separator
+  csv_thousands: null          # Thousands separator (e.g., "," for 1,000)
+  csv_na_values: null          # Additional values to treat as NaN
+
+# Classification Configuration
+classification:
+  model_type: "customer_feedback"  # Options: customer_feedback, general
+  system_prompt: |
+    As a data analyst for a healthcare services company, you are tasked with analyzing customer feedback regarding vendors conducting in-home patient visits.
+    
+    The feedback highlights several key concerns, including vendors failing to show up for scheduled appointments, frequent cancellations, poor customer service, and unprofessional or rude behavior toward patients. These recurring issues—such as vendor no-shows, cancellations, and negative interactions—need further investigation to improve the overall patient experience.
+    
+    Classify as Other if the feedback does not fall into any of the predefined categories.
+  analysis_columns:
+    - "issue_category"
+    - "issue_severity_level"
+    - "issue_summary"
+    - "sentiment_analysis"
+    - "emotion_analysis"
+  enable_batch_processing: true
+  save_intermediate_results: false
+  
+  # Dynamic field definitions - customize your classification categories!
+  field_definitions:
+    sentiment_analysis:
+      type: "literal"
+      values: ["Positive", "Negative", "Neutral", "Mixed", "Ambiguous", "Sarcastic/Ironic"]
+      description: "Sentiment analysis result for the feedback."
+    
+    emotion_analysis:
+      type: "string"
+      description: "Emotion expressed in the feedback, such as Happy, Angry, Sad, Frustrated, etc."
+    
+    issue_category:
+      type: "literal"
+      values:
+        - "Cost of Services"
+        - "Member Does Not Want HHV"
+        - "Plan/Program Dissatisfaction"
+        - "No Providers In Area"
+        - "Incorrect Health Data/Diagnosis"
+        - "Incorrect Information Provided"
+        - "Poor Provider Service/Professionalism"
+        - "Provider Incorrect Arrival Time"
+        - "Provider No Show"
+        - "Services Issue"
+        - "Short Visit"
+        - "Gift Card Issue (Non Provider)"
+        - "Claiming Reward Issue"
+        - "Gift Card Issue"
+        - "Gift Card Issue (Provider)"
+        - "Appointment Cancelled"
+        - "Unable To Confirm Appointment"
+        - "Unable To Schedule Appt"
+        - "Other"
+      default: "Other"
+      description: "Categorize the feedback issue. Default to 'Other' if it does not fit into any predefined categories."
+    
+    issue_severity_level:
+      type: "literal"
+      values: ["Low", "Medium", "High", "Critical"]
+      description: "Severity level of the issue reported based on impact and urgency."
+    
+    issue_summary:
+      type: "string"
+      description: "Brief summary of the issue reported by the customer in 2-3 words."
+
+# Workflow Configuration
+data_classification_workflow:
+  steps:
+    load_data: true
+    preprocess_data: true
+    classify_data: true
+    postprocess_results: true
+    save_results: true
+  max_retries: 3
+  timeout_per_step: 300  # 5 minutes per step
+  parallel_processing: false
+
+# Framework Configuration
+framework:
+  default_output_format: "json"
+  show_metadata: true
+  debug: false  # Set to true for detailed logging
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

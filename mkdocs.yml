@@ -1,0 +1,138 @@
+site_name: Ask RITA Documentation
+site_description: Reasoning Interface for Text-to-Analytics — natural-language SQL, NoSQL, and data-science workflows powered by LLMs
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - termynal
+
+extra_css:
+  - stylesheets/theme.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home:
+      - index.md
+  - Getting Started:
+        - Installation: installation.md
+        - Usage Examples & API: usage-examples.md
+        - Supported Platforms: supported-platforms.md
+  - Usage:
+      - Configuration:
+          - Overview: configuration/overview.md
+          - LLM Providers: configuration/llm-providers.md
+          - Database: configuration/database.md
+          - Workflow: configuration/workflow.md
+          - PII/PHI Detection: configuration/pii-detection.md
+          - Schema Descriptions: configuration/schema-descriptions.md
+          - Security: configuration/security.md
+          - Examples: configuration/examples.md
+          - Troubleshooting: configuration/troubleshooting.md
+      - Workflows:
+          - SQL Workflow: guides/sql-workflow.md
+          - Conversational SQL: guides/conversational-sql.md
+          - Research Workflow (CRISP-DM): guides/research-workflow.md
+          - Data Classification: guides/data-classification.md
+          - NoSQL (MongoDB) Workflow: guides/nosql-workflow.md
+      - Features:
+          - Export (PPTX, PDF, Excel): guides/exports.md
+          - Security: guides/security.md
+          - Schema Enrichment: guides/schema-enrichment.md
+          - Chain of Thoughts: guides/chain-of-thoughts.md
+      - Setup & Tools:
+          - CLI Reference: guides/cli-reference.md
+          - MCP Server: guides/mcp-server.md
+          - Claude Desktop Setup: guides/claude-desktop-setup.md
+          - CA Bundle Setup: guides/ca-bundle-setup.md
+
+  - Contributing:
+      - Developer Guide: developer/contributing.md
+      - Versioning & Releases: developer/versioning.md
+      - Docker Testing: developer/docker-testing.md
+  - Charts:
+      - Overview: charts/README.md
+      - Standard Charts:
+          - Bar Chart: charts/bar-chart.md
+          - Column Chart: charts/column-chart.md
+          - Line Chart: charts/line-chart.md
+          - Pie & Donut Chart: charts/pie-chart.md
+          - Scatter Plot: charts/scatter-chart.md
+      - High-Impact Charts:
+          - Combo Chart: charts/combo-chart.md
+          - Gauge Chart: charts/gauge-chart.md
+          - Geographic Map: charts/geo-chart.md
+      - Advanced Charts:
+          - Sankey Diagram: charts/sankey-chart.md
+          - TreeMap: charts/treemap-chart.md
+          - Timeline: charts/timeline-chart.md
+          - Calendar Heatmap: charts/calendar-chart.md
+          - Histogram: charts/histogram-chart.md
+          - Data Table: charts/table-chart.md
+      - Framework Integration:
+          - React: charts/react-integration.md
+          - Angular: charts/angular-integration.md
+  - Benchmarks:
+      - Overview: benchmarks/results.md
+      - How to Run: benchmarks/guide.md
+      - Google Models:
+          - Gemini 2.5 Pro: benchmarks/gemini-25-pro.md
+          - Gemini 2.5 Flash: benchmarks/gemini-25-flash.md
+          - Gemini 2.5 Flash-Lite: benchmarks/gemini-25-flash-lite.md
+      - OpenAI Models:
+          - GPT-5.4: benchmarks/gpt-54.md
+          - GPT-5.4 Mini: benchmarks/gpt-54-mini.md
+          - GPT-5.4 Nano: benchmarks/gpt-54-nano.md
+extra:
+  generator: false

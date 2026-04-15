@@ -1,0 +1,29 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    "group:allNonMajor"
+  ],
+  "ignorePaths": [
+    "sample_apps/**",
+    "sample_data/**"
+  ],
+  "packageRules": [
+    {
+      "matchPaths": ["sample_apps/**"],
+      "enabled": false
+    },
+    {
+      "groupName": "all dependencies",
+      "groupSlug": "all",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "schedule": ["before 6am on monday"]
+    }
+  ],
+  "prConcurrentLimit": 1,
+  "rebaseWhen": "conflicted",
+  "recreateClosed": true,
+  "suppressNotifications": ["prIgnoreNotification"],
+  "automergeStrategy": "merge-commit",
+  "platformAutomerge": false
+}

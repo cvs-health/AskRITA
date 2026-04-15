@@ -1,0 +1,240 @@
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color:        #CC0000;
+  --md-primary-fg-color--light: #E60000;
+  --md-primary-fg-color--dark:  #A30000;
+  --md-accent-fg-color:         #CC0000;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:        #CC0000;
+  --md-primary-fg-color--light: #E60000;
+  --md-primary-fg-color--dark:  #A30000;
+  --md-accent-fg-color:         #E60000;
+}
+
+/* ----------  Hero section  ---------- */
+
+.tx-container {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  background: linear-gradient(
+    to bottom,
+    var(--md-primary-fg-color),
+    var(--md-primary-fg-color--dark) 99%,
+    var(--md-default-bg-color) 99%
+  );
+}
+
+.tx-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: var(--md-primary-bg-color);
+  /* width: 80%; */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.tx-hero h1 {
+  margin-bottom: 1rem;
+  color: currentcolor;
+  font-weight: 700;
+  font-size: 2.4rem;
+  line-height: 1.15;
+}
+
+.tx-hero p {
+  color: currentcolor;
+  font-size: 1.15rem;
+  line-height: 1.7;
+  opacity: 0.92;
+}
+
+.tx-hero__acronym {
+  font-size: 1.3rem;
+  letter-spacing: 0.03em;
+  opacity: 0.95;
+  margin-bottom: 0.25rem;
+}
+
+.tx-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.tx-hero .md-button {
+  color: var(--md-primary-bg-color);
+  border-color: var(--md-primary-bg-color);
+}
+
+.tx-hero .md-button--primary {
+  color: var(--md-primary-fg-color--dark);
+  background-color: var(--md-primary-bg-color);
+  border-color: var(--md-primary-bg-color);
+}
+
+.tx-hero .md-button:focus,
+.tx-hero .md-button:hover {
+  color: var(--md-accent-fg-color);
+  background-color: var(--md-primary-bg-color);
+  border-color: var(--md-primary-bg-color);
+}
+
+@media screen and (max-width: 480px) {
+  .tx-hero h1 {
+    font-size: 1.8rem;
+  }
+  .tx-hero p {
+    font-size: 1rem;
+  }
+  .tx-container {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+}
+
+/* ----------  Full-width home content  ---------- */
+
+.md-grid {
+  max-width: 1440px;
+}
+
+/* ----------  Card hover enhancements  ---------- */
+
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover,
+.md-typeset .grid > .card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li:hover,
+[data-md-color-scheme="slate"] .md-typeset .grid > .card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* ----------  macOS window chrome for ALL code blocks  ---------- */
+
+.md-typeset .highlight {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding-top: 32px;
+  background: #e0e0e0;
+}
+
+.md-typeset .highlight::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  z-index: 1;
+  background: #e0e0e0;
+  background-image:
+    radial-gradient(circle at 16px 50%, #ff5f57 5px, transparent 5px),
+    radial-gradient(circle at 36px 50%, #ffbd2e 5px, transparent 5px),
+    radial-gradient(circle at 56px 50%, #28c940 5px, transparent 5px);
+  background-repeat: no-repeat;
+}
+
+.md-typeset .highlight pre {
+  margin: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.md-typeset .highlight code {
+  border-radius: 0 0 8px 8px;
+}
+
+.md-typeset .highlight .md-code__nav {
+  top: 36px;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .highlight {
+  background: #2d2d2d;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .highlight::before {
+  background-color: #2d2d2d;
+  background-image:
+    radial-gradient(circle at 16px 50%, #ff5f57 5px, transparent 5px),
+    radial-gradient(circle at 36px 50%, #ffbd2e 5px, transparent 5px),
+    radial-gradient(circle at 56px 50%, #28c940 5px, transparent 5px);
+}
+
+/* ----------  Mermaid diagram readability  ---------- */
+
+/* Light mode: light fill with dark text */
+.md-typeset .mermaid .node rect,
+.md-typeset .mermaid .node polygon,
+.md-typeset .mermaid .node circle,
+.md-typeset .mermaid .node ellipse {
+  fill: #f5f5f5 !important;
+  stroke: #555 !important;
+  stroke-width: 1.5px !important;
+}
+
+.md-typeset .mermaid .node .nodeLabel,
+.md-typeset .mermaid .nodeLabel {
+  color: #1a1a1a !important;
+  fill: #1a1a1a !important;
+}
+
+.md-typeset .mermaid .edgeLabel {
+  background-color: #fff !important;
+  color: #333 !important;
+  fill: #333 !important;
+}
+
+.md-typeset .mermaid .edgePath .path {
+  stroke: #888 !important;
+  stroke-width: 1.5px !important;
+}
+
+.md-typeset .mermaid marker path {
+  fill: #888 !important;
+}
+
+/* Dark mode: dark fill with light text */
+[data-md-color-scheme="slate"] .md-typeset .mermaid .node rect,
+[data-md-color-scheme="slate"] .md-typeset .mermaid .node polygon,
+[data-md-color-scheme="slate"] .md-typeset .mermaid .node circle,
+[data-md-color-scheme="slate"] .md-typeset .mermaid .node ellipse {
+  fill: #3a3a3a !important;
+  stroke: #888 !important;
+  stroke-width: 1.5px !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid .node .nodeLabel,
+[data-md-color-scheme="slate"] .md-typeset .mermaid .nodeLabel {
+  color: #e0e0e0 !important;
+  fill: #e0e0e0 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid .edgeLabel {
+  background-color: #2d2d2d !important;
+  color: #ccc !important;
+  fill: #ccc !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid .edgePath .path {
+  stroke: #999 !important;
+  stroke-width: 1.5px !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .mermaid marker path {
+  fill: #999 !important;
+}

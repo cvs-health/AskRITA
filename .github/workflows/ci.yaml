@@ -1,0 +1,257 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "**/*.md"
+      - "LICENSE"
+      - "THIRD_PARTY_LICENSES.txt"
+      - "Code_of_Conduct.md"
+      - "mkdocs.yml"
+      - "Dockerfile.docs"
+      - "benchmarks/**"
+      - "example-configs/**"
+      - ".github/workflows/docs.yaml"
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "**/*.md"
+      - "LICENSE"
+      - "THIRD_PARTY_LICENSES.txt"
+      - "Code_of_Conduct.md"
+      - "mkdocs.yml"
+      - "Dockerfile.docs"
+      - "benchmarks/**"
+      - "example-configs/**"
+
+# Cancel in-progress runs on the same branch/PR to avoid resource waste
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read  # restrict default permissions for fork safety
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Code Quality: Formatting and Style
+  # ─────────────────────────────────────────────
+  lint:
+    name: "Lint & Format"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: lint-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            lint-${{ runner.os }}-py3.14-
+
+      - name: Install dev dependencies
+        run: poetry install --only dev
+
+      - name: Black – enforce formatting
+        run: poetry run black --check --diff askrita tests
+
+      - name: isort – enforce import ordering
+        run: poetry run isort --check-only --diff askrita tests
+
+      - name: Flake8 – style and error checks
+        run: poetry run flake8 askrita tests
+
+      - name: Mypy – static type checking
+        run: poetry run mypy askrita
+
+  # ─────────────────────────────────────────────
+  # Security: SAST and dependency scanning
+  # ─────────────────────────────────────────────
+  security:
+    name: "Security Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: security-${{ runner.os }}-py3.13-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            security-${{ runner.os }}-py3.13-
+
+      - name: Install dev dependencies
+        run: poetry install --only dev
+
+      - name: Bandit – SAST scan (high severity threshold)
+        run: poetry run bandit -r askrita -ll -ii
+
+      - name: pip-audit – dependency vulnerability scan (SCA)
+        run: poetry run pip-audit
+        continue-on-error: true  # surfaced as warning; failures tracked in test summary
+
+      - name: Trivy – comprehensive repository scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  # ─────────────────────────────────────────────
+  # Test Matrix: Python 3.11, 3.12, 3.13
+  # ─────────────────────────────────────────────
+  test:
+    name: "Tests (Python ${{ matrix.python-version }})"
+    runs-on: ubuntu-latest
+    needs: [lint, security]
+    strategy:
+      fail-fast: false  # run all matrix variants; don't cancel on first failure
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: test-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            test-${{ runner.os }}-py${{ matrix.python-version }}-
+
+      - name: Install dependencies (main + test + exports)
+        run: poetry install --with test --extras exports
+
+      - name: Run dependency validation
+        run: poetry run python scripts/validate_dependencies.py
+
+      - name: Run tests with coverage
+        run: >
+          poetry run pytest tests/ -v
+          --tb=short
+          --cov=askrita
+          --cov-report=xml:coverage-${{ matrix.python-version }}.xml
+          --cov-report=term-missing
+          --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage-${{ matrix.python-version }}.xml
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # Build validation: verify the package builds
+  # ─────────────────────────────────────────────
+  build:
+    name: "Build Check"
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Build package (source + wheel)
+        run: poetry build
+
+      - name: Verify build artifacts
+        run: |
+          ls -lh dist/
+          if [ $(ls dist/*.whl | wc -l) -eq 0 ]; then
+            echo "ERROR: No wheel file found in dist/"
+            exit 1
+          fi
+          if [ $(ls dist/*.tar.gz | wc -l) -eq 0 ]; then
+            echo "ERROR: No sdist file found in dist/"
+            exit 1
+          fi
+          echo "Build artifacts verified ✓"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # Required Status Check (branch protection gate)
+  # All jobs must pass for a PR to be mergeable.
+  # ─────────────────────────────────────────────
+  ci-passed:
+    name: "CI ✓"
+    runs-on: ubuntu-latest
+    needs: [lint, security, test, build]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" || \
+                "${{ needs.test.result }}" != "success" || \
+                "${{ needs.build.result }}" != "success" ]]; then
+            echo "One or more required CI jobs failed."
+            exit 1
+          fi
+          echo "All CI gates passed ✓"

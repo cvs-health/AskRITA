@@ -1,0 +1,33 @@
+{% extends "main.html" %}
+
+{% block tabs %}
+  {{ super() }}
+
+  <section class="tx-container">
+    <div class="md-grid md-typeset">
+      <div class="tx-hero">
+        <h1>Ask what. Get answers.</h1>
+        <p class="tx-hero__acronym">
+          <strong>R</strong>easoning <strong>I</strong>nterface for
+          <strong>T</strong>ext-to-<strong>A</strong>nalytics
+        </p>
+        <p>
+          Turn natural-language questions into SQL, statistics, and insights
+          &mdash; no code required. Ask RITA connects to your database,
+          generates queries, runs real analytics, and visualizes results
+          automatically.
+        </p>
+        <div class="tx-hero__actions">
+          <a href="installation/" class="md-button md-button--primary">
+            Get Started
+          </a>
+          <a href="configuration/overview/" class="md-button">
+            Configuration
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block hero %}{% endblock %}

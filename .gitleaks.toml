@@ -1,0 +1,113 @@
+# Gitleaks configuration for AskRITA
+# https://github.com/gitleaks/gitleaks
+#
+# Scan the repo:   gitleaks detect --source . -v
+# Scan staged:     gitleaks protect --staged -v
+# With report:     gitleaks detect --source . --config .gitleaks.toml --report-path gitleaks-report.json
+
+title = "AskRITA gitleaks config"
+
+[extend]
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# Global allowlist — paths and patterns that are never flagged
+# ---------------------------------------------------------------------------
+[allowlist]
+description = "Global false-positive exclusions"
+
+paths = [
+  # Lock files and dependency manifests (contain hashes, not secrets)
+  '''poetry\.lock''',
+  '''package-lock\.json''',
+  '''yarn\.lock''',
+
+  # Third-party license text
+  '''THIRD_PARTY_LICENSES\.txt''',
+
+  # Built documentation site
+  '''(?:^|/)site/''',
+
+  # Virtual environments
+  '''(?i)(?:^|/)\.?v?env/''',
+
+  # Benchmark data and output (large auto-generated artifacts)
+  '''benchmarks/.+/data/''',
+  '''benchmarks/.+/output/''',
+
+  # Node modules
+  '''node_modules/''',
+
+  # Local credentials directory (gitignored; never committed)
+  '''credentials/''',
+
+  # IDE / editor settings that may reference local paths
+  '''\.sonarlint/''',
+  '''\.claude/''',
+  '''\.cursor/''',
+  '''\.windsurf/''',
+  '''\.vscode/''',
+  '''\.idea/''',
+
+  # Test fixtures may embed mock/fake tokens
+  '''tests/''',
+  '''conftest\.py''',
+
+  # Example configs use env-var placeholders, not real credentials
+  '''example-configs/''',
+
+  # Documentation contains illustrative snippets, not real secrets
+  '''docs/''',
+]
+
+regexes = [
+  # Environment-variable placeholders are not real secrets
+  #   ${VAR}, ${VAR:-default}
+  '''\$\{[A-Z_][A-Z0-9_]*(?::-.*)?\}''',
+
+  # Placeholder / example values commonly used in docs and configs
+  '''(?i)your-api-key(?:-here)?''',
+  '''(?i)your-(?:password|secret|token)(?:-here)?''',
+  '''(?i)<your[_-].*?>''',
+  '''(?i)changeme''',
+  '''(?i)CHANGE_ME''',
+  '''(?i)xxxx+''',
+  '''(?i)example\.com''',
+
+  # Generic SQLite in-memory or file-path connection strings
+  '''sqlite:///''',
+
+  # CA-bundle path references (not private keys)
+  '''(?i)/path/to/''',
+  '''(?i)zscaler.*\.pem''',
+  '''(?i)ca[_-]bundle''',
+]
+
+stopwords = [
+  "example",
+  "placeholder",
+  "your-api-key",
+  "CHANGE_ME",
+  "dummy",
+  "fake",
+]
+
+# ---------------------------------------------------------------------------
+# Known historical false positives
+# ---------------------------------------------------------------------------
+# GitHub auto-generates short-lived JWTs for private-repo video embeds.
+# Commit ca2c9e0 embedded a demo video URL that contained such a JWT, which
+# gitleaks also base64-decodes into a spurious AWS-access-token match.
+# These tokens are public, read-only, and expired.
+
+[[rules]]
+id = "jwt"
+[[rules.allowlists]]
+description = "GitHub video-embed JWT in old README commit"
+commits = ["ca2c9e0030a1fb40c6fd39c11d271a85c8ef8737"]
+
+[[rules]]
+id = "aws-access-token"
+[[rules.allowlists]]
+description = "False positive: base64-decoded GitHub JWT misidentified as AWS token"
+commits = ["ca2c9e0030a1fb40c6fd39c11d271a85c8ef8737"]

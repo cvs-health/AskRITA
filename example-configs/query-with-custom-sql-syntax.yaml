@@ -1,0 +1,81 @@
+# © 2026 CVS Health and/or one of its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Example configuration showing SQL syntax customization
+# This allows database-specific SQL generation for edge cases
+
+database:
+  connection_string: "${DATABASE_URL}"  # e.g., "bigquery://project-id/dataset-name"
+  
+  # SQL syntax configuration (optional - has smart defaults)
+  sql_syntax:
+    # Explicit CAST type override (optional)
+    # Uncomment to override automatic detection
+    # cast_to_string: "STRING"  # BigQuery
+    # cast_to_string: "VARCHAR"  # Snowflake, SQL Server
+    # cast_to_string: "TEXT"  # PostgreSQL
+    # cast_to_string: "CHAR"  # MySQL
+    
+    # Default mappings (auto-applied based on connection string)
+    # These are built-in defaults, shown here for reference only
+    default_cast_types:
+      bigquery: "STRING"
+      snowflake: "VARCHAR"
+      postgresql: "TEXT"
+      postgres: "TEXT"
+      mysql: "CHAR"
+      sqlserver: "VARCHAR"
+      mssql: "VARCHAR"
+
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  temperature: 0.1
+
+workflow:
+  enable_parse_question: true
+  enable_get_unique_nouns: true  # Uses sql_syntax.cast_to_string
+  enable_generate_sql: true
+  enable_validate_sql: true
+  enable_execute_sql: true
+  enable_format_results: true
+  enable_choose_visualization: true
+  enable_generate_followup_questions: true
+
+chain_of_thoughts:
+  enabled: true
+  include_timing: true
+  include_confidence: true
+
+# ============================================================================
+# USE CASES FOR CUSTOM SQL SYNTAX
+# ============================================================================
+
+# Use Case 1: Database with non-standard CAST syntax
+# database:
+#   connection_string: "custom-db://host/database"
+#   sql_syntax:
+#     cast_to_string: "VARCHAR(MAX)"  # SQL Server with MAX length
+
+# Use Case 2: Override for performance tuning
+# database:
+#   connection_string: "postgresql://host/database"
+#   sql_syntax:
+#     cast_to_string: "VARCHAR(1000)"  # Limit size for performance
+
+# Use Case 3: Legacy database with special requirements
+# database:
+#   connection_string: "oracle://host/service"
+#   sql_syntax:
+#     cast_to_string: "VARCHAR2(4000)"  # Oracle-specific type

@@ -1,0 +1,59 @@
+# © 2026 CVS Health and/or one of its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# AskRITA MCP Server Configuration
+# This config is used when running: askrita mcp --config mcp-server-config.yaml
+
+llm:
+  provider: "openai"
+  # API key is read from OPENAI_API_KEY environment variable
+  # Set it with: export OPENAI_API_KEY="your-api-key-here"
+  model: "gpt-4o"
+  temperature: 0.1
+  max_tokens: 4000
+
+database:
+  connection_string: "sqlite:///sample.db"
+  
+  # Schema caching for performance optimization
+  cache_schema: true                # Enable schema caching for better performance
+  schema_refresh_interval: 1800     # Cache expiry: 30 minutes (good for development/testing)
+  
+# Framework will use defaults
+# framework:
+#   log_level: "INFO"
+
+business_rules:
+  max_results: 1000
+  query_timeout: 30
+  enable_caching: true
+  allowed_operations: ["SELECT", "SHOW", "DESCRIBE"]
+
+workflow:
+  steps:
+    parse_question: true
+    get_unique_nouns: true
+    generate_sql: true
+    validate_and_fix_sql: true
+    execute_sql: true
+    format_results: true
+    choose_visualization: true
+    format_data_for_visualization: true
+    generate_followup_questions: true
+  output_format: "json"
+  max_retries: 3
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

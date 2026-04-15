@@ -1,0 +1,226 @@
+---
+trigger: always_on
+description: Complete release workflow and version management for AskRITA
+globs: ["pyproject.toml", "askrita/__init__.py", "README.md", "CHANGELOG.md", "VERSION_MANAGEMENT.md"]
+---
+
+# Release Workflow and Version Management
+
+## 🚀 Pre-Release Checklist
+
+### Code Quality Verification
+1. ✅ **All tests pass** - 203/203 tests passing
+2. ✅ **Code coverage >50%** - Verify with `pytest --cov=askrita`
+3. ✅ **No linting errors** - Clean code following patterns
+4. ✅ **React frontend builds** - `npm run build` succeeds
+5. ✅ **Example configs valid** - All example/*.yaml files load correctly
+
+### Documentation Verification
+1. ✅ **README.md updated** - "What's New" section reflects current version
+2. ✅ **CHANGELOG.md updated** - Complete entry for new version
+3. ✅ **README_YAML_CONFIG.md updated** - All new config options documented
+4. ✅ **Example configs updated** - New features demonstrated
+5. ✅ **Migration guide updated** - Breaking changes documented
+
+### Version Consistency Check
+1. ✅ **pyproject.toml** - version = "X.Y.Z"
+2. ✅ **askrita/__init__.py** - __version__ = "X.Y.Z"
+3. ✅ **setup.py** - version="X.Y.Z" (if present)
+4. ✅ **README.md** - "What's New in vX.Y.Z" section
+5. ✅ **CHANGELOG.md** - [X.Y.Z] - YYYY-MM-DD entry
+
+## 📋 Version Increment Decision Matrix
+
+### Patch Release (X.Y.Z+1)
+- Bug fixes only
+- Documentation updates
+- Example configuration updates
+- Performance improvements (non-breaking)
+- Dependency updates (compatible)
+
+### Minor Release (X.Y+1.0)
+- New features (backwards compatible)
+- New configuration options
+- New database strategies
+- New LLM provider support
+- Enhanced existing features
+
+### Major Release (X+1.0.0)
+- Breaking API changes
+- Configuration format changes
+- Removed deprecated features
+- Major architecture changes
+- Python version requirement changes
+
+## 🔄 Release Process Steps
+
+### Step 1: Version Planning
+```bash
+# Decide version increment based on changes
+# Current: 0.2.2
+# Next patch: 0.2.3
+# Next minor: 0.3.0
+# Next major: 1.0.0
+```
+
+### Step 2: Update Version Numbers
+```bash
+# Update pyproject.toml
+version = "0.2.3"
+
+# Update askrita/__init__.py
+__version__ = "0.2.3"
+
+# Update setup.py (if present)
+version="0.2.3"
+```
+
+### Step 3: Update Documentation
+1. **README.md Changes**:
+   - Change "What's New in v0.2.2" to "What's New in v0.2.3"
+   - Move current changes to new version
+   - Move previous version to "Previous Release"
+   - Remove older versions to keep only current + previous
+
+2. **CHANGELOG.md Changes**:
+   - Add new version section at top
+   - Move "Unreleased" items to new version
+   - Add release date
+   - Clear "Unreleased" section
+
+### Step 4: Final Testing
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run comprehensive tests
+python -m pytest tests/ -v --cov=askrita --cov-report=term-missing
+
+# Test React frontend
+cd sample_apps/react-visual-frontend && npm run build
+
+# Test example configurations
+python -c "
+from askrita import ConfigManager
+configs = ['example-configs/query-bigquery.yaml', 'example-configs/query-openai.yaml']
+for config in configs:
+    try:
+        cm = ConfigManager(config)
+        print(f'✅ {config} loads successfully')
+    except Exception as e:
+        print(f'❌ {config} failed: {e}')
+"
+```
+
+### Step 5: Git Operations
+```bash
+# Stage all changes
+git add .
+
+# Commit with version message
+git commit -m "Release v0.2.3: [Brief description of main changes]"
+
+# Create and push tag
+git tag -a v0.2.3 -m "Release version 0.2.3"
+git push origin main
+git push origin v0.2.3
+```
+
+## 📊 Release Content Guidelines
+
+### README.md "What's New" Section
+```markdown
+## 🆕 **What's New in v0.2.3**
+
+- 🧠 **Major Feature**: Brief description of most important change
+- 📊 **Enhancement**: Description of significant improvement
+- 🔧 **Developer Experience**: Tools or workflow improvements
+- 🐛 **Bug Fixes**: Important fixes (if patch release)
+
+**Previous Release (v0.2.2):**
+- Previous version highlights (keep brief)
+```
+
+### CHANGELOG.md Entry Template
+```markdown
+## [0.2.3] - 2025-08-XX
+
+### Added
+- 🧠 **Feature Name**: Detailed description with technical details
+  - Sub-feature details
+  - Configuration options
+  - Integration points
+
+### Changed
+- **Breaking Changes**: Clear description with migration guidance
+- **Improvements**: Performance or usability enhancements
+
+### Fixed
+- **Bug Fixes**: What was broken and how it was fixed
+- **Compatibility**: Compatibility improvements
+
+### Technical Details
+- **Architecture**: Design pattern or structural changes
+- **Performance**: Benchmarks or improvements
+- **Dependencies**: Updated or new dependencies
+```
+
+## 🎯 Release Types and Timing
+
+### Patch Releases (Weekly/Bi-weekly)
+- Quick bug fixes
+- Documentation improvements
+- Example updates
+- Small enhancements
+
+### Minor Releases (Monthly/Quarterly)
+- New features
+- New integrations
+- Significant improvements
+- Configuration enhancements
+
+### Major Releases (Quarterly/Annually)
+- Breaking changes
+- Major architecture changes
+- New major capabilities
+- Platform updates
+
+## 🔍 Post-Release Verification
+
+### Immediate Post-Release (within 1 hour)
+1. ✅ **Git tag created** - `git tag -l | grep v0.2.3`
+2. ✅ **Version consistency** - All files show same version
+3. ✅ **Documentation rendered** - GitHub displays updated README
+4. ✅ **Examples work** - Quick test of main examples
+
+### Short-term Post-Release (within 1 day)
+1. ✅ **CI/CD passes** - All automated checks pass
+2. ✅ **Integration tests** - Test with sample applications
+3. ✅ **User feedback** - Monitor for immediate issues
+4. ✅ **Documentation review** - Ensure all docs are accurate
+
+### Medium-term Post-Release (within 1 week)
+1. ✅ **User adoption** - Monitor usage patterns
+2. ✅ **Issue tracking** - Address any reported problems
+3. ✅ **Performance monitoring** - Verify no regressions
+4. ✅ **Feedback integration** - Plan next release based on feedback
+
+## 📝 Release Notes Best Practices
+
+### User-Focused Content
+- Lead with benefits and use cases
+- Provide clear examples of new features
+- Include migration guidance for breaking changes
+- Link to detailed documentation
+
+### Developer-Focused Content
+- Include technical implementation details
+- Document API changes and additions
+- Provide code examples for new features
+- Explain architectural decisions
+
+### Version Strategy
+- Keep current + previous version in README
+- Maintain complete history in CHANGELOG
+- Provide migration guides for major versions
+- Use semantic versioning consistently

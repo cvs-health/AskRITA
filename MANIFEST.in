@@ -1,0 +1,29 @@
+# Include important text files
+include README.md
+include LICENSE
+include CHANGELOG.md
+include THIRD_PARTY_LICENSES.txt
+include requirements*.txt
+
+# Include configuration files
+include pyproject.toml
+include setup.py
+include MANIFEST.in
+
+# Include package data
+recursive-include askrita *.py
+recursive-include askrita *.yaml
+recursive-include askrita *.yml
+recursive-include askrita *.json
+recursive-include askrita *.txt
+recursive-include askrita *.md
+
+# Exclude unwanted files
+exclude .gitignore
+exclude *.pyc
+exclude .DS_Store
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .pytest_cache
+recursive-exclude * .coverage
+recursive-exclude * .mypy_cache 

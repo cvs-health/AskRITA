@@ -1,0 +1,135 @@
+# © 2026 CVS Health and/or one of its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Data Classification Configuration - CSV Examples
+# Demonstrates various CSV configuration options
+
+# LLM Configuration
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  temperature: 0.1
+  # API key is read from OPENAI_API_KEY environment variable
+  # Set it with: export OPENAI_API_KEY="your-api-key-here"
+
+# Example 1: Standard CSV (comma-separated, UTF-8)
+data_processing:
+  input_file_path: "data/feedback.csv"
+  output_file_path: "results/processed_feedback.xlsx"
+  feedback_columns:
+    - "customer_feedback"
+    - "comments"
+  
+  # Standard CSV settings (these are the default values)
+  csv_delimiter: ","
+  csv_encoding: "utf-8"
+  csv_header: 0                # First row contains headers
+  csv_quotechar: '"'
+  csv_decimal: "."
+  
+# Example 2: European CSV (semicolon-separated, different decimal)
+# Uncomment and modify data_processing section for European format:
+#
+# data_processing:
+#   input_file_path: "data/european_data.csv"
+#   output_file_path: "results/european_results.xlsx"
+#   feedback_columns:
+#     - "customer_feedback"
+#   
+#   # European CSV settings
+#   csv_delimiter: ";"           # Semicolon separator
+#   csv_encoding: "latin-1"      # Common in European systems
+#   csv_header: 0
+#   csv_quotechar: '"'
+#   csv_decimal: ","             # Comma as decimal separator
+#   csv_thousands: "."           # Period as thousands separator
+#   csv_na_values:               # Additional NaN values
+#     - "N/A"
+#     - "NULL"
+#     - "n/a"
+#     - ""
+
+# Example 3: Tab-separated values (TSV)
+# Uncomment and modify data_processing section for TSV format:
+#
+# data_processing:
+#   input_file_path: "data/tab_separated.tsv"
+#   output_file_path: "results/tsv_results.csv"
+#   
+#   # TSV settings
+#   csv_delimiter: "\t"          # Tab separator
+#   csv_encoding: "utf-8"
+#   csv_header: 0
+#   csv_quotechar: '"'
+#   output_format: "csv"         # Output as CSV instead of Excel
+
+# Example 4: Pipe-separated values with custom settings
+# Uncomment and modify data_processing section for pipe-separated format:
+#
+# data_processing:
+#   input_file_path: "data/pipe_separated.txt"
+#   output_file_path: "results/pipe_results.json"
+#   
+#   # Pipe-separated settings
+#   csv_delimiter: "|"           # Pipe separator
+#   csv_encoding: "cp1252"       # Windows encoding
+#   csv_header: 0
+#   csv_quotechar: "'"           # Single quotes
+#   csv_escapechar: "\\"         # Backslash escape character
+#   output_format: "json"        # Output as JSON
+
+# Example 5: No header CSV
+# Uncomment and modify data_processing section for headerless CSV:
+#
+# data_processing:
+#   input_file_path: "data/no_headers.csv"
+#   output_file_path: "results/no_header_results.xlsx"
+#   feedback_columns:
+#     - 0                        # Use column indices instead of names
+#     - 1
+#   
+#   # No header settings
+#   csv_delimiter: ","
+#   csv_encoding: "utf-8"
+#   csv_header: null             # No header row
+#   csv_quotechar: '"'
+
+# Classification Configuration (same for all examples)
+classification:
+  model_type: "general"
+  system_prompt: |
+    Analyze the provided text data and classify it according to the following criteria.
+    Be objective and consistent in your analysis.
+  
+  field_definitions:
+    category:
+      type: "literal"
+      values: ["positive", "negative", "neutral"]
+      description: "Overall sentiment classification"
+    
+    confidence:
+      type: "float"
+      minimum: 0.0
+      maximum: 1.0
+      description: "Confidence score for the classification"
+    
+    summary:
+      type: "string"
+      description: "Brief summary of the content"
+
+# Data Classification Workflow Configuration
+data_classification_workflow:
+  enable_progress_tracking: true
+  save_intermediate_results: false
+  error_handling_strategy: "continue"  # Options: continue, stop
