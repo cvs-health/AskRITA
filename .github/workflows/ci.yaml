@@ -2,36 +2,9 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - "release/**"
-    paths-ignore:
-      - "docs/**"
-      - "*.md"
-      - "**/*.md"
-      - "LICENSE"
-      - "THIRD_PARTY_LICENSES.txt"
-      - "Code_of_Conduct.md"
-      - "mkdocs.yml"
-      - "Dockerfile.docs"
-      - "benchmarks/**"
-      - "example-configs/**"
-      - ".github/workflows/docs.yaml"
+    branches: ["main"]  # Merges to main trigger CI
   pull_request:
-    branches:
-      - main
-      - "release/**"
-    paths-ignore:
-      - "docs/**"
-      - "*.md"
-      - "**/*.md"
-      - "LICENSE"
-      - "THIRD_PARTY_LICENSES.txt"
-      - "Code_of_Conduct.md"
-      - "mkdocs.yml"
-      - "Dockerfile.docs"
-      - "benchmarks/**"
-      - "example-configs/**"
+    branches: ["**"]    # All PRs trigger CI (covers your feature branch work)
 
 # Cancel in-progress runs on the same branch/PR to avoid resource waste
 concurrency:
@@ -40,6 +13,7 @@ concurrency:
 
 permissions:
   contents: read  # restrict default permissions for fork safety
+  security-events: write
 
 jobs:
   # ─────────────────────────────────────────────
@@ -123,16 +97,23 @@ jobs:
 
       - name: pip-audit – dependency vulnerability scan (SCA)
         run: poetry run pip-audit
-        continue-on-error: true  # surfaced as warning; failures tracked in test summary
 
       - name: Trivy – comprehensive repository scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: 'fs'
           ignore-unfixed: true
-          format: 'table'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: '1'
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub code scanning
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   # ─────────────────────────────────────────────
   # Test Matrix: Python 3.11, 3.12, 3.13
@@ -228,6 +209,15 @@ jobs:
             exit 1
           fi
           echo "Build artifacts verified ✓"
+
+      - name: Smoke test built wheel in a clean virtualenv
+        run: |
+          python -m venv .pkg-smoke-venv
+          . .pkg-smoke-venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install dist/*.whl
+          python -c "import askrita; print('import-ok')"
+          askrita --help >/dev/null
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

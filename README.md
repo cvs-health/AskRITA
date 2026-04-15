@@ -20,6 +20,7 @@
 Go beyond simple text-to-SQL. Ask RITA is an LLM-powered analytics framework that generates queries, runs scipy-backed statistical tests, conducts CRISP-DM research workflows, classifies data, and visualizes results — across SQL and NoSQL databases — from a single natural-language question.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI version](https://badge.fury.io/py/askrita.svg)](https://pypi.org/project/askrita/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 > **🔒 IMPORTANT — Read-Only Database Access Required**
@@ -32,21 +33,6 @@ Go beyond simple text-to-SQL. Ask RITA is an LLM-powered analytics framework tha
 >
 > **The database user's granted permissions are the only reliable boundary between AskRITA and your data.**
 
-## 🆕 **What's New in v0.13.0**
-
-- 🧠 **Research Agent — Real Statistical Tests**: scipy-powered hypothesis testing replaces LLM-generated statistics
-  - Auto-selects Pearson vs Spearman correlation based on Shapiro-Wilk normality test
-  - Tukey HSD post-hoc pairwise comparisons after significant ANOVA
-  - Bonferroni correction across multiple tests in a single research run
-  - `analyze_hypothesis_data()` auto-routes to the correct test family based on column types
-- ⚡ **Research Agent — Parallel Evidence Execution**: Evidence queries now execute concurrently via `ThreadPoolExecutor` — wall time ≈ max(query_times) instead of sum
-- 🏗️ **Research Agent — Architecture Separation**: SQL Agent generates SQL only; Research Agent executes queries directly via `db_manager`
-- 🐛 **Bug Fixes**: Thread-safety for parallel queries, aggregated data detection, Bonferroni-aware confidence scoring, schema decorator recursion storm fix
-
-**Previous Release (v0.12.2):**
-
-- 🛡️ **SQL Prompt Injection Prevention**: Defence-in-depth protection against malicious inputs
-- 🔧 **SonarQube Fixes**: S2737, S3776, S1481, S1135, S1871
 
 ## 🚀 **Four Powerful Workflows**
 

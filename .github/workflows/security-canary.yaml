@@ -1,0 +1,82 @@
+name: Security Canary
+
+on:
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bandit-canary:
+    name: "Bandit Canary"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dev dependencies
+        run: poetry install --only dev
+
+      - name: Create Bandit canary fixture
+        run: |
+          mkdir -p .security-canary
+          cat > .security-canary/bandit_canary.py <<'EOF'
+          import subprocess
+
+          def run_user_supplied_command(cmd: str) -> None:
+              subprocess.Popen(cmd, shell=True)
+          EOF
+
+      - name: Expect Bandit to fail on known-unsafe code
+        run: |
+          if poetry run bandit -r .security-canary -ll -ii; then
+            echo "ERROR: Bandit canary unexpectedly passed"
+            exit 1
+          fi
+          echo "Bandit canary failed as expected ✓"
+
+  trivy-secret-canary:
+    name: "Trivy Secret Canary"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Trivy secret canary fixture
+        run: |
+          mkdir -p .security-canary
+          TOKEN_PREFIX="ghp"
+          TOKEN_BODY="$(printf 'A%.0s' {1..36})"
+          printf 'GITHUB_TOKEN=%s_%s\n' "$TOKEN_PREFIX" "$TOKEN_BODY" > .security-canary/.env
+
+      - name: Expect Trivy to fail on a known secret pattern
+        id: trivy_secret_scan
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: 'fs'
+          scan-ref: '.security-canary'
+          scanners: 'secret'
+          format: 'table'
+          exit-code: '1'
+
+      - name: Assert Trivy failed as expected
+        run: |
+          if [ "${{ steps.trivy_secret_scan.outcome }}" != "failure" ]; then
+            echo "ERROR: Trivy secret canary unexpectedly passed"
+            exit 1
+          fi
+          echo "Trivy secret canary failed as expected ✓"

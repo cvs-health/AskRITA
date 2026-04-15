@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
   id-token: write  # Required for PyPI Trusted Publisher (OIDC)
+  security-events: write
 
 jobs:
   # ─────────────────────────────────────────────
@@ -88,13 +89,21 @@ jobs:
         run: poetry run pip-audit
 
       - name: Trivy repository scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: 'fs'
           ignore-unfixed: true
-          format: 'table'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: '1'
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   test:
     name: "Tests (Python ${{ matrix.python-version }})"
@@ -147,6 +156,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tagged commit is on main
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "ERROR: Tagged commit is not reachable from origin/main"
+            exit 1
+          fi
+          echo "Tagged commit is reachable from origin/main ✓"
 
       - name: Check tag matches pyproject.toml version
         run: |
@@ -210,6 +230,15 @@ jobs:
           ls -lh dist/
           echo "Artifacts ready for upload:"
           ls dist/
+
+      - name: Smoke test built wheel in a clean virtualenv
+        run: |
+          python -m venv .pkg-smoke-venv
+          . .pkg-smoke-venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install dist/*.whl
+          python -c "import askrita; print('import-ok')"
+          askrita --help >/dev/null
 
       - name: Upload build artifacts (for audit trail)
         uses: actions/upload-artifact@v4
