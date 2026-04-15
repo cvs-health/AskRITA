@@ -1,27 +1,18 @@
-name: Publish Docs
+name: Publish Docs to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - "Dockerfile.docs"
-      - "askrita/**"  # rebuild if source API changes
+  workflow_dispatch:  # Manually run only
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "pages"
   cancel-in-progress: true
 
 permissions:
   contents: read
-  packages: write  # for pushing to GHCR
+  pages: write
+  id-token: write
 
 jobs:
-  # ─────────────────────────────────────────────
-  # Validate: build docs before publishing
-  # ─────────────────────────────────────────────
   build-docs:
     name: "Build Documentation"
     runs-on: ubuntu-latest
@@ -29,10 +20,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
+      - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -44,60 +35,32 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: docs-${{ runner.os }}-py3.13-${{ hashFiles('poetry.lock') }}
+          key: docs-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
           restore-keys: |
-            docs-${{ runner.os }}-py3.13-
+            docs-${{ runner.os }}-py3.14-
 
       - name: Install documentation dependencies
         run: poetry install --with dev --extras exports
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
       - name: Build documentation (strict – fail on warnings)
         run: poetry run mkdocs build --strict
 
-      - name: Upload built site
-        uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: docs-site
-          path: site/
-          retention-days: 7
+          path: "./site"
 
-  # ─────────────────────────────────────────────
-  # Publish: containerise and push docs image
-  # ─────────────────────────────────────────────
-  publish-docs-image:
-    name: "Publish Docs Docker Image"
+  deploy-pages:
+    name: "Deploy to GitHub Pages"
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: [build-docs]
+    needs: build-docs
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}/docs
-          tags: |
-            type=sha,prefix=sha-
-            type=raw,value=latest
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile.docs
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
