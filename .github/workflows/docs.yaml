@@ -40,7 +40,7 @@ jobs:
             docs-${{ runner.os }}-py3.14-
 
       - name: Install documentation dependencies
-        run: poetry install --with dev --extras exports
+        run: poetry install --only main,docs --extras exports
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
