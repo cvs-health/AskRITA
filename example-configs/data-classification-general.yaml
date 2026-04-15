@@ -1,0 +1,108 @@
+# © 2026 CVS Health and/or one of its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Data Classification Configuration - General Purpose
+# Configuration for general data classification tasks (not specific to customer feedback)
+
+# LLM Configuration
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  temperature: 0.1
+  max_tokens: 4000
+  top_p: 1.0
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+  # API key is read from OPENAI_API_KEY environment variable
+  # Set it with: export OPENAI_API_KEY="your-api-key-here"
+  timeout: 60
+
+# Data Processing Configuration
+data_processing:
+  input_file_path: "/path/to/your/input/data.csv"
+  output_file_path: "/path/to/your/output/classified_data.csv"
+  feedback_columns:
+    - "content"
+    - "description"
+    - "text"
+  max_rows_to_process: 5000
+  batch_size: 50
+  skip_empty_rows: true
+  output_format: "csv"
+
+# Classification Configuration
+classification:
+  model_type: "general"  # Using general classification model
+  system_prompt: |
+    You are a data analyst tasked with classifying and analyzing text content.
+    Categorize the content accurately and provide meaningful insights.
+    Classify into appropriate categories based on the content provided.
+    Be specific and accurate in your classifications.
+  analysis_columns:
+    - "category"
+    - "subcategory" 
+    - "confidence"
+    - "summary"
+    - "tags"
+  enable_batch_processing: true
+  save_intermediate_results: false
+  
+  # Dynamic field definitions for general classification
+  field_definitions:
+    category:
+      type: "string"
+      description: "Primary category classification for the data"
+    
+    subcategory:
+      type: "optional_string"
+      default: null
+      description: "Optional subcategory for more granular classification"
+    
+    confidence:
+      type: "literal"
+      values: ["Low", "Medium", "High"]
+      description: "Confidence level of the classification"
+    
+    summary:
+      type: "string"
+      description: "Brief summary of the classified content"
+    
+    tags:
+      type: "list"
+      item_type: "string"
+      default: null
+      description: "Optional list of tags for additional categorization"
+
+# Workflow Configuration
+data_classification_workflow:
+  steps:
+    load_data: true
+    preprocess_data: true
+    classify_data: true
+    postprocess_results: true
+    save_results: true
+  max_retries: 3
+  timeout_per_step: 300
+  parallel_processing: false
+
+# Framework Configuration
+framework:
+  default_output_format: "json"
+  show_metadata: true
+  debug: false
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

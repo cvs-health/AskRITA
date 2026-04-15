@@ -1,0 +1,105 @@
+---
+description: Development workflow for configuration and schema changes
+globs: ["askrita/config_manager.py", "askrita/sqlagent/database/schema_decorators.py", "example-configs/**/*.yaml"]
+alwaysApply: true
+---
+
+# Configuration Changes Workflow
+
+## 📋 When Modifying ConfigManager
+
+### Required Updates Checklist
+1. **Update dataclasses** - Add new fields with proper types and defaults
+2. **Add validation logic** - Include validation in `_validate_*_config` methods
+3. **Update property methods** - Add getter methods for new configuration sections
+4. **Add environment variable support** - Support ${VAR} substitution if needed
+
+### Example: Adding New Configuration Section
+```python
+@dataclass
+class NewFeatureConfig:
+    enabled: bool = True
+    setting_name: str = "default_value"
+    advanced_options: Dict[str, Any] = field(default_factory=dict)
+
+# Add to main config class
+@dataclass
+class DatabaseConfig:
+    # ... existing fields
+    new_feature: NewFeatureConfig = field(default_factory=NewFeatureConfig)
+```
+
+### After ConfigManager Changes
+1. **Update example configs** - Add the new section to ALL relevant example-configs/*.yaml
+2. **Update README_YAML_CONFIG.md** - Document the new configuration options
+3. **Add tests** - Create tests in `tests/test_config_manager.py`
+4. **Test integration** - Verify the config is properly loaded and used
+
+## 🏗️ Schema Decorators Changes
+
+### When Adding New Schema Decorator
+1. **Create decorator class** - Extend `SchemaDecorator` base class
+2. **Add to builder** - Include in `SchemaDecoratorBuilder`
+3. **Update strategies** - Add to relevant database strategy's `enhance_schema` method
+4. **Add configuration support** - Enable/disable via config
+
+### Required Test Coverage
+```python
+def test_new_decorator_functionality(self):
+    # Test decorator with valid config
+    # Test decorator with invalid config
+    # Test decorator integration with other decorators
+    # Test decorator performance impact
+```
+
+## 📝 Documentation Updates Required
+
+### For Any Configuration Change
+1. **README_YAML_CONFIG.md** - Add comprehensive documentation with examples
+2. **CHANGELOG.md** - Document the change with version information
+3. **Example configs** - Update at least 3 example configurations
+4. **Migration guide** - Add to version migration section if breaking
+
+### Configuration Documentation Template
+```yaml
+# New Feature Configuration (New in vX.Y.Z)
+new_feature:
+  enabled: true                    # Enable/disable the feature
+  setting_name: "value"           # Description of what this does
+  advanced_options:               # Complex configurations
+    option1: value1               # Explain when to use this
+    option2: value2               # Provide examples
+```
+
+## 🧪 Testing Requirements
+
+### Mandatory Tests for Config Changes
+1. **Unit tests** - Test configuration loading and validation
+2. **Integration tests** - Test the feature works end-to-end
+3. **Error handling tests** - Test invalid configurations fail gracefully
+4. **Backwards compatibility** - Ensure old configs still work
+
+### Test File Locations
+- Config loading: `tests/test_config_manager.py`
+- Feature integration: `tests/test_<feature_name>.py`
+- Database integration: `tests/test_database_manager.py`
+- Workflow integration: `tests/test_sql_agent.py`
+
+## 📊 Code Coverage Verification
+
+### After Making Changes
+```bash
+# Run tests with coverage
+source .venv/bin/activate
+python -m pytest tests/ --cov=askrita --cov-report=term-missing
+
+# Verify coverage didn't drop
+# Target: Maintain >50% overall coverage
+# New code should have >80% coverage
+```
+
+### Coverage Targets by Module
+- config_manager.py: >70%
+- New feature modules: >80%
+- Integration points: >60%
+- Test coverage should cover all new configuration paths

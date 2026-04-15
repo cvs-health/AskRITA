@@ -1,0 +1,330 @@
+---
+trigger: always_on
+description: Comprehensive testing workflow and coverage requirements
+globs: ["tests/**/*.py", "askrita/**/*.py", "sample_apps/**/*.py", "sample_apps/**/*.tsx"]
+---
+
+# Testing Workflow and Coverage Requirements
+
+## 🧪 Testing Hierarchy
+
+### Test Categories by Priority
+1. **Unit Tests** (Highest Priority)
+   - Test individual functions and methods
+   - Mock all external dependencies
+   - Fast execution (<1 second per test)
+   - Target: >80% coverage for new code
+
+2. **Integration Tests** (High Priority)
+   - Test component interactions
+   - Use real databases (SQLite in-memory)
+   - Test configuration loading
+   - Target: Cover all major workflows
+
+3. **End-to-End Tests** (Medium Priority)
+   - Test complete user workflows
+   - Test sample applications
+   - Test API endpoints
+   - Target: Cover critical user journeys
+
+## 📊 Coverage Requirements and Monitoring
+
+### Coverage Targets by Module
+```bash
+# Required coverage minimums:
+askrita/config_manager.py      >= 70%
+askrita/utils/LLMManager.py    >= 70%
+askrita/sqlagent/formatters/   >= 80%
+askrita/sqlagent/workflows/    >= 60%
+askrita/sqlagent/database/     >= 50%
+Overall project coverage         >= 52%
+```
+
+### Coverage Monitoring Commands
+```bash
+# Generate coverage report
+source .venv/bin/activate
+python -m pytest tests/ --cov=askrita --cov-report=term-missing --cov-report=html
+
+# Check coverage for specific module
+python -m pytest tests/test_config_manager.py --cov=askrita.config_manager --cov-report=term-missing
+
+# Fail if coverage drops below threshold
+python -m pytest tests/ --cov=askrita --cov-fail-under=52
+```
+
+## 🔧 Test Development Workflow
+
+### When Adding New Feature
+1. **Write tests first** (TDD approach recommended)
+2. **Create test file** - `tests/test_<feature_name>.py`
+3. **Test structure**:
+   ```python
+   class TestNewFeature:
+       def test_feature_success_path(self):
+           """Test the main success scenario."""
+           pass
+       
+       def test_feature_error_handling(self):
+           """Test error conditions."""
+           pass
+       
+       def test_feature_edge_cases(self):
+           """Test boundary conditions."""
+           pass
+       
+       def test_feature_integration(self):
+           """Test integration with other components."""
+           pass
+   ```
+
+### When Modifying Existing Code
+1. **Run existing tests** - Ensure no regressions
+2. **Update tests** - Modify tests for changed behavior
+3. **Add new tests** - Cover new functionality
+4. **Verify coverage** - Ensure coverage doesn't drop
+
+### Test Naming Conventions
+```python
+def test_function_name_condition_expected_result(self):
+    """
+    Test that function_name with specific condition produces expected result.
+    
+    This test verifies [specific behavior] when [specific condition].
+    """
+    pass
+
+# Examples:
+def test_config_loading_with_valid_yaml_returns_config_object(self):
+def test_database_connection_with_invalid_credentials_raises_error(self):
+def test_sql_generation_with_complex_question_produces_valid_query(self):
+```
+
+## 🎯 Critical Test Areas
+
+### Configuration Testing (High Priority)
+```python
+# tests/test_config_manager.py additions for new features
+def test_new_config_section_loading(self):
+    """Test that new configuration section loads correctly."""
+    config_data = {
+        'database': {'connection_string': 'sqlite:///:memory:'},
+        'llm': {'provider': 'openai', 'model': 'gpt-4o'},
+        'new_section': {'enabled': True, 'setting': 'value'}
+    }
+    # Test implementation
+
+def test_new_config_validation(self):
+    """Test validation of new configuration options."""
+    # Test valid configurations
+    # Test invalid configurations
+    # Test missing required fields
+    # Test type validation
+```
+
+### Database Integration Testing
+```python
+# tests/test_database_manager.py additions
+def test_new_database_feature_with_bigquery(self):
+    """Test new feature with BigQuery strategy."""
+    # Mock BigQuery connections
+    # Test feature-specific behavior
+    
+def test_new_database_feature_error_handling(self):
+    """Test error handling in database feature."""
+    # Test connection failures
+    # Test invalid configurations
+    # Test timeout scenarios
+```
+
+### Workflow Integration Testing
+```python
+# tests/test_sql_agent.py additions
+def test_workflow_with_new_feature_enabled(self):
+    """Test complete workflow with new feature."""
+    # Test end-to-end workflow
+    # Verify feature integration
+    
+def test_workflow_with_new_feature_disabled(self):
+    """Test workflow gracefully handles disabled feature."""
+    # Test backwards compatibility
+    # Verify no errors when feature disabled
+```
+
+## 🔍 Test Quality Checklist
+
+### Before Committing Tests
+1. ✅ **Test names are descriptive** - Clear what is being tested
+2. ✅ **Tests are independent** - Can run in any order
+3. ✅ **Mocks are appropriate** - External dependencies mocked
+4. ✅ **Error cases tested** - Not just success paths
+5. ✅ **Edge cases covered** - Boundary conditions tested
+6. ✅ **Documentation included** - Docstrings explain purpose
+
+### Test Code Quality
+```python
+# Good test structure
+def test_specific_behavior_with_clear_conditions(self):
+    """
+    Test description explaining what this test verifies.
+    
+    Include any important context or setup information.
+    """
+    # Arrange - Set up test data and mocks
+    config = create_test_config()
+    mock_database = Mock()
+    
+    # Act - Execute the behavior being tested
+    result = feature_under_test(config, mock_database)
+    
+    # Assert - Verify expected outcomes
+    assert result.success is True
+    assert result.data == expected_data
+    mock_database.method.assert_called_once_with(expected_args)
+```
+
+## 🚀 Frontend Testing Requirements
+
+### React Component Testing
+```typescript
+// For React components, ensure:
+// 1. Component renders without crashing
+// 2. Props are handled correctly
+// 3. User interactions work
+// 4. Error states are handled
+// 5. Integration with backend APIs
+
+// Example test structure:
+describe('ComponentName', () => {
+  it('renders with default props', () => {
+    // Test component rendering
+  });
+  
+  it('handles user interactions', () => {
+    // Test clicks, form submissions, etc.
+  });
+  
+  it('displays error states correctly', () => {
+    // Test error handling
+  });
+});
+```
+
+### Frontend Build Testing
+```bash
+# Ensure frontend builds successfully
+cd sample_apps/react-visual-frontend
+npm run build
+
+# Check for TypeScript errors
+npm run typecheck
+
+# Run frontend tests (when implemented)
+npm test
+```
+
+## 📋 Automated Testing Pipeline
+
+### Pre-Commit Testing
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit (example)
+
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run Python tests
+echo "Running Python tests..."
+python -m pytest tests/ -v --tb=short
+if [ $? -ne 0 ]; then
+    echo "❌ Python tests failed"
+    exit 1
+fi
+
+# Check code coverage
+echo "Checking code coverage..."
+python -m pytest tests/ --cov=askrita --cov-fail-under=52 --quiet
+if [ $? -ne 0 ]; then
+    echo "❌ Code coverage below threshold"
+    exit 1
+fi
+
+# Test React build
+echo "Testing React build..."
+cd sample_apps/react-visual-frontend
+npm run build
+if [ $? -ne 0 ]; then
+    echo "❌ React build failed"
+    exit 1
+fi
+
+echo "✅ All tests passed!"
+```
+
+### Continuous Integration Requirements
+1. **Python 3.10+ compatibility** - Test on multiple Python versions
+2. **All tests pass** - 203/203 tests must pass
+3. **Coverage maintenance** - >52% overall coverage
+4. **Frontend builds** - React app must build successfully
+5. **Example configs valid** - All example configurations must load
+
+## 🔄 Test Maintenance
+
+### Regular Test Maintenance Tasks
+1. **Review slow tests** - Optimize tests taking >5 seconds
+2. **Update mocks** - Keep mocks aligned with real APIs
+3. **Remove obsolete tests** - Clean up tests for removed features
+4. **Improve coverage** - Target modules with low coverage
+5. **Update test data** - Keep test examples current and relevant
+
+### When Tests Fail
+1. **Identify root cause** - Is it a real bug or test issue?
+2. **Fix immediately** - Don't leave broken tests in codebase
+3. **Update if needed** - Tests may need updates for changed behavior
+4. **Add regression tests** - Prevent the same issue in future
+5. **Document complex fixes** - Explain why test was changed
+
+## 📊 Performance Testing
+
+### Performance Benchmarks
+```python
+import time
+import pytest
+
+def test_query_performance_baseline(self):
+    """Test that queries complete within acceptable time."""
+    start_time = time.time()
+    
+    workflow = SQLAgentWorkflow(test_config)
+    result = workflow.query("Simple test question")
+    
+    execution_time = time.time() - start_time
+    assert execution_time < 5.0  # Should complete within 5 seconds
+    assert result is not None
+
+def test_schema_caching_performance(self):
+    """Test that schema caching improves performance."""
+    # Test without caching
+    # Test with caching
+    # Verify improvement
+```
+
+### Memory Usage Testing
+```python
+import psutil
+import os
+
+def test_memory_usage_within_limits(self):
+    """Test that memory usage stays within reasonable bounds."""
+    process = psutil.Process(os.getpid())
+    initial_memory = process.memory_info().rss
+    
+    # Execute memory-intensive operation
+    large_result = workflow.query("Complex query")
+    
+    final_memory = process.memory_info().rss
+    memory_increase = final_memory - initial_memory
+    
+    # Should not increase memory by more than 100MB
+    assert memory_increase < 100 * 1024 * 1024
+```

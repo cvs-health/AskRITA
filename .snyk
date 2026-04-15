@@ -1,0 +1,15 @@
+# Snyk policy file
+# https://snyk.io/docs/snyk-policy-file/
+version: v1.25.0
+exclude:
+  global:
+    - benchmarks/
+    - samples/
+ignore:
+  SNYK-PYTHON-PYDANTIC-14914754:
+    - '*':
+        reason: >-
+          pydantic is a transitive dependency of langchain-mongodb.
+          The ReDoS vulnerability (CVE-2024-58340) is in MRKLOutputParser.parse(),
+          which AskRITA does not use. No patched version is available upstream.
+          Not exploitable in this project's context.

@@ -1,0 +1,380 @@
+---
+description: Core development standards and code quality requirements for AskRITA
+globs: ["**/*.py", "**/*.ts", "**/*.tsx", "**/*.yaml", "**/*.md"]
+alwaysApply: true
+---
+
+# Development Standards and Code Quality
+
+## 🏗️ Architecture Principles
+
+### Design Patterns (Required)
+- **Strategy Pattern**: For database-specific operations
+- **Decorator Pattern**: For schema enhancements and cross-cutting concerns
+- **Chain of Responsibility**: For validation workflows and step processing
+- **Factory Pattern**: For automatic strategy creation based on configuration
+
+### Dependency Rules
+1. **No circular imports** - Use dependency injection instead
+2. **Layer isolation** - Database layer shouldn't know about workflow layer
+3. **Configuration-driven** - Behavior controlled by configuration, not hardcoded
+4. **Interface segregation** - Small, focused interfaces rather than large ones
+
+## 🔧 Python Code Standards
+
+### Type Hints (Mandatory)
+```python
+from typing import Dict, List, Optional, Any, Union
+from dataclasses import dataclass, field
+
+# All function signatures must include type hints
+def process_data(input_data: List[Dict[str, Any]], 
+                config: ConfigManager) -> Optional[str]:
+    """Process data with proper type annotations."""
+    pass
+
+# Dataclasses for configuration objects
+@dataclass
+class FeatureConfig:
+    enabled: bool = True
+    options: Dict[str, Any] = field(default_factory=dict)
+```
+
+### Error Handling Standards
+```python
+from askrita.exceptions import ConfigurationError, DatabaseError
+
+# Use specific exceptions with context
+def validate_config(config: dict) -> None:
+    if 'database' not in config:
+        raise ConfigurationError(
+            "Missing required 'database' section in configuration. "
+            "Please add database connection settings."
+        )
+
+# Log errors with appropriate levels
+import logging
+logger = logging.getLogger(__name__)
+
+try:
+    result = risky_operation()
+except DatabaseError as e:
+    logger.error(f"Database operation failed: {e}", exc_info=True)
+    raise
+```
+
+### Documentation Requirements
+```python
+def complex_feature(param1: str, param2: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Brief description of what this function does.
+    
+    Longer description explaining the purpose, behavior, and any important
+    implementation details that users need to know.
+    
+    Args:
+        param1: Description of first parameter and its expected format
+        param2: Optional parameter description, including default behavior
+        
+    Returns:
+        Dictionary containing the processed results with keys:
+        - 'status': Success/failure indicator
+        - 'data': Processed data or None if failed
+        - 'message': Human-readable status message
+        
+    Raises:
+        ConfigurationError: When configuration is invalid
+        DatabaseError: When database operations fail
+        
+    Example:
+        >>> result = complex_feature("input_data", 42)
+        >>> print(result['status'])
+        'success'
+    """
+    pass
+```
+
+## 🗄️ Database Integration Standards
+
+### Strategy Implementation Requirements
+```python
+from abc import ABC, abstractmethod
+
+class DatabaseConnectionStrategy(ABC):
+    """Base strategy for database-specific operations."""
+    
+    @abstractmethod
+    def authenticate(self, config: Any) -> bool:
+        """Authenticate with the database using provided configuration."""
+        pass
+    
+    @abstractmethod
+    def test_connection(self, db: Any, config: Any) -> bool:
+        """Test database connection and return success status."""
+        pass
+    
+    @abstractmethod
+    def enhance_schema(self, schema: str, config: Any) -> str:
+        """Enhance schema with database-specific information."""
+        pass
+
+# Concrete implementation example
+class BigQueryStrategy(DatabaseConnectionStrategy):
+    def authenticate(self, config: Any) -> bool:
+        """BigQuery-specific authentication logic."""
+        if config.database.bigquery_gcloud_cli_auth:
+            return self._authenticate_gcloud_cli()
+        else:
+            return self._authenticate_service_account(config)
+```
+
+### Schema Decorator Pattern
+```python
+class SchemaDecorator(ABC):
+    """Base class for schema enhancement decorators."""
+    
+    @abstractmethod
+    def enhance_schema(self, schema: str, config: Any) -> str:
+        """Enhance the provided schema and return enhanced version."""
+        pass
+
+# Fluent builder pattern for decorator chains
+class SchemaDecoratorBuilder:
+    def __init__(self, schema: str):
+        self._schema = schema
+        self._decorators: List[SchemaDecorator] = []
+    
+    def with_cross_project_enhancement(self) -> 'SchemaDecoratorBuilder':
+        self._decorators.append(CrossProjectSchemaDecorator())
+        return self
+    
+    def with_hybrid_descriptions(self) -> 'SchemaDecoratorBuilder':
+        self._decorators.append(HybridDescriptionDecorator())
+        return self
+    
+    def build(self) -> SchemaProvider:
+        return ChainedSchemaProvider(self._schema, self._decorators)
+```
+
+## 🤖 LLM Integration Standards
+
+### Provider-Agnostic Design
+```python
+class LLMManager:
+    """Manage interactions with various LLM providers."""
+    
+    def __init__(self, config: LLMConfig):
+        self.llm = self._create_llm(config)
+        self.config = config
+    
+    def _create_llm(self, config: LLMConfig):
+        """Factory method to create provider-specific LLM instances."""
+        if config.provider == "openai":
+            return self._create_openai_llm(config)
+        elif config.provider == "azure_openai":
+            return self._create_azure_openai_llm(config)
+        # ... other providers
+        else:
+            raise ValueError(f"Unsupported LLM provider: {config.provider}")
+```
+
+### Prompt Management
+```python
+# Template-based prompt system
+def create_prompt_from_config(self, prompt_name: str, **kwargs) -> str:
+    """Create prompt from configuration template with variable substitution."""
+    prompt_config = self.config.get_prompt(prompt_name)
+    
+    # Validate required variables
+    required_vars = self._extract_template_vars(prompt_config['human'])
+    missing_vars = required_vars - set(kwargs.keys())
+    if missing_vars:
+        raise ValueError(f"Missing required prompt variables: {missing_vars}")
+    
+    # Format prompt with provided variables
+    return prompt_config['human'].format(**kwargs)
+```
+
+## 📊 Configuration Management Standards
+
+### Configuration Dataclasses
+```python
+@dataclass
+class NewFeatureConfig:
+    """Configuration for new feature functionality."""
+    enabled: bool = True
+    advanced_mode: bool = False
+    custom_settings: Dict[str, Any] = field(default_factory=dict)
+    
+    def __post_init__(self):
+        """Validate configuration after initialization."""
+        if self.enabled and not self.custom_settings:
+            self.custom_settings = {"default_setting": "default_value"}
+
+# Integration with main config
+@dataclass  
+class DatabaseConfig:
+    connection_string: str
+    # ... existing fields
+    new_feature: NewFeatureConfig = field(default_factory=NewFeatureConfig)
+```
+
+### Environment Variable Support
+```python
+def _substitute_env_vars(self, value: str) -> str:
+    """Substitute environment variables in configuration values."""
+    import os
+    import re
+    
+    # Support ${VAR} and ${VAR:-default} syntax
+    pattern = r'\$\{([^}]+)\}'
+    
+    def replace_var(match):
+        var_expr = match.group(1)
+        if ':-' in var_expr:
+            var_name, default = var_expr.split(':-', 1)
+            return os.getenv(var_name, default)
+        else:
+            return os.getenv(var_expr, match.group(0))
+    
+    return re.sub(pattern, replace_var, value)
+```
+
+## 🎨 Frontend Development Standards
+
+### React/TypeScript Standards
+```typescript
+// Component interface definition
+interface ComponentProps {
+  data: ChartData;
+  onUpdate?: (data: ChartData) => void;
+  isLoading?: boolean;
+}
+
+// Functional component with proper typing
+export default function ChartComponent({ 
+  data, 
+  onUpdate, 
+  isLoading = false 
+}: ComponentProps) {
+  // State management
+  const [chartLayout, setChartLayout] = useState<'vertical' | 'horizontal'>('vertical');
+  
+  // Event handlers with proper typing
+  const handleLayoutChange = useCallback(() => {
+    setChartLayout(prev => prev === 'vertical' ? 'horizontal' : 'vertical');
+  }, []);
+  
+  // Effect cleanup
+  useEffect(() => {
+    // Setup logic
+    return () => {
+      // Cleanup logic
+    };
+  }, []);
+  
+  return (
+    <div className="chart-container">
+      {/* Component JSX */}
+    </div>
+  );
+}
+```
+
+### State Management Patterns
+```typescript
+// Custom hooks for complex state logic
+function useChartData(initialData: ChartData) {
+  const [data, setData] = useState(initialData);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const updateData = useCallback(async (newData: ChartData) => {
+    setIsLoading(true);
+    try {
+      // Process data
+      setData(newData);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  return { data, isLoading, updateData };
+}
+```
+
+## 🔒 Security Standards
+
+### Input Validation
+```python
+def validate_sql_safety(query: str, config: WorkflowConfig) -> bool:
+    """Validate SQL query against security rules."""
+    # Check forbidden patterns
+    forbidden = config.sql_safety.forbidden_patterns
+    query_upper = query.upper()
+    
+    for pattern in forbidden:
+        if pattern.upper() in query_upper:
+            raise SecurityError(f"Forbidden SQL pattern detected: {pattern}")
+    
+    # Check query length
+    if len(query) > config.sql_safety.max_sql_length:
+        raise SecurityError("SQL query exceeds maximum allowed length")
+    
+    return True
+
+def validate_input_content(question: str, config: WorkflowConfig) -> bool:
+    """Validate user input against injection attacks."""
+    blocked = config.input_validation.blocked_substrings
+    
+    for blocked_content in blocked:
+        if blocked_content.lower() in question.lower():
+            raise SecurityError(f"Blocked content detected in input: {blocked_content}")
+    
+    return True
+```
+
+### Sensitive Data Handling
+```python
+# Never log sensitive data
+def log_connection_attempt(connection_string: str, success: bool):
+    """Log connection attempt without exposing credentials."""
+    # Extract only non-sensitive parts
+    parsed = urlparse(connection_string)
+    safe_connection = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+    
+    logger.info(f"Database connection {'succeeded' if success else 'failed'}: {safe_connection}")
+
+# Use environment variables for secrets
+def get_api_key(provider: str) -> str:
+    """Get API key from environment variable."""
+    env_var = f"{provider.upper()}_API_KEY"
+    api_key = os.getenv(env_var)
+    
+    if not api_key:
+        raise ConfigurationError(
+            f"Missing required environment variable: {env_var}. "
+            f"Please set it with: export {env_var}='your-api-key'"
+        )
+    
+    return api_key
+```
+
+## 📋 Code Review Checklist
+
+### Before Submitting Code
+1. ✅ **Type hints added** - All functions have proper type annotations
+2. ✅ **Documentation complete** - Docstrings for all public functions
+3. ✅ **Error handling** - Appropriate exceptions and logging
+4. ✅ **Tests written** - Unit and integration tests cover new code
+5. ✅ **Security reviewed** - Input validation and sensitive data protection
+6. ✅ **Performance considered** - No obvious performance bottlenecks
+7. ✅ **Configuration updated** - New features have config options
+8. ✅ **Examples updated** - Relevant example configurations updated
+
+### Code Quality Gates
+1. **No hardcoded values** - Use configuration or constants
+2. **No magic numbers** - Named constants for all numeric values
+3. **Consistent naming** - Follow established naming conventions
+4. **Single responsibility** - Each function/class has one clear purpose
+5. **Open/closed principle** - Easy to extend, hard to modify
+6. **Dependency injection** - Avoid tight coupling between components

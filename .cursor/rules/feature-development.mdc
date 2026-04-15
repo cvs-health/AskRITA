@@ -1,0 +1,192 @@
+---
+description: Complete workflow for adding new features to AskRITA
+globs: ["askrita/**/*.py", "tests/**/*.py", "example-configs/**/*.yaml", "README*.md"]
+alwaysApply: true
+---
+
+# New Feature Development Workflow
+
+## 🚀 Feature Development Checklist
+
+### Phase 1: Planning and Design
+1. **Design the feature** - Consider architecture patterns (Strategy, Decorator, etc.)
+2. **Define configuration** - What config options are needed?
+3. **Plan integration points** - How does it fit with existing code?
+4. **Consider backwards compatibility** - Will this break existing functionality?
+
+### Phase 2: Implementation
+1. **Core implementation** - Write the main feature code
+2. **Configuration integration** - Add to ConfigManager and dataclasses
+3. **Database strategy integration** - Add to relevant database strategies
+4. **Workflow integration** - Integrate with SQLAgentWorkflow if needed
+
+### Phase 3: Testing
+1. **Unit tests** - Test individual components
+2. **Integration tests** - Test feature integration
+3. **Error handling tests** - Test edge cases and failures
+4. **Performance tests** - Verify no significant performance impact
+
+### Phase 4: Documentation
+1. **Code documentation** - Docstrings and inline comments
+2. **Configuration documentation** - Update README_YAML_CONFIG.md
+3. **Example configurations** - Create/update example configs
+4. **User documentation** - Update main README.md
+
+### Phase 5: Release Preparation
+1. **Version update** - Increment version in pyproject.toml and __init__.py
+2. **Changelog update** - Document changes in CHANGELOG.md
+3. **Migration guide** - Add migration instructions if needed
+4. **Example updates** - Ensure all examples work with new feature
+
+## 🏗️ Implementation Patterns
+
+### For Database Features
+```python
+# 1. Create strategy method
+class BigQueryStrategy(DatabaseConnectionStrategy):
+    def new_feature_method(self, config) -> Any:
+        # Implementation specific to BigQuery
+        pass
+
+# 2. Add to base strategy class
+class DatabaseConnectionStrategy:
+    def new_feature_method(self, config) -> Any:
+        raise NotImplementedError
+
+# 3. Update factory/builder if needed
+```
+
+### For Schema Features
+```python
+# 1. Create decorator
+class NewFeatureDecorator(SchemaDecorator):
+    def enhance_schema(self, schema: str, config: Any) -> str:
+        # Feature implementation
+        pass
+
+# 2. Add to builder
+class SchemaDecoratorBuilder:
+    def with_new_feature(self) -> 'SchemaDecoratorBuilder':
+        self._decorators.append(NewFeatureDecorator())
+        return self
+```
+
+## 📋 Required File Updates
+
+### Always Update These Files
+1. **askrita/__init__.py** - Update version if needed
+2. **pyproject.toml** - Update version and dependencies
+3. **README.md** - Add feature to "What's New" section
+4. **CHANGELOG.md** - Document all changes
+5. **README_YAML_CONFIG.md** - Document configuration options
+
+### Database Feature Updates
+1. **askrita/sqlagent/database/database_strategies.py** - Add strategy methods
+2. **askrita/config_manager.py** - Add configuration support
+3. **tests/test_database_manager.py** - Add tests
+4. **example-configs/query-*.yaml** - Update relevant examples
+
+### Frontend Feature Updates
+1. **sample_apps/react-visual-frontend/src/components/** - Update components
+2. **sample_apps/react-visual-frontend/package.json** - Update if new dependencies
+3. **sample_apps/react-visual-frontend/README.md** - Document changes
+
+## 🧪 Testing Strategy
+
+### Test File Creation
+```python
+# tests/test_new_feature.py
+class TestNewFeature:
+    def test_feature_enabled(self):
+        """Test feature works when enabled."""
+        pass
+    
+    def test_feature_disabled(self):
+        """Test graceful handling when disabled."""
+        pass
+    
+    def test_feature_error_handling(self):
+        """Test error scenarios."""
+        pass
+    
+    def test_feature_integration(self):
+        """Test integration with other components."""
+        pass
+```
+
+### Required Test Coverage
+- **Unit tests**: Test the feature in isolation
+- **Integration tests**: Test with real configurations
+- **Error tests**: Test invalid inputs and edge cases
+- **Performance tests**: Ensure no significant slowdown
+
+### Test Execution Checklist
+```bash
+# 1. Run all tests
+python -m pytest tests/ -v
+
+# 2. Check coverage
+python -m pytest tests/ --cov=askrita --cov-report=term-missing
+
+# 3. Run linting
+# (No formal linter configured, but check code quality)
+
+# 4. Test example configurations
+python -c "from askrita import ConfigManager; ConfigManager('example-configs/query-bigquery.yaml')"
+```
+
+## 📊 Version Management
+
+### Version Increment Rules
+- **Patch (0.2.X)**: Bug fixes, documentation updates
+- **Minor (0.X.0)**: New features, non-breaking changes
+- **Major (X.0.0)**: Breaking changes, major architecture changes
+
+### Files to Update for Version Changes
+1. **pyproject.toml** - version field
+2. **askrita/__init__.py** - __version__ variable
+3. **setup.py** - version field (if present)
+4. **README.md** - "What's New" section
+5. **CHANGELOG.md** - Add new version section
+
+### Version Update Script Pattern
+```bash
+# Increment version in all required files
+# Update CHANGELOG.md with new version
+# Update README.md "What's New" section
+# Commit with version tag
+git tag -a v0.2.3 -m "Release version 0.2.3"
+```
+
+## 🔄 Pre-Commit Checklist
+
+### Before Committing Any Change
+1. ✅ **All tests pass** - `pytest tests/`
+2. ✅ **Code coverage maintained** - >50% overall, >80% for new code
+3. ✅ **No linting errors** - Code follows existing patterns
+4. ✅ **Documentation updated** - All relevant docs updated
+5. ✅ **Examples work** - Test key example configurations
+6. ✅ **Version consistency** - Version numbers match across files
+
+### Before Creating Pull Request
+1. ✅ **Feature complete** - All planned functionality implemented
+2. ✅ **Tests comprehensive** - Cover success, failure, and edge cases
+3. ✅ **Documentation complete** - User and developer docs updated
+4. ✅ **Examples updated** - Show how to use the new feature
+5. ✅ **Migration guide** - If breaking changes, provide migration path
+6. ✅ **Performance verified** - No significant performance regression
+
+## 🎯 Feature Integration Points
+
+### Common Integration Areas
+1. **ConfigManager** - Add configuration support
+2. **DatabaseManager** - Add database-specific behavior
+3. **SQLAgentWorkflow** - Integrate with query processing
+4. **Schema decorators** - Add schema enhancement capabilities
+5. **Frontend components** - Update UI if user-facing changes
+
+### Integration Testing
+- Test feature with different database types
+- Test feature with different LLM providers
+- Test feature with various configuration combinations
+- Test feature in both single query and chat modes

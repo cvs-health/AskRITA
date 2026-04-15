@@ -1,0 +1,11 @@
+# These fingerprints correspond to test-only PostgreSQL connection strings that used
+# a generic placeholder password ("pass"). The strings were introduced in commit
+# 6b0f014 and the password component was removed in the follow-up fix commit.
+# All 6 are false positives: the credentials are non-functional test fixtures used
+# solely to exercise host-extraction and credential-sanitisation logic.
+6b0f014ecef610e8bccf75709ca5eb785c2e5e71:tests/test_database_manager_coverage.py:postgresql-connection-string:116
+6b0f014ecef610e8bccf75709ca5eb785c2e5e71:tests/test_database_manager_coverage.py:postgresql-connection-string:328
+6b0f014ecef610e8bccf75709ca5eb785c2e5e71:tests/test_database_manager_coverage.py:postgresql-connection-string:347
+6b0f014ecef610e8bccf75709ca5eb785c2e5e71:tests/test_database_manager_coverage.py:postgresql-connection-string:349
+6b0f014ecef610e8bccf75709ca5eb785c2e5e71:tests/test_database_manager_coverage.py:postgresql-connection-string:358
+6b0f014ecef610e8bccf75709ca5eb785c2e5e71:tests/test_database_manager_coverage.py:postgresql-connection-string:360

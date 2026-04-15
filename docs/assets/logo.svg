@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#CC0000"/>
+      <stop offset="100%" stop-color="#8B0000"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="48" fill="url(#bg)"/>
+  <!-- Speech bubble -->
+  <path d="M50 60 h140 a20 20 0 0 1 20 20 v80 a20 20 0 0 1-20 20 h-80 l-30 30 v-30 h-10 a20 20 0 0 1-20-20 v-80 a20 20 0 0 1 20-20z" fill="white" opacity="0.95"/>
+  <!-- "?" icon representing a question -->
+  <text x="120" y="148" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="90" font-weight="700" fill="#CC0000">?</text>
+  <!-- Database bars at bottom right -->
+  <rect x="165" y="150" width="30" height="8" rx="4" fill="white" opacity="0.7"/>
+  <rect x="165" y="163" width="22" height="8" rx="4" fill="white" opacity="0.5"/>
+  <rect x="165" y="176" width="14" height="8" rx="4" fill="white" opacity="0.3"/>
+</svg>
