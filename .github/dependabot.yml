@@ -16,7 +16,11 @@ updates:
     labels:
       - "dependencies"
       - "python"
-    # Ensure it picks up pyproject.toml
+    # Bundles all Python updates into a single weekly PR
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
     versioning-strategy: "increase"
 
   # 🤖 GitHub Actions
@@ -29,3 +33,8 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    # Bundles all Action updates into a single weekly PR
+    groups:
+      actions-dependencies:
+        patterns:
+          - "*"
