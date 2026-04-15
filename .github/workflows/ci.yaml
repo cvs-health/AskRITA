@@ -2,36 +2,9 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - "release/**"
-    paths-ignore:
-      - "docs/**"
-      - "*.md"
-      - "**/*.md"
-      - "LICENSE"
-      - "THIRD_PARTY_LICENSES.txt"
-      - "Code_of_Conduct.md"
-      - "mkdocs.yml"
-      - "Dockerfile.docs"
-      - "benchmarks/**"
-      - "example-configs/**"
-      - ".github/workflows/docs.yaml"
+    branches: ["**"]  # Trigger on all branches
   pull_request:
-    branches:
-      - main
-      - "release/**"
-    paths-ignore:
-      - "docs/**"
-      - "*.md"
-      - "**/*.md"
-      - "LICENSE"
-      - "THIRD_PARTY_LICENSES.txt"
-      - "Code_of_Conduct.md"
-      - "mkdocs.yml"
-      - "Dockerfile.docs"
-      - "benchmarks/**"
-      - "example-configs/**"
+    branches: ["**"]  # Trigger on all pull requests
 
 # Cancel in-progress runs on the same branch/PR to avoid resource waste
 concurrency:

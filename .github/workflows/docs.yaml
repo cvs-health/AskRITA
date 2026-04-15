@@ -1,7 +1,11 @@
 name: Publish Docs to GitHub Pages
 
 on:
-  workflow_dispatch:  # Manually run only
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:  # Keep manual trigger
 
 concurrency:
   group: "pages"
