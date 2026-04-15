@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["**"]  # Trigger on all branches
+    branches: ["main"]  # Merges to main trigger CI
   pull_request:
-    branches: ["**"]  # Trigger on all pull requests
+    branches: ["**"]    # All PRs trigger CI (covers your feature branch work)
 
 # Cancel in-progress runs on the same branch/PR to avoid resource waste
 concurrency:
