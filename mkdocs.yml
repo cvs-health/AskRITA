@@ -1,5 +1,9 @@
 site_name: Ask RITA Documentation
 site_description: Reasoning Interface for Text-to-Analytics — natural-language SQL, NoSQL, and data-science workflows powered by LLMs
+site_url: https://cvs-health.github.io/AskRITA/
+
+repo_url: https://github.com/cvs-health/AskRITA
+repo_name: cvs-health/AskRITA
 
 theme:
   name: material
@@ -32,6 +36,14 @@ theme:
   favicon: assets/favicon.svg
   icon:
     repo: fontawesome/brands/github
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/cvs-health/AskRITA
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/askrita/
 
 plugins:
   - search
@@ -134,5 +146,3 @@ nav:
           - GPT-5.4: benchmarks/gpt-54.md
           - GPT-5.4 Mini: benchmarks/gpt-54-mini.md
           - GPT-5.4 Nano: benchmarks/gpt-54-nano.md
-extra:
-  generator: false
