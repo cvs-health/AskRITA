@@ -22,8 +22,6 @@ Covers:
   507, 529, 566-574, 582-600, 617-620, 684, 756-870)
 """
 
-import io
-import os
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -481,7 +479,6 @@ class TestBigQueryValidationChain:
 
     def test_no_dataset_in_connection_string(self, caplog):
         """Line 382: CROSS_PROJECT_ACCESS dataset_id when no / in connection string."""
-        import logging
 
         from askrita.sqlagent.database.validation_chain import BigQueryValidationChain
 
@@ -538,7 +535,6 @@ def _rich_tables():
 class TestSchemaAnalyzerMissingPaths:
     def test_determine_statistical_type_temporal_by_type(self):
         """Line 259: type contains DATE/TIME → temporal."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         result = analyzer._determine_statistical_type("some_col", "DATETIME")
@@ -546,7 +542,6 @@ class TestSchemaAnalyzerMissingPaths:
 
     def test_determine_statistical_type_identifier_by_type(self):
         """Line 265: type contains UUID → identifier."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         result = analyzer._determine_statistical_type("my_field", "UUID")
@@ -554,7 +549,6 @@ class TestSchemaAnalyzerMissingPaths:
 
     def test_determine_statistical_type_default_categorical(self):
         """Line 288: completely unknown type → categorical default."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         result = analyzer._determine_statistical_type("misc_field", "GEOMETRY")
@@ -562,11 +556,10 @@ class TestSchemaAnalyzerMissingPaths:
 
     def test_classify_table_type_default_fact(self):
         """Line 400: equal numerical & categorical → default "fact"."""
-        from askrita.research.SchemaAnalyzer import ColumnAnalysis, SchemaAnalyzer
+        from askrita.research.SchemaAnalyzer import ColumnAnalysis
 
         analyzer = _make_schema_analyzer()
         # Equal mix → falls through to default "fact"
-        from collections import OrderedDict
 
         cols = {
             "a": ColumnAnalysis("a", "FLOAT", True, statistical_type="numerical"),
@@ -580,7 +573,6 @@ class TestSchemaAnalyzerMissingPaths:
         from askrita.research.SchemaAnalyzer import (
             ColumnAnalysis,
             SchemaAnalysisReport,
-            SchemaAnalyzer,
             TableAnalysis,
         )
 
@@ -603,7 +595,6 @@ class TestSchemaAnalyzerMissingPaths:
         """Line 529: dimension tables added to potential_dimension_tables."""
         from askrita.research.SchemaAnalyzer import (
             SchemaAnalysisReport,
-            SchemaAnalyzer,
             TableAnalysis,
         )
 
@@ -626,7 +617,7 @@ class TestSchemaAnalyzerMissingPaths:
 
     def test_assess_research_potential_normalized_model(self):
         """Lines 565-566: more dimension tables → normalized."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalysisReport, SchemaAnalyzer
+        from askrita.research.SchemaAnalyzer import SchemaAnalysisReport
 
         analyzer = _make_schema_analyzer()
         report = SchemaAnalysisReport(
@@ -643,7 +634,7 @@ class TestSchemaAnalyzerMissingPaths:
 
     def test_assess_research_potential_denormalized_model(self):
         """Lines 567-568: fact only → denormalized."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalysisReport, SchemaAnalyzer
+        from askrita.research.SchemaAnalyzer import SchemaAnalysisReport
 
         analyzer = _make_schema_analyzer()
         report = SchemaAnalysisReport(
@@ -660,7 +651,7 @@ class TestSchemaAnalyzerMissingPaths:
 
     def test_assess_research_potential_excellent_readiness(self):
         """Line 574: ≥3 high-value tables + ≥1 fact → excellent."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalysisReport, SchemaAnalyzer
+        from askrita.research.SchemaAnalyzer import SchemaAnalysisReport
 
         analyzer = _make_schema_analyzer()
         report = SchemaAnalysisReport(
@@ -679,7 +670,6 @@ class TestSchemaAnalyzerMissingPaths:
         """Lines 582-596: _enhance_with_sample_data queries row counts."""
         from askrita.research.SchemaAnalyzer import (
             SchemaAnalysisReport,
-            SchemaAnalyzer,
             TableAnalysis,
         )
 
@@ -708,7 +698,6 @@ class TestSchemaAnalyzerMissingPaths:
         """Lines 598-600: exception in query → continue gracefully."""
         from askrita.research.SchemaAnalyzer import (
             SchemaAnalysisReport,
-            SchemaAnalyzer,
             TableAnalysis,
         )
 
@@ -730,7 +719,6 @@ class TestSchemaAnalyzerMissingPaths:
 
     def test_analyze_schema_with_sample_data_enabled(self):
         """Line 161: _enhance_with_sample_data called when include_sample_data=True."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer(_rich_tables())
         analyzer.sql_agent.query.side_effect = RuntimeError("no LLM")
@@ -741,7 +729,6 @@ class TestSchemaAnalyzerMissingPaths:
 
     def test_analyze_table_primary_key_tracked(self):
         """Line 195: primary key column added to primary_keys list."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         table_info = {
@@ -845,7 +832,6 @@ class TestSchemaAnalyzerRenderingMethods:
 
     def test_render_high_value_tables_section(self):
         """Lines 756-770: _render_high_value_tables_section returns non-empty list."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         report = self._full_report()
@@ -855,7 +841,6 @@ class TestSchemaAnalyzerRenderingMethods:
 
     def test_render_table_detail_section(self):
         """Lines 774-794: _render_table_detail_section returns non-empty list."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         report = self._full_report()
@@ -866,7 +851,6 @@ class TestSchemaAnalyzerRenderingMethods:
 
     def test_render_recommendations_section(self):
         """Lines 798-810: _render_recommendations_section returns list with categories."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         report = self._full_report()
@@ -878,7 +862,6 @@ class TestSchemaAnalyzerRenderingMethods:
 
     def test_generate_detailed_report(self):
         """Lines 814-870: generate_detailed_report returns a multi-line string."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         report = self._full_report()
@@ -890,7 +873,7 @@ class TestSchemaAnalyzerRenderingMethods:
 
     def test_generate_detailed_report_no_high_value_tables(self):
         """generate_detailed_report works with empty high_value_tables (no section)."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalysisReport, SchemaAnalyzer
+        from askrita.research.SchemaAnalyzer import SchemaAnalysisReport
 
         analyzer = _make_schema_analyzer()
         report = SchemaAnalysisReport(
@@ -909,7 +892,6 @@ class TestSchemaAnalyzerRenderingMethods:
 
     def test_generate_analysis_instructions_excellent_readiness(self):
         """Line 684: excellent readiness adds Advanced Analytics recommendation."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         report = self._full_report()
@@ -923,7 +905,6 @@ class TestSchemaAnalyzerRenderingMethods:
 
     def test_generate_analysis_instructions_needs_preparation(self):
         """Else branch in _generate_analysis_instructions for needs_preparation."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         report = self._full_report()
@@ -939,7 +920,6 @@ class TestSchemaAnalyzerRenderingMethods:
 
     def test_get_readiness_description_all_values(self):
         """_get_readiness_description returns non-empty string for all values."""
-        from askrita.research.SchemaAnalyzer import SchemaAnalyzer
 
         analyzer = _make_schema_analyzer()
         for readiness in ["excellent", "good", "needs_preparation", "unknown"]:

@@ -1086,8 +1086,8 @@ class ConfigManager:
         logger.error("CONFIGURATION ERROR: Missing Azure OpenAI configuration")
         logger.error("")
         logger.error("Missing required fields:")
-        for field in missing:
-            logger.error(f"  x {field}")
+        for missing_field in missing:
+            logger.error(f"  x {missing_field}")
         logger.error("")
         logger.error(self._FIX_HINT)
         logger.error("Add required Azure OpenAI fields:")
@@ -1117,8 +1117,8 @@ class ConfigManager:
             logger.error("CONFIGURATION ERROR: Missing Vertex AI configuration")
             logger.error("")
             logger.error("Missing required fields:")
-            for field in missing:
-                logger.error(f"  x {field}")
+            for missing_field in missing:
+                logger.error(f"  x {missing_field}")
             logger.error("")
             logger.error(self._FIX_HINT)
             logger.error("Add required Vertex AI fields:")

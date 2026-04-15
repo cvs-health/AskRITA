@@ -14,7 +14,7 @@
 
 """Tests for ResearchAgent targeting previously uncovered code paths."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from askrita.research.ResearchAgent import ResearchAgent, ResearchWorkflowState
 

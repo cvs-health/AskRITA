@@ -832,9 +832,9 @@ class SQLAgentWorkflow:
         import re
 
         if "\n" in columns_text:
-            raw_lines = [l.strip() for l in columns_text.split("\n") if l.strip()]
+            raw_lines = [line.strip() for line in columns_text.split("\n") if line.strip()]
         else:
-            raw_lines = [l.strip() for l in columns_text.split(",") if l.strip()]
+            raw_lines = [line.strip() for line in columns_text.split(",") if line.strip()]
 
         columns = {}
         col_pattern = re.compile(r"`?([^`\s]+)`?\s+([\w\[\]<>]+(?:\([^)]*\))?)")

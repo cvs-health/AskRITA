@@ -20,7 +20,6 @@ Covers:
 - askrita/sqlagent/database/schema_decorators.py
 """
 
-import os
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -455,7 +454,7 @@ class TestDescriptionMerger:
         from askrita.sqlagent.database.schema_decorators import DescriptionMerger
 
         manual_config = self._make_manual_config()
-        merger = DescriptionMerger(manual_config)
+        DescriptionMerger(manual_config)
         result = DescriptionMerger._combine_text_and_context("desc", "context")
         assert result == "desc | context"
 

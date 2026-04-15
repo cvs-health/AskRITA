@@ -15,7 +15,7 @@
 """Additional DatabaseManager tests targeting previously uncovered code paths."""
 
 import os
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
