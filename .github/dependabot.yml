@@ -21,6 +21,7 @@ updates:
       python-dependencies:
         patterns:
           - "*"
+    # Ensure it picks up pyproject.toml
     versioning-strategy: "increase"
 
   # 🤖 GitHub Actions
