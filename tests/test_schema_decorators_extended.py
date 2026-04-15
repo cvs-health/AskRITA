@@ -18,25 +18,34 @@
 
 """Extended tests for schema_decorators.py – targets missing coverage lines."""
 
-import pandas as pd
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
+
 from askrita.sqlagent.database.schema_decorators import (
+    AutoDescriptionExtractor,
     BaseSchemaProvider,
     CrossProjectSchemaDecorator,
-    SchemaMetadataDecorator,
     SchemaFormattingDecorator,
-    AutoDescriptionExtractor,
+    SchemaMetadataDecorator,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_config(project_id=None, cross_project_enabled=False, datasets=None,
-                 include_tables=None, exclude_tables=None, cache_schema=True,
-                 query_timeout=30, max_results=1000, db_type="BigQuery"):
+
+def _make_config(
+    project_id=None,
+    cross_project_enabled=False,
+    datasets=None,
+    include_tables=None,
+    exclude_tables=None,
+    cache_schema=True,
+    query_timeout=30,
+    max_results=1000,
+    db_type="BigQuery",
+):
     cfg = MagicMock()
     cfg.get_database_type.return_value = db_type
     db = MagicMock()
@@ -65,6 +74,7 @@ def _make_dataframe(rows):
 # BaseSchemaProvider
 # ---------------------------------------------------------------------------
 
+
 class TestBaseSchemaProvider:
     def test_returns_base_schema(self):
         provider = BaseSchemaProvider("CREATE TABLE foo (id INT);")
@@ -78,6 +88,7 @@ class TestBaseSchemaProvider:
 # ---------------------------------------------------------------------------
 # CrossProjectSchemaDecorator
 # ---------------------------------------------------------------------------
+
 
 class TestCrossProjectSchemaDecorator:
     def _make_decorator(self, base_schema="BASE SCHEMA"):
@@ -99,7 +110,9 @@ class TestCrossProjectSchemaDecorator:
 
     def test_cross_project_no_datasets_returns_schema(self):
         decorator = self._make_decorator()
-        config = _make_config(project_id="my-project", cross_project_enabled=True, datasets=[])
+        config = _make_config(
+            project_id="my-project", cross_project_enabled=True, datasets=[]
+        )
         with patch("google.cloud.bigquery.Client"):
             result = decorator.get_schema(config)
         assert result == "BASE SCHEMA"
@@ -111,10 +124,16 @@ class TestCrossProjectSchemaDecorator:
             cross_project_enabled=True,
             datasets=["other-project.dataset1"],
         )
-        mock_df = _make_dataframe([
-            {"table_name": "orders", "column_name": "id", "data_type": "INT64"},
-            {"table_name": "orders", "column_name": "amount", "data_type": "FLOAT64"},
-        ])
+        mock_df = _make_dataframe(
+            [
+                {"table_name": "orders", "column_name": "id", "data_type": "INT64"},
+                {
+                    "table_name": "orders",
+                    "column_name": "amount",
+                    "data_type": "FLOAT64",
+                },
+            ]
+        )
         mock_client = MagicMock()
         mock_client.query.return_value.to_dataframe.return_value = mock_df
 
@@ -154,9 +173,9 @@ class TestCrossProjectSchemaDecorator:
             if call_count[0] == 1:
                 raise RuntimeError("Forbidden")
             result = MagicMock()
-            result.to_dataframe.return_value = _make_dataframe([
-                {"table_name": "users", "column_name": "id", "data_type": "INT64"}
-            ])
+            result.to_dataframe.return_value = _make_dataframe(
+                [{"table_name": "users", "column_name": "id", "data_type": "INT64"}]
+            )
             return result
 
         mock_client.query.side_effect = side_effect
@@ -170,7 +189,9 @@ class TestCrossProjectSchemaDecorator:
     def test_outer_exception_returns_original_schema(self):
         decorator = self._make_decorator("ORIGINAL")
         config = _make_config(project_id="proj")
-        with patch("google.cloud.bigquery.Client", side_effect=RuntimeError("bq error")):
+        with patch(
+            "google.cloud.bigquery.Client", side_effect=RuntimeError("bq error")
+        ):
             result = decorator.get_schema(config)
         assert result == "ORIGINAL"
 
@@ -227,6 +248,7 @@ class TestCrossProjectSchemaDecorator:
 # SchemaMetadataDecorator
 # ---------------------------------------------------------------------------
 
+
 class TestSchemaMetadataDecorator:
     def _make_decorator(self, base_schema="CREATE TABLE foo (id INT);"):
         base = BaseSchemaProvider(base_schema)
@@ -277,6 +299,7 @@ class TestSchemaMetadataDecorator:
 # SchemaFormattingDecorator
 # ---------------------------------------------------------------------------
 
+
 class TestSchemaFormattingDecorator:
     def _make_decorator(self, base_schema):
         base = BaseSchemaProvider(base_schema)
@@ -317,6 +340,7 @@ class TestSchemaFormattingDecorator:
 # AutoDescriptionExtractor static methods
 # ---------------------------------------------------------------------------
 
+
 class TestAutoDescriptionExtractor:
     def test_build_bq_queries_returns_two(self):
         queries = AutoDescriptionExtractor._build_bq_queries("proj.dataset")
@@ -324,29 +348,47 @@ class TestAutoDescriptionExtractor:
         assert "INFORMATION_SCHEMA.COLUMNS" in queries[0]
 
     def test_populate_descriptions_from_df(self):
-        df = _make_dataframe([
-            {"table_name": "orders", "column_name": "id", "description": "Primary key"},
-            {"table_name": "orders", "column_name": "amount", "description": "Order amount"},
-        ])
+        df = _make_dataframe(
+            [
+                {
+                    "table_name": "orders",
+                    "column_name": "id",
+                    "description": "Primary key",
+                },
+                {
+                    "table_name": "orders",
+                    "column_name": "amount",
+                    "description": "Order amount",
+                },
+            ]
+        )
         descriptions = {}
-        AutoDescriptionExtractor._populate_descriptions_from_df(df, "proj.ds", descriptions)
+        AutoDescriptionExtractor._populate_descriptions_from_df(
+            df, "proj.ds", descriptions
+        )
         assert "proj.ds.orders" in descriptions
         assert descriptions["proj.ds.orders"]["id"] == "Primary key"
 
     def test_populate_descriptions_none_value(self):
-        df = _make_dataframe([
-            {"table_name": "orders", "column_name": "id", "description": None},
-        ])
+        df = _make_dataframe(
+            [
+                {"table_name": "orders", "column_name": "id", "description": None},
+            ]
+        )
         descriptions = {}
-        AutoDescriptionExtractor._populate_descriptions_from_df(df, "proj.ds", descriptions)
+        AutoDescriptionExtractor._populate_descriptions_from_df(
+            df, "proj.ds", descriptions
+        )
         assert descriptions["proj.ds.orders"]["id"] == ""
 
     def test_populate_descriptions_accumulates(self):
-        df = _make_dataframe([
-            {"table_name": "orders", "column_name": "id", "description": "ID1"},
-            {"table_name": "orders", "column_name": "amount", "description": "Amt"},
-            {"table_name": "users", "column_name": "name", "description": "Name"},
-        ])
+        df = _make_dataframe(
+            [
+                {"table_name": "orders", "column_name": "id", "description": "ID1"},
+                {"table_name": "orders", "column_name": "amount", "description": "Amt"},
+                {"table_name": "users", "column_name": "name", "description": "Name"},
+            ]
+        )
         descriptions = {}
         AutoDescriptionExtractor._populate_descriptions_from_df(df, "p.d", descriptions)
         assert len(descriptions) == 2
@@ -356,7 +398,10 @@ class TestAutoDescriptionExtractor:
     def test_handle_bq_query_error_unrecognized_description(self):
         err = Exception("unrecognized name: description")
         result = AutoDescriptionExtractor._handle_bq_query_error(
-            err, "unrecognized name: description", attempt=0, cross_project_dataset="proj.ds"
+            err,
+            "unrecognized name: description",
+            attempt=0,
+            cross_project_dataset="proj.ds",
         )
         assert result is True  # Should continue to next query
 

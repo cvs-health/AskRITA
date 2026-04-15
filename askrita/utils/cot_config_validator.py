@@ -198,9 +198,17 @@ class CoTConfigValidator:
         display_prefs = config.display_preferences
         if display_prefs.get("show_step_timing", False) and not config.include_timing:
             errors.append("Cannot show step timing when include_timing is disabled")
-        if display_prefs.get("show_confidence_scores", False) and not config.include_confidence:
-            errors.append("Cannot show confidence scores when include_confidence is disabled")
-        if display_prefs.get("show_step_details", False) and not config.include_step_details:
+        if (
+            display_prefs.get("show_confidence_scores", False)
+            and not config.include_confidence
+        ):
+            errors.append(
+                "Cannot show confidence scores when include_confidence is disabled"
+            )
+        if (
+            display_prefs.get("show_step_details", False)
+            and not config.include_step_details
+        ):
             logger.warning("Showing step details but include_step_details is disabled")
 
     def _validate_cross_fields(self, config: ChainOfThoughtsConfig) -> List[str]:
@@ -208,12 +216,20 @@ class CoTConfigValidator:
         errors = []
 
         if not config.enabled:
-            if config.include_timing or config.include_confidence or config.include_step_details:
+            if (
+                config.include_timing
+                or config.include_confidence
+                or config.include_step_details
+            ):
                 logger.warning(
                     "Chain of thoughts is disabled but timing/confidence/details are enabled"
                 )
 
-        if config.enabled and config.include_step_details and config.max_reasoning_length > 2000:
+        if (
+            config.enabled
+            and config.include_step_details
+            and config.max_reasoning_length > 2000
+        ):
             logger.warning(
                 "Large max_reasoning_length with detailed step tracking may impact performance"
             )

@@ -18,31 +18,32 @@
 
 """Extended tests for excel_exporter.py – targets missing coverage lines."""
 
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
 from askrita.sqlagent.exporters.excel_exporter import (
-    _col_to_excel,
-    _rgb_to_hex,
-    _extract_fallback_headers,
-    _get_cell_value,
-    _write_cell_value,
-    _build_enhanced_headers,
-    _first_column_header,
-    _value_column_headers,
-    _generate_table_headers_from_chart_data,
-    _find_value_columns,
-    _find_secondary_series_idx,
-    _resolve_value_columns,
     XLSXWRITER_AVAILABLE,
+    _build_enhanced_headers,
+    _col_to_excel,
+    _extract_fallback_headers,
+    _find_secondary_series_idx,
+    _find_value_columns,
+    _first_column_header,
+    _generate_table_headers_from_chart_data,
+    _get_cell_value,
+    _resolve_value_columns,
+    _rgb_to_hex,
+    _value_column_headers,
+    _write_cell_value,
 )
 from askrita.sqlagent.exporters.models import ExportSettings
 from askrita.sqlagent.State import WorkflowState
 
-
 # ---------------------------------------------------------------------------
 # _col_to_excel
 # ---------------------------------------------------------------------------
+
 
 class TestColToExcel:
     def test_first_column(self):
@@ -65,6 +66,7 @@ class TestColToExcel:
 # _rgb_to_hex
 # ---------------------------------------------------------------------------
 
+
 class TestRgbToHex:
     def test_black(self):
         assert _rgb_to_hex((0, 0, 0)) == "#000000"
@@ -82,6 +84,7 @@ class TestRgbToHex:
 # ---------------------------------------------------------------------------
 # _extract_fallback_headers
 # ---------------------------------------------------------------------------
+
 
 class TestExtractFallbackHeaders:
     def _make_state(self, sql_query=None):
@@ -126,6 +129,7 @@ class TestExtractFallbackHeaders:
 # _get_cell_value
 # ---------------------------------------------------------------------------
 
+
 class TestGetCellValue:
     def test_dict_row(self):
         row = {"name": "Alice", "age": 30}
@@ -153,6 +157,7 @@ class TestGetCellValue:
 # _write_cell_value
 # ---------------------------------------------------------------------------
 
+
 class TestWriteCellValue:
     def test_writes_float(self):
         ws = MagicMock()
@@ -176,6 +181,7 @@ class TestWriteCellValue:
 # ---------------------------------------------------------------------------
 # _build_enhanced_headers
 # ---------------------------------------------------------------------------
+
 
 class TestBuildEnhancedHeaders:
     def _make_chart_data(self, x_label=None, y_label=None, datasets=None):
@@ -208,6 +214,7 @@ class TestBuildEnhancedHeaders:
 # _first_column_header
 # ---------------------------------------------------------------------------
 
+
 class TestFirstColumnHeader:
     def test_uses_x_axis_label(self):
         cd = MagicMock()
@@ -228,6 +235,7 @@ class TestFirstColumnHeader:
 # ---------------------------------------------------------------------------
 # _value_column_headers
 # ---------------------------------------------------------------------------
+
 
 class TestValueColumnHeaders:
     def test_from_datasets(self):
@@ -259,6 +267,7 @@ class TestValueColumnHeaders:
 # ---------------------------------------------------------------------------
 # _generate_table_headers_from_chart_data
 # ---------------------------------------------------------------------------
+
 
 class TestGenerateTableHeaders:
     def _make_cd(self, x_label=None, y_label=None, datasets=None):
@@ -299,7 +308,9 @@ class TestGenerateTableHeaders:
         ds.label = "V"
         cd = self._make_cd(x_label="C", datasets=[ds])
         results = [["A", 10]]  # list, not dict
-        result = _generate_table_headers_from_chart_data(cd, results, ["fallback1", "fallback2"])
+        result = _generate_table_headers_from_chart_data(
+            cd, results, ["fallback1", "fallback2"]
+        )
         # headers generated should be returned if not empty
         assert len(result) >= 1
 
@@ -307,6 +318,7 @@ class TestGenerateTableHeaders:
 # ---------------------------------------------------------------------------
 # _find_value_columns
 # ---------------------------------------------------------------------------
+
 
 class TestFindValueColumns:
     def _make_dataset(self, label):
@@ -336,6 +348,7 @@ class TestFindValueColumns:
 # ---------------------------------------------------------------------------
 # _find_secondary_series_idx
 # ---------------------------------------------------------------------------
+
 
 class TestFindSecondarySeriesIdx:
     def _make_axis(self, axis_id=None, position=None):
@@ -370,6 +383,7 @@ class TestFindSecondarySeriesIdx:
 # _resolve_value_columns
 # ---------------------------------------------------------------------------
 
+
 class TestResolveValueColumns:
     def _make_dataset(self, label):
         ds = MagicMock()
@@ -393,6 +407,7 @@ class TestResolveValueColumns:
 # create_excel_export (integration) – requires xlsxwriter
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.skipif(not XLSXWRITER_AVAILABLE, reason="xlsxwriter not installed")
 class TestCreateExcelExport:
     def _basic_state(self, **kwargs):
@@ -415,6 +430,7 @@ class TestCreateExcelExport:
 
     def test_basic_export_returns_bytes(self):
         from askrita.sqlagent.exporters.excel_exporter import create_excel_export
+
         state = self._basic_state()
         settings = self._settings()
         result = create_excel_export(state, settings)
@@ -423,6 +439,7 @@ class TestCreateExcelExport:
 
     def test_export_without_results(self):
         from askrita.sqlagent.exporters.excel_exporter import create_excel_export
+
         state = WorkflowState(answer="No data")
         settings = self._settings()
         result = create_excel_export(state, settings)
@@ -430,6 +447,7 @@ class TestCreateExcelExport:
 
     def test_export_with_followup_questions(self):
         from askrita.sqlagent.exporters.excel_exporter import create_excel_export
+
         state = self._basic_state(followup_questions=["Question 1?", "Question 2?"])
         settings = self._settings()
         result = create_excel_export(state, settings)
@@ -437,6 +455,7 @@ class TestCreateExcelExport:
 
     def test_export_with_tuple_results(self):
         from askrita.sqlagent.exporters.excel_exporter import create_excel_export
+
         state = WorkflowState(
             results=[("Jan", 100), ("Feb", 200)],
             sql_query="SELECT month, sales FROM t",
@@ -447,6 +466,7 @@ class TestCreateExcelExport:
 
     def test_export_no_sql_in_settings(self):
         from askrita.sqlagent.exporters.excel_exporter import create_excel_export
+
         state = self._basic_state()
         settings = ExportSettings(title="Test", include_sql=False)
         result = create_excel_export(state, settings)
@@ -456,8 +476,9 @@ class TestCreateExcelExport:
 @pytest.mark.skipif(XLSXWRITER_AVAILABLE, reason="xlsxwriter IS installed")
 class TestCreateExcelExportNoXlsxwriter:
     def test_raises_export_error_when_missing(self):
-        from askrita.sqlagent.exporters.excel_exporter import create_excel_export
         from askrita.exceptions import ExportError
+        from askrita.sqlagent.exporters.excel_exporter import create_excel_export
+
         state = WorkflowState()
         settings = ExportSettings(title="Test")
         with pytest.raises(ExportError):

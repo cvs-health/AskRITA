@@ -88,7 +88,11 @@ class StatisticalResult:
                 f"{analyzed_n} analyzed rows)"
             )
         if info.get("bonferroni_p") is not None:
-            bon_sig = "significant" if info.get("bonferroni_significant") else "not significant"
+            bon_sig = (
+                "significant"
+                if info.get("bonferroni_significant")
+                else "not significant"
+            )
             n_cor = info.get("n_tests_corrected_for", "?")
             lines.append(
                 f"Bonferroni-corrected p: {info['bonferroni_p']:.6f} ({bon_sig}, corrected for {n_cor} tests)"
@@ -164,9 +168,9 @@ class StatisticalAnalyzer:
     """
 
     # Large-N thresholds
-    LARGE_N_THRESHOLD: int = 10_000   # warn about p-value inflation above this
-    SAMPLE_THRESHOLD: int = 100_000   # trigger stratified sampling above this
-    TARGET_SAMPLE: int = 50_000       # post-sampling target size
+    LARGE_N_THRESHOLD: int = 10_000  # warn about p-value inflation above this
+    SAMPLE_THRESHOLD: int = 100_000  # trigger stratified sampling above this
+    TARGET_SAMPLE: int = 50_000  # post-sampling target size
 
     def __init__(self):
         self.scipy_available = SCIPY_AVAILABLE
@@ -241,7 +245,9 @@ class StatisticalAnalyzer:
         df_clean = df_clean.dropna()
 
         # Large-N handling: stratified sample if needed, warn if still large
-        df_clean, was_sampled, original_n = self._stratified_sample(df_clean, group_column)
+        df_clean, was_sampled, original_n = self._stratified_sample(
+            df_clean, group_column
+        )
         large_n_note = self._large_n_note(original_n)
 
         groups = df_clean.groupby(group_column)[value_column]
@@ -385,8 +391,16 @@ class StatisticalAnalyzer:
     def _check_two_group_normality(groups: list) -> bool:
         """Return True if both groups pass Shapiro-Wilk normality (default True on error)."""
         try:
-            normal1 = stats.shapiro(groups[0][:5000])[1] > 0.05 if len(groups[0]) >= 3 else True
-            normal2 = stats.shapiro(groups[1][:5000])[1] > 0.05 if len(groups[1]) >= 3 else True
+            normal1 = (
+                stats.shapiro(groups[0][:5000])[1] > 0.05
+                if len(groups[0]) >= 3
+                else True
+            )
+            normal2 = (
+                stats.shapiro(groups[1][:5000])[1] > 0.05
+                if len(groups[1]) >= 3
+                else True
+            )
             return normal1 and normal2
         except Exception:
             return True
@@ -397,14 +411,18 @@ class StatisticalAnalyzer:
         stat, p_value = stats.ttest_ind(groups[0], groups[1], equal_var=False)
         pooled_std = np.sqrt((groups[0].var() + groups[1].var()) / 2)
         effect_size = (
-            abs(groups[0].mean() - groups[1].mean()) / pooled_std if pooled_std > 0 else 0
+            abs(groups[0].mean() - groups[1].mean()) / pooled_std
+            if pooled_std > 0
+            else 0
         )
         return stat, p_value, "Welch's t-test", effect_size
 
     @staticmethod
     def _nonparametric_two_group(groups: list):
         """Run Mann-Whitney U test and return (stat, p_value, test_name, effect_size)."""
-        stat, p_value = stats.mannwhitneyu(groups[0], groups[1], alternative="two-sided")
+        stat, p_value = stats.mannwhitneyu(
+            groups[0], groups[1], alternative="two-sided"
+        )
         n1, n2 = len(groups[0]), len(groups[1])
         effect_size = 1 - (2 * stat) / (n1 * n2)
         return stat, p_value, "Mann-Whitney U test", effect_size
@@ -424,7 +442,9 @@ class StatisticalAnalyzer:
         if use_parametric:
             stat, p_value, test_name, effect_size = self._parametric_two_group(groups)
         else:
-            stat, p_value, test_name, effect_size = self._nonparametric_two_group(groups)
+            stat, p_value, test_name, effect_size = self._nonparametric_two_group(
+                groups
+            )
 
         # Effect size interpretation
         effect_interp = self._interpret_effect_size(abs(effect_size))
@@ -759,10 +779,16 @@ class StatisticalAnalyzer:
         """Return (numeric_order, categorical_order) prioritising hypothesis-mentioned columns."""
         numeric_cols = list(df.select_dtypes(include=[np.number]).columns)
         preferred_numeric = [c for c in numeric_cols if str(c) in hypothesis_tokens]
-        numeric_order = preferred_numeric + [c for c in numeric_cols if c not in preferred_numeric]
+        numeric_order = preferred_numeric + [
+            c for c in numeric_cols if c not in preferred_numeric
+        ]
 
-        categorical_cols = list(df.select_dtypes(include=["object", "category"]).columns)
-        preferred_categorical = [c for c in categorical_cols if str(c) in hypothesis_tokens]
+        categorical_cols = list(
+            df.select_dtypes(include=["object", "category"]).columns
+        )
+        preferred_categorical = [
+            c for c in categorical_cols if str(c) in hypothesis_tokens
+        ]
         categorical_order = preferred_categorical + [
             c for c in categorical_cols if c not in preferred_categorical
         ]
@@ -867,7 +893,9 @@ class StatisticalAnalyzer:
             or best_test.additional_info.get("sample_warning"),
         }
 
-    def _maybe_add_tukey_hsd(self, df: pd.DataFrame, best_test: "StatisticalResult") -> None:
+    def _maybe_add_tukey_hsd(
+        self, df: pd.DataFrame, best_test: "StatisticalResult"
+    ) -> None:
         """Add Tukey HSD post-hoc pairs to a significant ANOVA result."""
         if not (best_test.is_significant and best_test.test_name == "One-way ANOVA"):
             return
@@ -963,9 +991,13 @@ class StatisticalAnalyzer:
             "test_outcome": None,
         }
 
-        numeric_order, categorical_order = self._build_column_orders(df, hypothesis_tokens)
+        numeric_order, categorical_order = self._build_column_orders(
+            df, hypothesis_tokens
+        )
         trace_entry["selected"]["numeric_order"] = [str(c) for c in numeric_order[:10]]
-        trace_entry["selected"]["categorical_order"] = [str(c) for c in categorical_order[:10]]
+        trace_entry["selected"]["categorical_order"] = [
+            str(c) for c in categorical_order[:10]
+        ]
 
         self._collect_descriptive_stats(df, numeric_order, results)
 
@@ -1026,7 +1058,9 @@ class StatisticalAnalyzer:
         for query_key, query_data in collected_data.items():
             if "error" in query_data or not query_data.get("data"):
                 continue
-            self._analyze_single_query(query_key, query_data, hypothesis_tokens, results)
+            self._analyze_single_query(
+                query_key, query_data, hypothesis_tokens, results
+            )
 
         # Bonferroni correction across ALL tests collected this run
         self.apply_bonferroni_correction(results["statistical_tests"])
@@ -1040,7 +1074,9 @@ class StatisticalAnalyzer:
             col0, col1 = df.columns[0], df.columns[1]
 
             def _is_string_like(dtype) -> bool:
-                return pd.api.types.is_string_dtype(dtype) or pd.api.types.is_object_dtype(dtype)
+                return pd.api.types.is_string_dtype(
+                    dtype
+                ) or pd.api.types.is_object_dtype(dtype)
 
             if _is_string_like(df[col0]) and pd.api.types.is_numeric_dtype(df[col1]):
                 df = df.rename(columns={col0: "group", col1: "value"})

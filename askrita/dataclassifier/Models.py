@@ -53,7 +53,9 @@ def _resolve_field_annotation(
         return int, default_value
     if field_type == "float":
         return float, default_value
-    logger.warning(f"Unknown field type '{field_type}' for field '{field_name}', using string")
+    logger.warning(
+        f"Unknown field type '{field_type}' for field '{field_name}', using string"
+    )
     return str, default_value
 
 

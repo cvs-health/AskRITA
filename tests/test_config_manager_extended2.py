@@ -19,8 +19,9 @@
 """Additional targeted tests for config_manager.py missing coverage lines."""
 
 import os
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from askrita.config_manager import ConfigManager
 
@@ -37,10 +38,13 @@ def openai_env():
 # get_database_type
 # ---------------------------------------------------------------------------
 
+
 class TestGetDatabaseType:
     def test_postgresql(self):
         cm = ConfigManager(None)
-        cm._config_data["database"]["connection_string"] = "postgresql://user:pass@host/db"
+        cm._config_data["database"][
+            "connection_string"
+        ] = "postgresql://user:pass@host/db"
         assert cm.get_database_type() == "PostgreSQL"
 
     def test_mysql(self):
@@ -81,6 +85,7 @@ class TestGetDatabaseType:
 # ---------------------------------------------------------------------------
 # _validate_required_prompts
 # ---------------------------------------------------------------------------
+
 
 class TestValidateRequiredPrompts:
     def test_returns_true_with_all_required_prompts(self):
@@ -140,6 +145,7 @@ class TestValidateRequiredPrompts:
 # ---------------------------------------------------------------------------
 # _validate_llm_config
 # ---------------------------------------------------------------------------
+
 
 class TestValidateLlmConfig:
     def test_openai_valid(self):
@@ -231,6 +237,7 @@ class TestValidateLlmConfig:
 # validate_config
 # ---------------------------------------------------------------------------
 
+
 class TestValidateConfig:
     def test_validate_with_defaults_returns_true(self):
         cm = ConfigManager(None)
@@ -278,7 +285,9 @@ class TestValidateConfig:
         # Force an exception in validate_config by deleting required section key
         # so the section loop raises KeyError (won't happen; test the exception path another way)
         # Patch _validate_llm_config to raise
-        with patch.object(cm, "_validate_llm_config", side_effect=RuntimeError("unexpected")):
+        with patch.object(
+            cm, "_validate_llm_config", side_effect=RuntimeError("unexpected")
+        ):
             result = cm.validate_config()
             assert result is False
 
@@ -286,6 +295,7 @@ class TestValidateConfig:
 # ---------------------------------------------------------------------------
 # Schema cache methods
 # ---------------------------------------------------------------------------
+
 
 class TestSchemaCacheMethods:
     def test_should_cache_schema_false_when_disabled(self):
@@ -342,6 +352,7 @@ class TestSchemaCacheMethods:
 # ---------------------------------------------------------------------------
 # reload_config / get_parse_overrides / get_sql_safety_settings / etc.
 # ---------------------------------------------------------------------------
+
 
 class TestWorkflowHelperMethods:
     def test_get_parse_overrides_default(self):

@@ -424,9 +424,9 @@ class NoSQLAgentWorkflow:
     def _extract_output_summary(combined_details: Dict[str, Any]) -> str:
         """Return a truncated output summary from combined step details."""
         if "output" in combined_details:
-            return str(combined_details["output"])[:DisplayLimits.INPUT_SUMMARY]
+            return str(combined_details["output"])[: DisplayLimits.INPUT_SUMMARY]
         if "answer" in combined_details:
-            return str(combined_details["answer"])[:DisplayLimits.INPUT_SUMMARY]
+            return str(combined_details["answer"])[: DisplayLimits.INPUT_SUMMARY]
         return ""
 
     def _complete_cot_step(
@@ -442,7 +442,9 @@ class NoSQLAgentWorkflow:
             if error:
                 self._cot_tracker.complete_current_step(
                     step_name=step_name,
-                    reasoning=reasoning_template.get("failure", f"{step_name} failed: {error}"),
+                    reasoning=reasoning_template.get(
+                        "failure", f"{step_name} failed: {error}"
+                    ),
                     output_summary=output_summary,
                     details=combined_details,
                     confidence_score=0.0,
@@ -451,15 +453,15 @@ class NoSQLAgentWorkflow:
             else:
                 self._cot_tracker.complete_current_step(
                     step_name=step_name,
-                    reasoning=reasoning_template.get("success", f"Completed {step_name}"),
+                    reasoning=reasoning_template.get(
+                        "success", f"Completed {step_name}"
+                    ),
                     output_summary=output_summary,
                     details=combined_details,
                     confidence_score=0.9,
                 )
         except Exception:
-            logger.exception(
-                "Failed to complete chain-of-thought step '%s'", step_name
-            )
+            logger.exception("Failed to complete chain-of-thought step '%s'", step_name)
 
     def _complete_step(
         self,
@@ -592,7 +594,9 @@ class NoSQLAgentWorkflow:
             raise QueryError("Workflow returned invalid result format")
         return result
 
-    def _build_workflow_state(self, result: dict, initial_state: WorkflowState) -> WorkflowState:
+    def _build_workflow_state(
+        self, result: dict, initial_state: WorkflowState
+    ) -> WorkflowState:
         """Construct a WorkflowState from the raw graph result dict."""
         return WorkflowState(
             question=result.get("question", initial_state.question),
@@ -1223,7 +1227,7 @@ class NoSQLAgentWorkflow:
         try:
             schema = self._get_cached_schema()
             if schema:
-                schema_lines = schema.split("\n")[:DisplayLimits.SCHEMA_DISPLAY_LINES]
+                schema_lines = schema.split("\n")[: DisplayLimits.SCHEMA_DISPLAY_LINES]
                 return "Available database schema:\n" + "\n".join(schema_lines)
         except Exception:
             pass
@@ -1423,13 +1427,21 @@ class NoSQLAgentWorkflow:
         self, workflow: StateGraph, enabled_step_order: list
     ) -> None:
         """Wire sequential edges with conditional clarification checks where needed."""
-        steps_that_check_clarification = {"parse_question", "get_unique_nouns", "generate_sql"}
+        steps_that_check_clarification = {
+            "parse_question",
+            "get_unique_nouns",
+            "generate_sql",
+        }
         for i in range(len(enabled_step_order) - 1):
             current_step = enabled_step_order[i]
             next_step = enabled_step_order[i + 1]
             if current_step in steps_that_check_clarification:
+
                 def make_checker(step_name):
-                    return lambda state: self._should_continue_workflow(state, step_name)
+                    return lambda state: self._should_continue_workflow(
+                        state, step_name
+                    )
+
                 workflow.add_conditional_edges(
                     current_step,
                     make_checker(current_step),
@@ -1447,7 +1459,11 @@ class NoSQLAgentWorkflow:
             workflow.add_conditional_edges(
                 "execute_sql",
                 self._should_retry_query_generation,
-                {"generate_sql": "generate_sql", "continue": "parallel_dispatcher", "__end__": END},
+                {
+                    "generate_sql": "generate_sql",
+                    "continue": "parallel_dispatcher",
+                    "__end__": END,
+                },
             )
         else:
             workflow.add_edge("execute_sql", "parallel_dispatcher")
@@ -1456,12 +1472,16 @@ class NoSQLAgentWorkflow:
             if workflow_config.steps.get(ps, True):
                 workflow.add_edge("parallel_dispatcher", ps)
 
-        if workflow_config.steps.get("generate_followup_questions", True) and workflow_config.steps.get("format_results", True):
+        if workflow_config.steps.get(
+            "generate_followup_questions", True
+        ) and workflow_config.steps.get("format_results", True):
             workflow.add_edge("format_results", "generate_followup_questions")
 
     def _add_end_edges(self, workflow: StateGraph, workflow_config) -> None:
         """Wire final end-point edges."""
-        followup_enabled = workflow_config.steps.get("generate_followup_questions", True)
+        followup_enabled = workflow_config.steps.get(
+            "generate_followup_questions", True
+        )
         format_enabled = workflow_config.steps.get("format_results", True)
 
         if followup_enabled and format_enabled:
@@ -1478,16 +1498,24 @@ class NoSQLAgentWorkflow:
         workflow = StateGraph(state_schema=WorkflowState)
         workflow_config = self.config.workflow
 
-        enabled_steps = [step for step, enabled in workflow_config.steps.items() if enabled]
+        enabled_steps = [
+            step for step, enabled in workflow_config.steps.items() if enabled
+        ]
         logger.info(f"Enabled workflow steps: {', '.join(enabled_steps)}")
 
         self._register_workflow_nodes(workflow, workflow_config)
 
         step_order = [
-            "pii_detection", "parse_question", "get_unique_nouns",
-            "generate_sql", "validate_and_fix_sql", "execute_sql",
+            "pii_detection",
+            "parse_question",
+            "get_unique_nouns",
+            "generate_sql",
+            "validate_and_fix_sql",
+            "execute_sql",
         ]
-        enabled_step_order = [s for s in step_order if workflow_config.steps.get(s, True)]
+        enabled_step_order = [
+            s for s in step_order if workflow_config.steps.get(s, True)
+        ]
 
         self._add_sequential_edges(workflow, enabled_step_order)
         self._add_post_execute_edges(workflow, workflow_config)

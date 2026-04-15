@@ -15,11 +15,12 @@
 """Tests for validation_chain - simple coverage boost."""
 
 from unittest.mock import Mock, patch
+
 from askrita.sqlagent.database.validation_chain import (
-    ValidationContext,
     BigQueryValidationChain,
     DatasetExistenceValidationStep,
-    TableListingValidationStep
+    TableListingValidationStep,
+    ValidationContext,
 )
 
 
@@ -28,18 +29,33 @@ class TestValidationContext:
 
     def test_init(self):
         """Test initialization."""
-        context = ValidationContext(db=Mock(), config=Mock(), connection_string="bigquery://test", project_id="test")
+        context = ValidationContext(
+            db=Mock(),
+            config=Mock(),
+            connection_string="bigquery://test",
+            project_id="test",
+        )
         assert isinstance(context.validation_results, dict)
 
     def test_add_error(self):
         """Test adding errors."""
-        context = ValidationContext(db=Mock(), config=Mock(), connection_string="bigquery://test", project_id="test")
+        context = ValidationContext(
+            db=Mock(),
+            config=Mock(),
+            connection_string="bigquery://test",
+            project_id="test",
+        )
         context.add_result("Step", False, "Error 1")
         assert context.error_messages["Step"] == "Error 1"
 
     def test_has_errors(self):
         """Test checking errors."""
-        context = ValidationContext(db=Mock(), config=Mock(), connection_string="bigquery://test", project_id="test")
+        context = ValidationContext(
+            db=Mock(),
+            config=Mock(),
+            connection_string="bigquery://test",
+            project_id="test",
+        )
         assert context.is_successful() is False
         context.add_result("Step", True)
         assert context.is_successful() is True
@@ -51,12 +67,12 @@ class TestBigQueryValidationChain:
     def test_init(self):
         """Test initialization."""
         chain = BigQueryValidationChain()
-        assert hasattr(chain, 'dataset_step')
+        assert hasattr(chain, "dataset_step")
 
     def test_add_step(self):
         """Test adding steps."""
         chain = BigQueryValidationChain()
-        assert hasattr(chain, 'query_step') and hasattr(chain, 'table_step')
+        assert hasattr(chain, "query_step") and hasattr(chain, "table_step")
 
     def test_validate_success(self):
         """Test successful validation."""
@@ -70,7 +86,9 @@ class TestBigQueryValidationChain:
         mock_config.database.connection_string = "bigquery://test/test-dataset"
         db = Mock()
         # Force dataset step to use provided client via context by monkeypatching client creation
-        with patch('askrita.sqlagent.database.validation_chain.bigquery.Client') as mock_client_ctor:
+        with patch(
+            "askrita.sqlagent.database.validation_chain.bigquery.Client"
+        ) as mock_client_ctor:
             mock_client_ctor.return_value = mock_client
             chain.validate(db, mock_config)
 
@@ -89,7 +107,9 @@ class TestBigQueryValidationChain:
         mock_cross.enabled = False
         mock_config.database.cross_project_access = mock_cross
         db = Mock()
-        with patch('askrita.sqlagent.database.validation_chain.bigquery.Client') as mock_client_ctor:
+        with patch(
+            "askrita.sqlagent.database.validation_chain.bigquery.Client"
+        ) as mock_client_ctor:
             mock_client_ctor.return_value = mock_client
             assert chain.validate(db, mock_config) is False
 
@@ -103,7 +123,12 @@ class TestDatasetExistenceStep:
         mock_client.get_dataset.return_value = Mock()
 
         step = DatasetExistenceValidationStep()
-        context = ValidationContext(db=Mock(), config=Mock(), connection_string="bigquery://test", project_id="test")
+        context = ValidationContext(
+            db=Mock(),
+            config=Mock(),
+            connection_string="bigquery://test",
+            project_id="test",
+        )
         context.dataset_id = "test-dataset"
 
         # validate() returns bool; ensure no exception
@@ -115,10 +140,17 @@ class TestDatasetExistenceStep:
         mock_client.get_dataset.side_effect = Exception("Not found")
 
         step = DatasetExistenceValidationStep()
-        context = ValidationContext(db=Mock(), config=Mock(), connection_string="bigquery://test", project_id="test")
+        context = ValidationContext(
+            db=Mock(),
+            config=Mock(),
+            connection_string="bigquery://test",
+            project_id="test",
+        )
         context.dataset_id = "test-dataset"
 
-        with patch('askrita.sqlagent.database.validation_chain.bigquery.Client') as mock_ctor:
+        with patch(
+            "askrita.sqlagent.database.validation_chain.bigquery.Client"
+        ) as mock_ctor:
             mock_ctor.return_value = mock_client
             assert step.validate(context) in [True, False]
 
@@ -136,10 +168,16 @@ class TestTableListingStep:
         mock_client.get_dataset.return_value = mock_dataset
 
         step = TableListingValidationStep()
-        context = ValidationContext(db=Mock(), config=Mock(), connection_string="bigquery://test", project_id="test")
+        context = ValidationContext(
+            db=Mock(),
+            config=Mock(),
+            connection_string="bigquery://test",
+            project_id="test",
+        )
         context.dataset_id = "test-dataset"
 
-        with patch('askrita.sqlagent.database.validation_chain.bigquery.Client') as mock_ctor:
+        with patch(
+            "askrita.sqlagent.database.validation_chain.bigquery.Client"
+        ) as mock_ctor:
             mock_ctor.return_value = mock_client
             assert step.validate(context) in [True, False]
-

@@ -21,17 +21,17 @@
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-from langchain_core.outputs import LLMResult, Generation
+from langchain_core.outputs import Generation, LLMResult
 
 from askrita.sqlagent.workflows.langgraph_callback_handler import (
-    ChainOfThoughtsCallbackHandler,
     CallbackEvent,
+    ChainOfThoughtsCallbackHandler,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_handler(**kwargs):
     return ChainOfThoughtsCallbackHandler(**kwargs)
@@ -44,6 +44,7 @@ def _run_id():
 # ---------------------------------------------------------------------------
 # Initialization
 # ---------------------------------------------------------------------------
+
 
 class TestInit:
     def test_defaults(self):
@@ -65,11 +66,14 @@ class TestInit:
 # on_chain_start
 # ---------------------------------------------------------------------------
 
+
 class TestOnChainStart:
     def test_known_step_name_tracked(self):
         h = _make_handler()
         run_id = _run_id()
-        h.on_chain_start({"name": "parse_question"}, {"question": "What?"}, run_id=run_id)
+        h.on_chain_start(
+            {"name": "parse_question"}, {"question": "What?"}, run_id=run_id
+        )
         assert str(run_id) in h._active_steps
 
     def test_none_serialized_handled(self):
@@ -87,7 +91,12 @@ class TestOnChainStart:
     def test_metadata_step_name_takes_priority(self):
         h = _make_handler()
         run_id = _run_id()
-        h.on_chain_start({"name": "unknown"}, {}, run_id=run_id, metadata={"step_name": "custom_step"})
+        h.on_chain_start(
+            {"name": "unknown"},
+            {},
+            run_id=run_id,
+            metadata={"step_name": "custom_step"},
+        )
         step_state = h._active_steps[str(run_id)]
         assert step_state.step_name == "custom_step"
 
@@ -144,15 +153,16 @@ class TestOnChainStart:
         # Simulate previous step still in "started" state
         first_step_key = str(run_id1)
         if first_step_key in h._active_steps:
-            h._active_steps[first_step_key] = h._active_steps[first_step_key].model_copy(
-                update={"status": "started"}
-            )
+            h._active_steps[first_step_key] = h._active_steps[
+                first_step_key
+            ].model_copy(update={"status": "started"})
         h.on_chain_start({"name": "generate_sql"}, {}, run_id=run_id2)
 
 
 # ---------------------------------------------------------------------------
 # on_chain_end
 # ---------------------------------------------------------------------------
+
 
 class TestOnChainEnd:
     def _start_step(self, h, step_name="parse_question"):
@@ -202,7 +212,10 @@ class TestOnChainEnd:
     def test_different_output_summaries(self):
         """Test various step types produce different summaries."""
         for step, outputs in [
-            ("parse_question", {"parsed_question": {"is_relevant": True, "relevant_tables": ["t1"]}}),
+            (
+                "parse_question",
+                {"parsed_question": {"is_relevant": True, "relevant_tables": ["t1"]}},
+            ),
             ("generate_sql", {"sql_query": "SELECT * FROM t"}),
             ("validate_and_fix_sql", {"sql_valid": True}),
             ("execute_sql", {"results": [{"a": 1}, {"a": 2}]}),
@@ -216,6 +229,7 @@ class TestOnChainEnd:
 # ---------------------------------------------------------------------------
 # on_chain_error
 # ---------------------------------------------------------------------------
+
 
 class TestOnChainError:
     def _start_step(self, h, step_name="parse_question"):
@@ -254,6 +268,7 @@ class TestOnChainError:
 # on_llm_start
 # ---------------------------------------------------------------------------
 
+
 class TestOnLlmStart:
     def test_tracks_llm_metadata(self):
         h = _make_handler()
@@ -280,13 +295,20 @@ class TestOnLlmStart:
 # on_llm_end
 # ---------------------------------------------------------------------------
 
+
 class TestOnLlmEnd:
     def test_updates_token_usage(self):
         h = _make_handler()
         run_id = _run_id()
         h.on_llm_start({"name": "gpt-4"}, ["prompt"], run_id=run_id)
 
-        llm_output = {"token_usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30}}
+        llm_output = {
+            "token_usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 20,
+                "total_tokens": 30,
+            }
+        }
         gen = Generation(text="response text")
         response = LLMResult(generations=[[gen]], llm_output=llm_output)
         h.on_llm_end(response, run_id=run_id)
@@ -324,6 +346,7 @@ class TestOnLlmEnd:
 # on_llm_error
 # ---------------------------------------------------------------------------
 
+
 class TestOnLlmError:
     def test_streams_error_event(self):
         events = []
@@ -344,6 +367,7 @@ class TestOnLlmError:
 # ---------------------------------------------------------------------------
 # on_tool_start / on_tool_end / on_tool_error
 # ---------------------------------------------------------------------------
+
 
 class TestToolEvents:
     def test_tool_start_streams_event(self):
@@ -385,6 +409,7 @@ class TestToolEvents:
 # _extract_step_name
 # ---------------------------------------------------------------------------
 
+
 class TestExtractStepName:
     def test_metadata_priority(self):
         h = _make_handler()
@@ -420,6 +445,7 @@ class TestExtractStepName:
 # ---------------------------------------------------------------------------
 # _infer_step_type
 # ---------------------------------------------------------------------------
+
 
 class TestInferStepType:
     def test_parse_is_analysis(self):
@@ -472,6 +498,7 @@ class TestInferStepType:
 # _summarize_inputs
 # ---------------------------------------------------------------------------
 
+
 class TestSummarizeInputs:
     def test_empty_inputs(self):
         h = _make_handler()
@@ -503,6 +530,7 @@ class TestSummarizeInputs:
 # _get_concise_reasoning
 # ---------------------------------------------------------------------------
 
+
 class TestGetConciseReasoning:
     def test_track_step_skipped(self):
         h = _make_handler()
@@ -516,7 +544,9 @@ class TestGetConciseReasoning:
 
     def test_parse_not_relevant(self):
         h = _make_handler()
-        result = h._get_concise_reasoning("parse_question", "relevant: false, no tables")
+        result = h._get_concise_reasoning(
+            "parse_question", "relevant: false, no tables"
+        )
         assert "relevance" in result.lower()
 
     def test_generate_sql(self):
@@ -526,7 +556,9 @@ class TestGetConciseReasoning:
 
     def test_validate_corrected(self):
         h = _make_handler()
-        result = h._get_concise_reasoning("validate_and_fix_sql", "valid: false, corrected")
+        result = h._get_concise_reasoning(
+            "validate_and_fix_sql", "valid: false, corrected"
+        )
         assert result is not None
 
     def test_execute_with_rows(self):
@@ -554,6 +586,7 @@ class TestGetConciseReasoning:
 # _summarize_outputs edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestSummarizeOutputs:
     def test_empty_outputs_returns_no_output(self):
         h = _make_handler()
@@ -564,18 +597,22 @@ class TestSummarizeOutputs:
         h = _make_handler()
         result = h._summarize_outputs(
             {"parsed_question": {"is_relevant": True, "relevant_tables": ["a", "b"]}},
-            "parse_question"
+            "parse_question",
         )
         assert "Tables: 2" in result
 
     def test_parse_outputs_not_dict(self):
         h = _make_handler()
-        result = h._summarize_outputs({"parsed_question": "something"}, "parse_question")
+        result = h._summarize_outputs(
+            {"parsed_question": "something"}, "parse_question"
+        )
         assert isinstance(result, str)
 
     def test_format_with_answer(self):
         h = _make_handler()
-        result = h._summarize_outputs({"answer": "Here is the answer."}, "format_results")
+        result = h._summarize_outputs(
+            {"answer": "Here is the answer."}, "format_results"
+        )
         assert "Answer:" in result
 
     def test_generic_outputs(self):
@@ -587,6 +624,7 @@ class TestSummarizeOutputs:
 # ---------------------------------------------------------------------------
 # Public API: get_active_steps, get_token_usage, get_breadcrumbs, reset
 # ---------------------------------------------------------------------------
+
 
 class TestPublicAPI:
     def test_get_active_steps_empty(self):
@@ -644,6 +682,7 @@ class TestPublicAPI:
 # _stream_event
 # ---------------------------------------------------------------------------
 
+
 class TestStreamEvent:
     def test_listener_error_doesnt_propagate(self):
         def bad_listener(event):
@@ -651,21 +690,18 @@ class TestStreamEvent:
 
         h = _make_handler(cot_listeners=[bad_listener])
         # Should not raise
-        h._stream_event(
-            CallbackEvent(event_type="test", run_id="abc", timestamp=1.0)
-        )
+        h._stream_event(CallbackEvent(event_type="test", run_id="abc", timestamp=1.0))
 
     def test_no_listeners_no_op(self):
         h = _make_handler(enable_streaming=True)
         # No listeners, should not raise
-        h._stream_event(
-            CallbackEvent(event_type="test", run_id="abc", timestamp=1.0)
-        )
+        h._stream_event(CallbackEvent(event_type="test", run_id="abc", timestamp=1.0))
 
 
 # ---------------------------------------------------------------------------
 # _extract_step_details
 # ---------------------------------------------------------------------------
+
 
 class TestExtractStepDetails:
     def test_extracts_known_fields(self):

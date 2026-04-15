@@ -18,19 +18,20 @@
 
 """Tests for DatabaseManager functionality."""
 
-import pytest
-from unittest.mock import Mock, patch
 import os
 import sys
+from unittest.mock import Mock, patch
 
-from askrita.sqlagent.database.DatabaseManager import DatabaseManager
+import pytest
+
 from askrita.exceptions import DatabaseError
+from askrita.sqlagent.database.DatabaseManager import DatabaseManager
 
 
 @pytest.fixture(autouse=True)
 def mock_openai_api_key():
     """Automatically mock OPENAI_API_KEY for all database tests."""
-    with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-api-key'}):
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "test-api-key"}):
         yield
 
 
@@ -39,64 +40,103 @@ class TestDatabaseManager:
 
     def test_initialization_success(self, mock_config):
         """Test successful DatabaseManager initialization."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True) as mock_sql_db, \
-             patch('askrita.utils.LLMManager', create=True):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True
+            ) as mock_sql_db,
+            patch("askrita.utils.LLMManager", create=True),
+        ):
 
             mock_db = Mock()
             mock_sql_db.from_uri.return_value = mock_db
 
-            db_manager = DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+            db_manager = DatabaseManager(
+                mock_config, test_llm_connection=False, test_db_connection=False
+            )
 
             # Verify basic initialization without strict object comparison
             assert db_manager.config == mock_config
-            assert hasattr(db_manager, 'db')
+            assert hasattr(db_manager, "db")
             assert db_manager.db is not None
 
     # BigQuery initialization test removed - too complex to mock reliably
     # BigQuery functionality is tested through integration tests instead
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock exception handling issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11),
+        reason="Mock exception handling issue on Python 3.10",
+    )
     def test_initialization_database_error(self, mock_config):
         """Test database initialization error handling."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True) as mock_sql_db, \
-             patch('askrita.utils.LLMManager', create=True):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True
+            ) as mock_sql_db,
+            patch("askrita.utils.LLMManager", create=True),
+        ):
 
             mock_sql_db.from_uri.side_effect = Exception("Connection failed")
 
             with pytest.raises(DatabaseError, match="Database connection failed"):
-                DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+                DatabaseManager(
+                    mock_config, test_llm_connection=False, test_db_connection=False
+                )
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock exception handling issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11),
+        reason="Mock exception handling issue on Python 3.10",
+    )
     def test_initialization_authentication_error(self, mock_config):
         """Test database authentication error handling."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True) as mock_sql_db, \
-             patch('askrita.utils.LLMManager', create=True):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True
+            ) as mock_sql_db,
+            patch("askrita.utils.LLMManager", create=True),
+        ):
 
             mock_sql_db.from_uri.side_effect = Exception("authentication failed")
 
             with pytest.raises(DatabaseError, match="Database authentication failed"):
-                DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+                DatabaseManager(
+                    mock_config, test_llm_connection=False, test_db_connection=False
+                )
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock exception handling issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11),
+        reason="Mock exception handling issue on Python 3.10",
+    )
     def test_initialization_connection_refused_error(self, mock_config):
         """Test database connection refused error handling."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True) as mock_sql_db, \
-             patch('askrita.utils.LLMManager', create=True):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True
+            ) as mock_sql_db,
+            patch("askrita.utils.LLMManager", create=True),
+        ):
 
             mock_sql_db.from_uri.side_effect = Exception("connection refused")
 
             with pytest.raises(DatabaseError, match="Cannot connect to database"):
-                DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+                DatabaseManager(
+                    mock_config, test_llm_connection=False, test_db_connection=False
+                )
 
     def test_get_safe_connection_info(self, mock_config):
         """Test safe connection info extraction."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True), \
-             patch('askrita.utils.LLMManager'):
+        with (
+            patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True),
+            patch("askrita.utils.LLMManager"),
+        ):
 
-            db_manager = DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+            db_manager = DatabaseManager(
+                mock_config, test_llm_connection=False, test_db_connection=False
+            )
 
             # Test with user@host format
-            info = db_manager._get_safe_connection_info("postgresql://user:pass@localhost:5432/db")
+            info = db_manager._get_safe_connection_info(
+                "postgresql://user:pass@localhost:5432/db"
+            )
             assert info == "localhost:5432/db"
 
             # Test BigQuery format
@@ -167,10 +207,16 @@ class TestDatabaseManager:
 
     def test_execute_query_with_backticks(self, mock_database_manager):
         """Test query execution with backtick removal."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True), \
-             patch('askrita.utils.LLMManager', create=True):
+        with (
+            patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True),
+            patch("askrita.utils.LLMManager", create=True),
+        ):
 
-            db_manager = DatabaseManager(mock_database_manager.config, test_llm_connection=False, test_db_connection=False)
+            db_manager = DatabaseManager(
+                mock_database_manager.config,
+                test_llm_connection=False,
+                test_db_connection=False,
+            )
             db_manager.db = Mock()
             db_manager.db.run.return_value = [("result", 1)]
 
@@ -184,10 +230,16 @@ class TestDatabaseManager:
 
     def test_execute_query_result_limit(self, mock_database_manager):
         """Test query result limiting."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True), \
-             patch('askrita.utils.LLMManager', create=True):
+        with (
+            patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True),
+            patch("askrita.utils.LLMManager", create=True),
+        ):
 
-            db_manager = DatabaseManager(mock_database_manager.config, test_llm_connection=False, test_db_connection=False)
+            db_manager = DatabaseManager(
+                mock_database_manager.config,
+                test_llm_connection=False,
+                test_db_connection=False,
+            )
             db_manager.db = Mock()
 
             # Mock large result set
@@ -202,7 +254,9 @@ class TestDatabaseManager:
 
     def test_execute_query_error_handling(self, mock_database_manager):
         """Test query execution error handling."""
-        mock_database_manager.execute_query.side_effect = DatabaseError("Query execution failed")
+        mock_database_manager.execute_query.side_effect = DatabaseError(
+            "Query execution failed"
+        )
 
         with pytest.raises(DatabaseError, match="Query execution failed"):
             mock_database_manager.execute_query("SELECT * FROM nonexistent")
@@ -230,7 +284,9 @@ class TestDatabaseManager:
 
     def test_get_table_names_error(self, mock_database_manager):
         """Test table name retrieval error handling."""
-        mock_database_manager.get_table_names.side_effect = Exception("Failed to get tables")
+        mock_database_manager.get_table_names.side_effect = Exception(
+            "Failed to get tables"
+        )
 
         with pytest.raises(Exception, match="Failed to get tables"):
             mock_database_manager.get_table_names()
@@ -240,7 +296,7 @@ class TestDatabaseManager:
         expected_info = {
             "database_type": "SQLite",
             "host": "localhost",
-            "database_name": "test.db"
+            "database_name": "test.db",
         }
         mock_database_manager.get_connection_info.return_value = expected_info
 
@@ -262,14 +318,20 @@ class TestBigQuerySetup:
         mock_config.database.bigquery_credentials_path = None
         mock_config.database.connection_string = "bigquery://project/dataset"
 
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True), \
-             patch('askrita.utils.LLMManager'), \
-             patch('askrita.sqlagent.database.database_strategies.default') as mock_default:
+        with (
+            patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True),
+            patch("askrita.utils.LLMManager"),
+            patch(
+                "askrita.sqlagent.database.database_strategies.default"
+            ) as mock_default,
+        ):
 
             mock_default.side_effect = Exception("ADC failed")
 
             with pytest.raises(DatabaseError, match="BigQuery authentication failed"):
-                DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+                DatabaseManager(
+                    mock_config, test_llm_connection=False, test_db_connection=False
+                )
 
 
 class TestDatabaseManagerEdgeCases:
@@ -283,13 +345,21 @@ class TestDatabaseManagerEdgeCases:
 
         assert results == []
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock behavior issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock behavior issue on Python 3.10"
+    )
     def test_execute_query_non_list_result(self, mock_database_manager):
         """Test query execution with non-list result - should normalize to List[Dict]."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True), \
-             patch('askrita.utils.LLMManager', create=True):
+        with (
+            patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True),
+            patch("askrita.utils.LLMManager", create=True),
+        ):
 
-            db_manager = DatabaseManager(mock_database_manager.config, test_llm_connection=False, test_db_connection=False)
+            db_manager = DatabaseManager(
+                mock_database_manager.config,
+                test_llm_connection=False,
+                test_db_connection=False,
+            )
             db_manager.db = Mock()
             db_manager.db.run.return_value = "Single string result"
 
@@ -302,13 +372,19 @@ class TestDatabaseManagerEdgeCases:
 
     def test_connection_string_parsing_edge_cases(self, mock_config):
         """Test connection string parsing for various formats."""
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True), \
-             patch('askrita.utils.LLMManager'):
+        with (
+            patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True),
+            patch("askrita.utils.LLMManager"),
+        ):
 
-            db_manager = DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+            db_manager = DatabaseManager(
+                mock_config, test_llm_connection=False, test_db_connection=False
+            )
 
             # Test complex connection string
-            complex_conn = "postgresql://user:p@ssw0rd@db.example.com:5432/mydb?sslmode=require"
+            complex_conn = (
+                "postgresql://user:p@ssw0rd@db.example.com:5432/mydb?sslmode=require"
+            )
             info = db_manager._get_safe_connection_info(complex_conn)
             assert "db.example.com:5432/mydb" in info
 
@@ -332,15 +408,21 @@ class TestDatabaseManagerEdgeCases:
         """Test that timeout configuration is properly handled."""
         mock_config.database.query_timeout = 45
 
-        with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True), \
-             patch('askrita.utils.LLMManager'):
+        with (
+            patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True),
+            patch("askrita.utils.LLMManager"),
+        ):
 
-            db_manager = DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+            db_manager = DatabaseManager(
+                mock_config, test_llm_connection=False, test_db_connection=False
+            )
 
             # Timeout should be accessible through config
             assert db_manager.config.database.query_timeout == 45
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock behavior issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock behavior issue on Python 3.10"
+    )
     def test_database_error_context(self, mock_config):
         """Test that database errors include helpful context."""
         test_cases = [
@@ -350,12 +432,20 @@ class TestDatabaseManagerEdgeCases:
         ]
 
         for error_msg, expected_pattern in test_cases:
-            with patch('askrita.sqlagent.database.DatabaseManager.SQLDatabase', create=True) as mock_sql_db, \
-                 patch('askrita.utils.LLMManager'):
+            with (
+                patch(
+                    "askrita.sqlagent.database.DatabaseManager.SQLDatabase", create=True
+                ) as mock_sql_db,
+                patch("askrita.utils.LLMManager"),
+            ):
 
                 mock_sql_db.from_uri.side_effect = Exception(error_msg)
 
                 with pytest.raises(DatabaseError) as exc_info:
-                    DatabaseManager(mock_config, test_llm_connection=False, test_db_connection=False)
+                    DatabaseManager(
+                        mock_config, test_llm_connection=False, test_db_connection=False
+                    )
 
-                assert expected_pattern in str(exc_info.value).lower() or error_msg in str(exc_info.value)
+                assert expected_pattern in str(
+                    exc_info.value
+                ).lower() or error_msg in str(exc_info.value)

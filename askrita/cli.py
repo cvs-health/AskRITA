@@ -30,6 +30,7 @@ from .sqlagent.database.DatabaseManager import DatabaseManager
 from .sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 from .utils.LLMManager import LLMManager
 
+
 class SafeLogFormatter(logging.Formatter):
     """Formatter that sanitizes log messages to prevent log injection (CRLF)."""
 

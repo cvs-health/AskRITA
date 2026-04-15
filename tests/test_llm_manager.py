@@ -19,32 +19,37 @@
 
 """Tests for LLMManager functionality."""
 
-import pytest
 import os
 import sys
 from unittest.mock import Mock, patch
 
+import pytest
+
+from askrita.exceptions import ConfigurationError, LLMError
 from askrita.utils.LLMManager import LLMManager
-from askrita.exceptions import LLMError, ConfigurationError
 
 
 @pytest.fixture(autouse=True)
 def mock_openai_api_key():
     """Automatically mock OPENAI_API_KEY for all LLM tests."""
-    with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-api-key'}):
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "test-api-key"}):
         yield
 
 
 class TestLLMManager:
     """Test cases for LLMManager class."""
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_initialization_openai_success(self, mock_config):
         """Test successful OpenAI LLM initialization."""
         mock_config.llm.provider = "openai"
-        #mock_config.llm.api_key = "test-api-key"
+        # mock_config.llm.api_key = "test-api-key"
 
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True) as mock_chat_openai:
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI", create=True
+        ) as mock_chat_openai:
             mock_llm = Mock()
             mock_chat_openai.return_value = mock_llm
 
@@ -54,7 +59,9 @@ class TestLLMManager:
             assert llm_manager.llm == mock_llm
             mock_chat_openai.assert_called_once()
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_initialization_azure_openai_success(self, mock_config):
         """Test successful Azure OpenAI LLM initialization."""
         mock_config.llm.provider = "azure_openai"
@@ -64,8 +71,12 @@ class TestLLMManager:
         mock_config.llm.azure_client_id = "test-client"
         mock_config.llm.azure_certificate_path = "/path/to/cert.pem"
 
-        with patch('askrita.utils.LLMManager.AzureChatOpenAI', create=True) as mock_azure_chat, \
-             patch.object(LLMManager, 'get_azure_token_provider') as mock_token_provider:
+        with (
+            patch(
+                "askrita.utils.LLMManager.AzureChatOpenAI", create=True
+            ) as mock_azure_chat,
+            patch.object(LLMManager, "get_azure_token_provider") as mock_token_provider,
+        ):
 
             mock_llm = Mock()
             mock_azure_chat.return_value = mock_llm
@@ -77,14 +88,18 @@ class TestLLMManager:
             mock_azure_chat.assert_called_once()
             mock_token_provider.assert_called_once()
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_initialization_vertex_ai_success(self, mock_config):
         """Test successful Vertex AI LLM initialization."""
         mock_config.llm.provider = "vertex_ai"
         mock_config.llm.project_id = "test-project"
         mock_config.llm.location = "us-central1"
 
-        with patch('askrita.utils.LLMManager.ChatVertexAI', create=True) as mock_vertex_ai:
+        with patch(
+            "askrita.utils.LLMManager.ChatVertexAI", create=True
+        ) as mock_vertex_ai:
             mock_llm = Mock()
             mock_vertex_ai.return_value = mock_llm
 
@@ -93,15 +108,19 @@ class TestLLMManager:
             assert llm_manager.llm == mock_llm
             mock_vertex_ai.assert_called_once()
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_initialization_bedrock_success(self, mock_config):
         """Test successful Bedrock LLM initialization."""
         mock_config.llm.provider = "bedrock"
         mock_config.llm.region_name = "us-east-1"
         mock_config.llm.aws_access_key_id_env_var = "AWS_ACCESS_KEY_ID"
 
-        with patch('askrita.utils.LLMManager.ChatBedrock', create=True) as mock_bedrock, \
-             patch.dict(os.environ, {"AWS_ACCESS_KEY_ID": "test-key"}):
+        with (
+            patch("askrita.utils.LLMManager.ChatBedrock", create=True) as mock_bedrock,
+            patch.dict(os.environ, {"AWS_ACCESS_KEY_ID": "test-key"}),
+        ):
 
             mock_llm = Mock()
             mock_bedrock.return_value = mock_llm
@@ -122,7 +141,7 @@ class TestLLMManager:
         """Test error handling for missing API key."""
         mock_config.llm.provider = "openai"
 
-        with patch('os.getenv') as mock_getenv:
+        with patch("os.getenv") as mock_getenv:
             mock_getenv.return_value = None  # No OPENAI_API_KEY env var
 
             with pytest.raises(LLMError, match="OpenAI API key not found"):
@@ -148,10 +167,9 @@ class TestLLMManager:
         """Test LLM invocation with prompt template."""
         from langchain_core.prompts import ChatPromptTemplate
 
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a helpful assistant."),
-            ("human", "Hello, {name}!")
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", "You are a helpful assistant."), ("human", "Hello, {name}!")]
+        )
 
         response = mock_llm_manager.invoke(prompt, name="World")
 
@@ -163,21 +181,25 @@ class TestLLMManager:
         response = mock_llm_manager.invoke_with_config_prompt(
             "parse_question",
             question="What are the sales?",
-            schema="CREATE TABLE sales..."
+            schema="CREATE TABLE sales...",
         )
 
         expected_response = '{"is_relevant": true, "relevant_tables": [{"table_name": "customers", "noun_columns": ["name"]}]}'
         assert response == expected_response
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_create_prompt_from_config(self, mock_llm_manager):
         """Test prompt template creation from configuration."""
-        with patch('askrita.utils.LLMManager.ChatPromptTemplate', create=True) as mock_prompt_template:
+        with patch(
+            "askrita.utils.LLMManager.ChatPromptTemplate", create=True
+        ) as mock_prompt_template:
             mock_template = Mock()
             mock_prompt_template.from_messages.return_value = mock_template
 
             # Create a real LLMManager to test the method
-            with patch('askrita.utils.LLMManager.ChatOpenAI', create=True):
+            with patch("askrita.utils.LLMManager.ChatOpenAI", create=True):
                 llm_manager = LLMManager(mock_llm_manager.config, test_connection=False)
 
                 llm_manager.create_prompt_from_config("parse_question")
@@ -186,11 +208,7 @@ class TestLLMManager:
 
     def test_get_model_info(self, mock_llm_manager):
         """Test model information retrieval."""
-        expected_info = {
-            "provider": "openai",
-            "model": "gpt-4o",
-            "temperature": 0.1
-        }
+        expected_info = {"provider": "openai", "model": "gpt-4o", "temperature": 0.1}
         mock_llm_manager.get_model_info.return_value = expected_info
 
         info = mock_llm_manager.get_model_info()
@@ -215,7 +233,9 @@ class TestLLMManager:
 class TestOpenAIInitialization:
     """Test OpenAI-specific initialization."""
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_openai_with_all_parameters(self, mock_config):
         """Test OpenAI initialization with all parameters."""
         mock_config.llm.provider = "openai"
@@ -224,8 +244,12 @@ class TestOpenAIInitialization:
         mock_config.llm.temperature = 0.7
         mock_config.llm.max_tokens = 2000
 
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True) as mock_chat_openai, \
-             patch('os.getenv') as mock_getenv:
+        with (
+            patch(
+                "askrita.utils.LLMManager.ChatOpenAI", create=True
+            ) as mock_chat_openai,
+            patch("os.getenv") as mock_getenv,
+        ):
             mock_getenv.return_value = "test-env-api-key"  # Mock OPENAI_API_KEY env var
             mock_llm = Mock()
             mock_chat_openai.return_value = mock_llm
@@ -234,20 +258,26 @@ class TestOpenAIInitialization:
 
             # Verify ChatOpenAI was called with correct parameters
             call_args = mock_chat_openai.call_args[1]
-            #assert call_args["api_key"] == "test-env-api-key"
+            # assert call_args["api_key"] == "test-env-api-key"
             assert call_args["base_url"] == "https://api.custom.com/v1"
             assert call_args["organization"] == "test-org"
             assert call_args["temperature"] == 0.7
             assert call_args["max_tokens"] == 2000
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_openai_with_ca_bundle(self, mock_config):
         """Test OpenAI initialization with custom CA bundle."""
         mock_config.llm.provider = "openai"
         mock_config.llm.ca_bundle_path = "/path/to/custom-ca-bundle.pem"
 
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True) as mock_chat_openai, \
-             patch('askrita.utils.LLMManager.httpx', create=True) as mock_httpx:
+        with (
+            patch(
+                "askrita.utils.LLMManager.ChatOpenAI", create=True
+            ) as mock_chat_openai,
+            patch("askrita.utils.LLMManager.httpx", create=True) as mock_httpx,
+        ):
 
             mock_llm = Mock()
             mock_chat_openai.return_value = mock_llm
@@ -257,7 +287,9 @@ class TestOpenAIInitialization:
             _ = LLMManager(mock_config, test_connection=False)
 
             # Verify httpx.Client was created with the CA bundle path
-            mock_httpx.Client.assert_called_once_with(verify="/path/to/custom-ca-bundle.pem")
+            mock_httpx.Client.assert_called_once_with(
+                verify="/path/to/custom-ca-bundle.pem"
+            )
 
             # Verify ChatOpenAI was called with the http_client parameter
             call_args = mock_chat_openai.call_args[1]
@@ -268,7 +300,9 @@ class TestOpenAIInitialization:
 class TestAzureOpenAIInitialization:
     """Test Azure OpenAI-specific initialization."""
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_azure_openai_certificate_auth(self, mock_config):
         """Test Azure OpenAI with certificate authentication."""
         mock_config.llm.provider = "azure_openai"
@@ -280,9 +314,13 @@ class TestAzureOpenAIInitialization:
         mock_config.llm.azure_certificate_path = "/path/to/cert.pem"
         mock_config.llm.azure_certificate_password = "cert-password"
 
-        with patch('askrita.utils.LLMManager.AzureChatOpenAI', create=True) as mock_azure_chat, \
-             patch('azure.identity.CertificateCredential') as mock_cert_cred, \
-             patch('azure.identity.get_bearer_token_provider') as mock_token_provider:
+        with (
+            patch(
+                "askrita.utils.LLMManager.AzureChatOpenAI", create=True
+            ) as mock_azure_chat,
+            patch("azure.identity.CertificateCredential") as mock_cert_cred,
+            patch("azure.identity.get_bearer_token_provider") as mock_token_provider,
+        ):
 
             mock_llm = Mock()
             mock_azure_chat.return_value = mock_llm
@@ -305,14 +343,12 @@ class TestAzureOpenAIInitialization:
 
             # Verify token provider was created
             mock_token_provider.assert_called_once_with(
-                mock_credential,
-                "https://cognitiveservices.azure.com/.default"
+                mock_credential, "https://cognitiveservices.azure.com/.default"
             )
 
             # Verify AzureChatOpenAI was called with token provider
             call_args = mock_azure_chat.call_args[1]
             assert call_args["azure_ad_token_provider"] == mock_provider
-
 
     def test_azure_openai_missing_tenant_id(self, mock_config):
         """Test Azure OpenAI error when tenant ID is missing."""
@@ -328,7 +364,9 @@ class TestAzureOpenAIInitialization:
 class TestVertexAIInitialization:
     """Test Vertex AI-specific initialization."""
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_vertex_ai_with_credentials(self, mock_config):
         """Test Vertex AI initialization with credentials path."""
         mock_config.llm.provider = "vertex_ai"
@@ -336,8 +374,12 @@ class TestVertexAIInitialization:
         mock_config.llm.location = "us-west1"
         mock_config.llm.credentials_path = "/path/to/credentials.json"
 
-        with patch('askrita.utils.LLMManager.ChatVertexAI', create=True) as mock_vertex_ai, \
-             patch.dict(os.environ, {}, clear=True):
+        with (
+            patch(
+                "askrita.utils.LLMManager.ChatVertexAI", create=True
+            ) as mock_vertex_ai,
+            patch.dict(os.environ, {}, clear=True),
+        ):
 
             mock_llm = Mock()
             mock_vertex_ai.return_value = mock_llm
@@ -345,7 +387,10 @@ class TestVertexAIInitialization:
             _ = LLMManager(mock_config, test_connection=False)
 
             # Should set GOOGLE_APPLICATION_CREDENTIALS
-            assert os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") == "/path/to/credentials.json"
+            assert (
+                os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+                == "/path/to/credentials.json"
+            )
 
             # Verify ChatVertexAI was called with correct parameters
             call_args = mock_vertex_ai.call_args[1]
@@ -356,7 +401,9 @@ class TestVertexAIInitialization:
 class TestBedrockInitialization:
     """Test Bedrock-specific initialization."""
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_bedrock_with_aws_credentials(self, mock_config):
         """Test Bedrock initialization with AWS credentials."""
         mock_config.llm.provider = "bedrock"
@@ -365,12 +412,17 @@ class TestBedrockInitialization:
         mock_config.llm.aws_secret_access_key_env_var = "AWS_SECRET_ACCESS_KEY"
         mock_config.llm.aws_session_token_env_var = "AWS_SESSION_TOKEN"
 
-        with patch('askrita.utils.LLMManager.ChatBedrock', create=True) as mock_bedrock, \
-             patch.dict(os.environ, {
-                 "AWS_ACCESS_KEY_ID": "test-access-key",
-                 "AWS_SECRET_ACCESS_KEY": "test-secret-key",
-                 "AWS_SESSION_TOKEN": "test-session-token"
-             }):
+        with (
+            patch("askrita.utils.LLMManager.ChatBedrock", create=True) as mock_bedrock,
+            patch.dict(
+                os.environ,
+                {
+                    "AWS_ACCESS_KEY_ID": "test-access-key",
+                    "AWS_SECRET_ACCESS_KEY": "test-secret-key",
+                    "AWS_SESSION_TOKEN": "test-session-token",
+                },
+            ),
+        ):
 
             mock_llm = Mock()
             mock_bedrock.return_value = mock_llm
@@ -395,24 +447,36 @@ class TestLLMManagerErrorHandling:
         with pytest.raises(Exception, match="LLM API error"):
             mock_llm_manager.invoke(Mock())
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_missing_import_error(self, mock_config):
         """Test handling of missing dependency imports."""
         mock_config.llm.provider = "openai"
 
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True) as mock_chat_openai:
-            mock_chat_openai.side_effect = ImportError("No module named 'langchain_openai'")
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI", create=True
+        ) as mock_chat_openai:
+            mock_chat_openai.side_effect = ImportError(
+                "No module named 'langchain_openai'"
+            )
 
-            with pytest.raises(ConfigurationError, match="Missing dependencies for openai"):
+            with pytest.raises(
+                ConfigurationError, match="Missing dependencies for openai"
+            ):
                 LLMManager(mock_config, test_connection=False)
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_authentication_error_handling(self, mock_config):
         """Test handling of authentication errors."""
         mock_config.llm.provider = "openai"
-        #mock_config.llm.api_key = "invalid-key"
+        # mock_config.llm.api_key = "invalid-key"
 
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True) as mock_chat_openai:
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI", create=True
+        ) as mock_chat_openai:
             mock_chat_openai.side_effect = Exception("authentication failed")
 
             with pytest.raises(LLMError, match="LLM authentication failed"):
@@ -420,16 +484,20 @@ class TestLLMManagerErrorHandling:
 
     def test_prompt_creation_error(self, mock_config):
         """Test error handling in prompt creation."""
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True):
+        with patch("askrita.utils.LLMManager.ChatOpenAI", create=True):
             llm_manager = LLMManager(mock_config, test_connection=False)
 
             # Try to create prompt for non-existent prompt name
-            with pytest.raises(ConfigurationError, match="Prompt 'nonexistent' not found"):
+            with pytest.raises(
+                ConfigurationError, match="Prompt 'nonexistent' not found"
+            ):
                 llm_manager.create_prompt_from_config("nonexistent")
 
     def test_connection_test_with_error(self, mock_config):
         """Test connection test when LLM raises an error."""
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True) as mock_chat_openai:
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI", create=True
+        ) as mock_chat_openai:
             mock_llm = Mock()
             mock_llm.invoke.side_effect = Exception("Connection failed")
             mock_chat_openai.return_value = mock_llm
@@ -448,7 +516,7 @@ class TestLLMManagerErrorHandling:
         mock_config.llm.azure_client_id = "test-client"
         mock_config.llm.azure_certificate_path = "/path/to/cert.pem"
 
-        with patch('azure.identity.CertificateCredential') as mock_cert_cred:
+        with patch("azure.identity.CertificateCredential") as mock_cert_cred:
             mock_cert_cred.side_effect = Exception("Certificate error")
 
             with pytest.raises(LLMError, match="Failed to create Azure token provider"):
@@ -458,13 +526,17 @@ class TestLLMManagerErrorHandling:
 class TestLLMManagerEdgeCases:
     """Test edge cases and special scenarios."""
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_invoke_with_database_type_injection(self, mock_config):
         """Test that database type is automatically injected into prompts."""
         # Ensure the mock config's get_database_type method works
         mock_config.get_database_type.return_value = "sqlite"
 
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True) as mock_chat_openai:
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI", create=True
+        ) as mock_chat_openai:
             mock_llm = Mock()
             mock_response = Mock()
             mock_response.content = "Generated SQL"
@@ -474,12 +546,17 @@ class TestLLMManagerEdgeCases:
             llm_manager = LLMManager(mock_config, test_connection=False)
 
             from langchain_core.prompts import ChatPromptTemplate
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", "Generate SQL for {database_type}"),
-                ("human", "Question: {question}")
-            ])
 
-            response = llm_manager.invoke(prompt, question="Show customers", database_type="sqlite")
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "Generate SQL for {database_type}"),
+                    ("human", "Question: {question}"),
+                ]
+            )
+
+            response = llm_manager.invoke(
+                prompt, question="Show customers", database_type="sqlite"
+            )
 
             # Should include database_type in the call
             assert response == "Generated SQL"
@@ -489,7 +566,7 @@ class TestLLMManagerEdgeCases:
 
     def test_invoke_with_config_prompt_missing_template(self, mock_config):
         """Test invoke with config prompt when template is missing."""
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True):
+        with patch("askrita.utils.LLMManager.ChatOpenAI", create=True):
             llm_manager = LLMManager(mock_config, test_connection=False)
 
             # Mock empty prompt response
@@ -500,14 +577,18 @@ class TestLLMManagerEdgeCases:
             # Should return error message
             assert "Error" in response
 
-    @pytest.mark.skipif(sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 11), reason="Mock compatibility issue on Python 3.10"
+    )
     def test_model_parameters_validation(self, mock_config):
         """Test that model parameters are properly validated and passed."""
         mock_config.llm.provider = "openai"
         mock_config.llm.temperature = 1.5  # Invalid temperature
-        mock_config.llm.max_tokens = -1     # Invalid max_tokens
+        mock_config.llm.max_tokens = -1  # Invalid max_tokens
 
-        with patch('askrita.utils.LLMManager.ChatOpenAI', create=True) as mock_chat_openai:
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI", create=True
+        ) as mock_chat_openai:
             mock_llm = Mock()
             mock_chat_openai.return_value = mock_llm
 

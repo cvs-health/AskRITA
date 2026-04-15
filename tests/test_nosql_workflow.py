@@ -18,21 +18,21 @@
 
 """Tests for NoSQLAgentWorkflow."""
 
-import pytest
 from unittest.mock import Mock, patch
 
+import pytest
+
+from askrita.exceptions import ValidationError
+from askrita.sqlagent.State import WorkflowState
 from askrita.sqlagent.workflows.NoSQLAgentWorkflow import (
-    NoSQLAgentWorkflow,
+    FollowupQuestionsResponse,
     MongoQueryGenerationResponse,
     MongoQueryValidationResponse,
+    NoSQLAgentWorkflow,
     ParseQuestionResponse,
-    TableInfo,
-    FollowupQuestionsResponse,
     ResultsFormattingResponse,
+    TableInfo,
 )
-from askrita.sqlagent.State import WorkflowState
-from askrita.exceptions import ValidationError
-
 
 # =============================================================================
 # FIXTURES
@@ -91,20 +91,24 @@ def mock_config():
 @pytest.fixture
 def mock_nosql_workflow(mock_config):
     """Create a NoSQLAgentWorkflow with all dependencies mocked."""
-    with patch(
-        "askrita.sqlagent.workflows.NoSQLAgentWorkflow.NoSQLDatabaseManager"
-    ) as MockDBManager, patch(
-        "askrita.sqlagent.workflows.NoSQLAgentWorkflow.LLMManager"
-    ) as MockLLM, patch(
-        "askrita.sqlagent.workflows.NoSQLAgentWorkflow.DataFormatter"
-    ) as MockFormatter, patch(
-        "askrita.sqlagent.workflows.NoSQLAgentWorkflow.create_pii_detector"
-    ) as MockPII, patch.object(
-        NoSQLAgentWorkflow, "_create_workflow"
-    ) as mock_create_wf:
+    with (
+        patch(
+            "askrita.sqlagent.workflows.NoSQLAgentWorkflow.NoSQLDatabaseManager"
+        ) as MockDBManager,
+        patch("askrita.sqlagent.workflows.NoSQLAgentWorkflow.LLMManager") as MockLLM,
+        patch(
+            "askrita.sqlagent.workflows.NoSQLAgentWorkflow.DataFormatter"
+        ) as MockFormatter,
+        patch(
+            "askrita.sqlagent.workflows.NoSQLAgentWorkflow.create_pii_detector"
+        ) as MockPII,
+        patch.object(NoSQLAgentWorkflow, "_create_workflow") as mock_create_wf,
+    ):
         # Setup mock DB manager
         mock_db = Mock()
-        mock_db.get_schema.return_value = "Collection: orders\nFields: _id, amount, date"
+        mock_db.get_schema.return_value = (
+            "Collection: orders\nFields: _id, amount, date"
+        )
         mock_db.execute_query.return_value = [{"_id": "1", "amount": 100}]
         mock_db.db = Mock()
         mock_db.db.run_no_throw.return_value = [{"_id": "active"}]
@@ -182,7 +186,9 @@ class TestPydanticModels:
         response = ParseQuestionResponse(
             is_relevant=True,
             relevant_tables=[
-                TableInfo(table_name="orders", noun_columns=["status"], relevance_score=0.9)
+                TableInfo(
+                    table_name="orders", noun_columns=["status"], relevance_score=0.9
+                )
             ],
         )
         assert response.is_relevant is True
@@ -291,12 +297,16 @@ class TestQuerySafety:
     def test_validate_blocks_insert(self, mock_nosql_workflow):
         """Test that insert operations are blocked."""
         with pytest.raises(ValidationError, match="forbidden operation"):
-            mock_nosql_workflow._validate_query_safety('db.orders.insertOne({name: "test"})')
+            mock_nosql_workflow._validate_query_safety(
+                'db.orders.insertOne({name: "test"})'
+            )
 
     def test_validate_blocks_update(self, mock_nosql_workflow):
         """Test that update operations are blocked."""
         with pytest.raises(ValidationError, match="forbidden operation"):
-            mock_nosql_workflow._validate_query_safety('db.orders.updateMany({}, {$set: {status: "done"}})')
+            mock_nosql_workflow._validate_query_safety(
+                'db.orders.updateMany({}, {$set: {status: "done"}})'
+            )
 
     def test_validate_blocks_drop(self, mock_nosql_workflow):
         """Test that drop operations are blocked."""
@@ -337,7 +347,9 @@ class TestParseQuestion:
         mock_nosql_workflow.llm_manager.invoke_with_structured_output.return_value = (
             ParseQuestionResponse(
                 is_relevant=True,
-                relevant_tables=[TableInfo(table_name="orders", noun_columns=["status"])],
+                relevant_tables=[
+                    TableInfo(table_name="orders", noun_columns=["status"])
+                ],
             )
         )
 
@@ -374,7 +386,9 @@ class TestParseQuestion:
 
     def test_parse_question_error_handling(self, mock_nosql_workflow):
         """Test parse_question error handling."""
-        mock_nosql_workflow.llm_manager.invoke_with_structured_output.side_effect = Exception("LLM error")
+        mock_nosql_workflow.llm_manager.invoke_with_structured_output.side_effect = (
+            Exception("LLM error")
+        )
 
         state = WorkflowState(question="Test question")
         result = mock_nosql_workflow.parse_question(state)
@@ -424,16 +438,17 @@ class TestGenerateQuery:
 
     def test_generate_query_success(self, mock_nosql_workflow):
         """Test successful query generation."""
-        mock_nosql_workflow.llm_manager.invoke_with_structured_output.return_value = (
-            MongoQueryGenerationResponse(
-                query_command='db.orders.aggregate([{$group: {_id: "$status", count: {$sum: 1}}}])',
-                query_reason="Grouped orders by status",
-            )
+        mock_nosql_workflow.llm_manager.invoke_with_structured_output.return_value = MongoQueryGenerationResponse(
+            query_command='db.orders.aggregate([{$group: {_id: "$status", count: {$sum: 1}}}])',
+            query_reason="Grouped orders by status",
         )
 
         state = WorkflowState(
             question="How many orders per status?",
-            parsed_question={"is_relevant": True, "relevant_tables": [{"table_name": "orders"}]},
+            parsed_question={
+                "is_relevant": True,
+                "relevant_tables": [{"table_name": "orders"}],
+            },
             unique_nouns=["active", "pending"],
         )
 
@@ -589,7 +604,7 @@ class TestFormatResults:
 
         state = WorkflowState(
             question="How many orders per status?",
-            sql_query='db.orders.aggregate([...])',
+            sql_query="db.orders.aggregate([...])",
             results=[{"_id": "active", "count": 42}, {"_id": "pending", "count": 10}],
         )
 
@@ -598,7 +613,9 @@ class TestFormatResults:
 
     def test_format_results_no_data(self, mock_nosql_workflow):
         """Test formatting with no results."""
-        state = WorkflowState(question="Test", sql_query="db.orders.aggregate([])", results=[])
+        state = WorkflowState(
+            question="Test", sql_query="db.orders.aggregate([])", results=[]
+        )
         result = mock_nosql_workflow.format_results(state)
         assert "No results" in result["answer"]
 
@@ -650,10 +667,12 @@ class TestChooseAndFormatVisualization:
     def test_visualization_success(self, mock_nosql_workflow):
         """Test successful visualization choice and formatting."""
         mock_chart_data = Mock()
-        mock_nosql_workflow.llm_manager.invoke_with_structured_output.return_value = Mock(
-            visualization="bar",
-            visualization_reason="Categorical comparison",
-            universal_format=mock_chart_data,
+        mock_nosql_workflow.llm_manager.invoke_with_structured_output.return_value = (
+            Mock(
+                visualization="bar",
+                visualization_reason="Categorical comparison",
+                universal_format=mock_chart_data,
+            )
         )
 
         state = WorkflowState(
@@ -668,7 +687,9 @@ class TestChooseAndFormatVisualization:
 
     def test_visualization_no_data(self, mock_nosql_workflow):
         """Test visualization with no data."""
-        state = WorkflowState(question="Test", sql_query="db.test.aggregate([])", results=[])
+        state = WorkflowState(
+            question="Test", sql_query="db.test.aggregate([])", results=[]
+        )
         result = mock_nosql_workflow.choose_and_format_visualization(state)
         assert result["visualization"] == "none"
 

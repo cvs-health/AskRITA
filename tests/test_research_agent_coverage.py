@@ -14,15 +14,14 @@
 
 """Tests for ResearchAgent targeting previously uncovered code paths."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
 from askrita.research.ResearchAgent import ResearchAgent, ResearchWorkflowState
 
-
 # ---------------------------------------------------------------------------
 # Helper: create a bare ResearchAgent (bypasses __init__)
 # ---------------------------------------------------------------------------
+
 
 def _bare_agent():
     """Return a ResearchAgent instance bypassing __init__."""
@@ -57,6 +56,7 @@ def _make_state(**kwargs):
 # _detect_column_remapping – empty input (line 432)
 # ---------------------------------------------------------------------------
 
+
 class TestDetectColumnRemapping:
     def test_empty_raw_rows_returns_false_zero(self):
         """Line 432: empty list → (False, 0)."""
@@ -82,6 +82,7 @@ class TestDetectColumnRemapping:
 # ---------------------------------------------------------------------------
 # _remap_raw_rows – non-dict/non-list row (line 461)
 # ---------------------------------------------------------------------------
+
 
 class TestRemapRawRows:
     def test_scalar_row_wrapped_in_value_dict(self):
@@ -115,6 +116,7 @@ class TestRemapRawRows:
 # ---------------------------------------------------------------------------
 # _execute_query – no SQL path (lines 478-480) and exception (lines 496-499)
 # ---------------------------------------------------------------------------
+
 
 class TestExecuteQuery:
     def test_empty_sql_stores_error_entry(self):
@@ -155,7 +157,9 @@ class TestExecuteQuery:
         sample_sizes: dict = {}
         sql_map = {0: "SELECT group, score FROM t"}
 
-        agent._execute_query(0, ["Show group and score"], sql_map, collected, sample_sizes)
+        agent._execute_query(
+            0, ["Show group and score"], sql_map, collected, sample_sizes
+        )
 
         assert "data" in collected["query_1"]
         assert sample_sizes["query_1"] == 2
@@ -164,6 +168,7 @@ class TestExecuteQuery:
 # ---------------------------------------------------------------------------
 # _data_preparation – no queries case (line 510)
 # ---------------------------------------------------------------------------
+
 
 class TestDataPreparation:
     def test_returns_next_phase_when_no_queries(self):
@@ -178,6 +183,7 @@ class TestDataPreparation:
 # ---------------------------------------------------------------------------
 # _populate_best_test_metrics – bonferroni path (lines 599-602)
 # ---------------------------------------------------------------------------
+
 
 class TestPopulateBestTestMetrics:
     def _make_test_result(self, p_value=0.01, effect_size=0.5, bonferroni_p=None):
@@ -202,7 +208,9 @@ class TestPopulateBestTestMetrics:
         best_test = self._make_test_result(bonferroni_p=0.02)
         computed_metrics: dict = {}
 
-        ResearchAgent._populate_best_test_metrics(best_test, computed_metrics, n_tests=3)
+        ResearchAgent._populate_best_test_metrics(
+            best_test, computed_metrics, n_tests=3
+        )
 
         assert "bonferroni_p" in computed_metrics
         assert computed_metrics["bonferroni_p"] == 0.02
@@ -213,7 +221,9 @@ class TestPopulateBestTestMetrics:
         best_test = self._make_test_result()  # no bonferroni
         computed_metrics: dict = {}
 
-        ResearchAgent._populate_best_test_metrics(best_test, computed_metrics, n_tests=1)
+        ResearchAgent._populate_best_test_metrics(
+            best_test, computed_metrics, n_tests=1
+        )
 
         assert "bonferroni_p" not in computed_metrics
 
@@ -221,6 +231,7 @@ class TestPopulateBestTestMetrics:
 # ---------------------------------------------------------------------------
 # _modeling – no data case (lines 610-619)
 # ---------------------------------------------------------------------------
+
 
 class TestModeling:
     def test_no_collected_data_returns_no_data_state(self):
@@ -239,6 +250,7 @@ class TestModeling:
 # _get_structured_schema_summary – exception fallback (lines 935-937)
 # ---------------------------------------------------------------------------
 
+
 class TestGetStructuredSchemaSummary:
     def test_returns_fallback_string_on_exception(self):
         """Lines 935-937: exception in analyze_schema returns generic fallback string."""
@@ -255,6 +267,7 @@ class TestGetStructuredSchemaSummary:
 # _business_understanding – LLM success and error paths (lines 307-338)
 # ---------------------------------------------------------------------------
 
+
 class TestBusinessUnderstanding:
     def test_returns_refined_hypothesis_on_success(self):
         """Lines 307-335: returns structured output on successful LLM call."""
@@ -263,7 +276,9 @@ class TestBusinessUnderstanding:
         llm_result.refined_hypothesis = "Refined: A increases B by 20%"
         llm_result.success_criteria = "p < 0.05"
         llm_result.key_variables = ["column_a", "column_b"]
-        agent.sql_agent.llm_manager.invoke_with_structured_output_direct.return_value = llm_result
+        agent.sql_agent.llm_manager.invoke_with_structured_output_direct.return_value = (
+            llm_result
+        )
 
         state = _make_state()
         result = agent._business_understanding(state)
@@ -289,6 +304,7 @@ class TestBusinessUnderstanding:
 # _data_understanding – LLM success and error paths (lines 347-422)
 # ---------------------------------------------------------------------------
 
+
 class TestDataUnderstanding:
     def test_returns_evidence_queries_on_success(self):
         """Lines 402-416: returns evidence_queries when LLM succeeds."""
@@ -299,7 +315,9 @@ class TestDataUnderstanding:
         llm_result.data_quality_notes = "Good data"
         llm_result.limitations = ["Small sample"]
         llm_result.recommended_queries = ["Show col_a and col_b"]
-        agent.sql_agent.llm_manager.invoke_with_structured_output_direct.return_value = llm_result
+        agent.sql_agent.llm_manager.invoke_with_structured_output_direct.return_value = (
+            llm_result
+        )
 
         state = _make_state()
         result = agent._data_understanding(state)
@@ -325,6 +343,7 @@ class TestDataUnderstanding:
 # ---------------------------------------------------------------------------
 # _deployment – error path (lines 823-835)
 # ---------------------------------------------------------------------------
+
 
 class TestDeployment:
     def test_returns_defaults_on_llm_failure(self):
@@ -354,7 +373,9 @@ class TestDeployment:
         llm_result.insights = ["Key insight"]
         llm_result.recommendations = ["Do X"]
         llm_result.next_steps = ["Collect more data"]
-        agent.sql_agent.llm_manager.invoke_with_structured_output_direct.return_value = llm_result
+        agent.sql_agent.llm_manager.invoke_with_structured_output_direct.return_value = (
+            llm_result
+        )
 
         state = _make_state(
             conclusion="SUPPORTED",
@@ -372,9 +393,18 @@ class TestDeployment:
 # _compute_evaluation_confidence – all branches (lines 770-780)
 # ---------------------------------------------------------------------------
 
+
 class TestComputeEvaluationConfidence:
-    def _call(self, agent, p_value, is_significant, bonferroni_sig=None,
-              bonferroni_p=None, effect_size=None, fallback=50):
+    def _call(
+        self,
+        agent,
+        p_value,
+        is_significant,
+        bonferroni_sig=None,
+        bonferroni_p=None,
+        effect_size=None,
+        fallback=50,
+    ):
         return agent._compute_evaluation_confidence(
             p_value, is_significant, bonferroni_sig, bonferroni_p, effect_size, fallback
         )
@@ -418,8 +448,7 @@ class TestComputeEvaluationConfidence:
         agent = _bare_agent()
         # Standard: not significant (p=0.5). But bonferroni says significant with large effect.
         result = self._call(
-            agent, 0.5, False,
-            bonferroni_sig=True, bonferroni_p=0.01, effect_size=0.9
+            agent, 0.5, False, bonferroni_sig=True, bonferroni_p=0.01, effect_size=0.9
         )
         assert result == 90
 
@@ -427,6 +456,7 @@ class TestComputeEvaluationConfidence:
 # ---------------------------------------------------------------------------
 # _get_structured_schema_summary – success path (lines 912-934)
 # ---------------------------------------------------------------------------
+
 
 class TestGetStructuredSchemaSummarySuccess:
     def test_success_path_returns_formatted_text(self):
@@ -466,6 +496,7 @@ class TestGetStructuredSchemaSummarySuccess:
 # Public API methods: test_hypothesis, test_assumption, query, schema,
 # analyze_schema (lines 956-1019)
 # ---------------------------------------------------------------------------
+
 
 class TestPublicAPI:
     def test_test_hypothesis_invokes_workflow(self):
@@ -578,6 +609,7 @@ class TestPublicAPI:
 # ---------------------------------------------------------------------------
 # _modeling with actual (mocked) data (lines 621-681)
 # ---------------------------------------------------------------------------
+
 
 class TestModelingWithData:
     def test_modeling_with_mocked_stats(self):

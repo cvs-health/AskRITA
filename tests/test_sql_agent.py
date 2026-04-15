@@ -18,13 +18,14 @@
 
 """Tests for SQLAgentWorkflow functionality."""
 
-import pytest
 import os
 from unittest.mock import Mock, patch
 
-from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
+import pytest
+
 from askrita.exceptions import ValidationError
 from askrita.sqlagent.State import WorkflowState
+from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 
 # ---------------------------------------------------------------------------
 # String constants for WorkflowState keys and common test values
@@ -60,8 +61,13 @@ _TABLE_NAME = "table_name"
 # Module-level helper functions for mock_sql_agent_for_unit_tests fixture
 # ---------------------------------------------------------------------------
 
+
 def _mock_parse_question(sql_agent, state):
-    question = state.question or "" if hasattr(state, 'question') else getattr(state, 'question', "") or ""
+    question = (
+        state.question or ""
+        if hasattr(state, "question")
+        else getattr(state, "question", "") or ""
+    )
 
     # Check for step disabled first (has highest priority)
     if sql_agent.config.is_step_enabled.return_value is False:
@@ -73,9 +79,13 @@ def _mock_parse_question(sql_agent, state):
 
     # LLM error case - return False for _QUESTION_SALES only when coming from LLM error test
     # We'll detect this by checking if there's an active side_effect AND it's specifically "sales"
-    if question == _QUESTION_SALES and \
-       hasattr(sql_agent.llm_manager.invoke_with_config_prompt, 'side_effect') and \
-       isinstance(sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception):
+    if (
+        question == _QUESTION_SALES
+        and hasattr(sql_agent.llm_manager.invoke_with_config_prompt, "side_effect")
+        and isinstance(
+            sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception
+        )
+    ):
         return {_PARSED_QUESTION: {_IS_RELEVANT: False, _RELEVANT_TABLES: []}}
     else:
         return {_PARSED_QUESTION: {_IS_RELEVANT: True, _RELEVANT_TABLES: []}}
@@ -83,8 +93,9 @@ def _mock_parse_question(sql_agent, state):
 
 def _mock_get_unique_nouns(sql_agent, state):
     # If the test has set up specific db_manager behavior, use the real method
-    if hasattr(sql_agent.db_manager.execute_query, 'return_value') or \
-       hasattr(sql_agent.db_manager.execute_query, 'side_effect'):
+    if hasattr(sql_agent.db_manager.execute_query, "return_value") or hasattr(
+        sql_agent.db_manager.execute_query, "side_effect"
+    ):
         # Use the real method
         real_method = SQLAgentWorkflow.get_unique_nouns.__get__(sql_agent)
         return real_method(state)
@@ -92,7 +103,11 @@ def _mock_get_unique_nouns(sql_agent, state):
     # Otherwise use simple mock behavior
     if not sql_agent.config.is_step_enabled.return_value:
         return {_UNIQUE_NOUNS: []}
-    elif (state.parsed_question or {}).get(_IS_RELEVANT, True) if hasattr(state, 'parsed_question') else (getattr(state, 'parsed_question', None) or {}).get(_IS_RELEVANT, True):
+    elif (
+        (state.parsed_question or {}).get(_IS_RELEVANT, True)
+        if hasattr(state, "parsed_question")
+        else (getattr(state, "parsed_question", None) or {}).get(_IS_RELEVANT, True)
+    ):
         return {_UNIQUE_NOUNS: ["test_noun"]}
     else:
         return {_UNIQUE_NOUNS: []}
@@ -101,20 +116,43 @@ def _mock_get_unique_nouns(sql_agent, state):
 def _mock_generate_sql(sql_agent, state):
     # If the test has set up specific LLM manager behavior, use the real method
     # BUT exclude basic tests that don't need real method behavior
-    if (hasattr(sql_agent.llm_manager.invoke_with_structured_output, 'side_effect') and \
-        isinstance(sql_agent.llm_manager.invoke_with_structured_output.side_effect, Exception)) or \
-       (hasattr(sql_agent.llm_manager.invoke_with_config_prompt, 'side_effect') and \
-        isinstance(sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception)) or \
-       (hasattr(sql_agent.llm_manager.invoke_with_config_prompt, 'return_value') and \
-        isinstance(sql_agent.llm_manager.invoke_with_config_prompt.return_value, str) and \
-        "DROP" in sql_agent.llm_manager.invoke_with_config_prompt.return_value.upper()):
+    if (
+        (
+            hasattr(sql_agent.llm_manager.invoke_with_structured_output, "side_effect")
+            and isinstance(
+                sql_agent.llm_manager.invoke_with_structured_output.side_effect,
+                Exception,
+            )
+        )
+        or (
+            hasattr(sql_agent.llm_manager.invoke_with_config_prompt, "side_effect")
+            and isinstance(
+                sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception
+            )
+        )
+        or (
+            hasattr(sql_agent.llm_manager.invoke_with_config_prompt, "return_value")
+            and isinstance(
+                sql_agent.llm_manager.invoke_with_config_prompt.return_value, str
+            )
+            and "DROP"
+            in sql_agent.llm_manager.invoke_with_config_prompt.return_value.upper()
+        )
+    ):
         # Use the real method for error handling and safety validation
         real_method = SQLAgentWorkflow.generate_sql.__get__(sql_agent)
         return real_method(state)
 
     if not sql_agent.config.is_step_enabled.return_value:
-        return {_SQL_QUERY: "", _IS_RELEVANT: True}  # Step disabled expects is_relevant=True
-    elif not (state.parsed_question or {}).get(_IS_RELEVANT, True) if hasattr(state, 'parsed_question') else not (getattr(state, 'parsed_question', None) or {}).get(_IS_RELEVANT, True):
+        return {
+            _SQL_QUERY: "",
+            _IS_RELEVANT: True,
+        }  # Step disabled expects is_relevant=True
+    elif (
+        not (state.parsed_question or {}).get(_IS_RELEVANT, True)
+        if hasattr(state, "parsed_question")
+        else not (getattr(state, "parsed_question", None) or {}).get(_IS_RELEVANT, True)
+    ):
         return {_SQL_QUERY: _NOT_RELEVANT, _IS_RELEVANT: False}
     else:
         return {_SQL_QUERY: "SELECT * FROM test", _IS_RELEVANT: True}
@@ -123,55 +161,103 @@ def _mock_generate_sql(sql_agent, state):
 def _mock_validate_and_fix_sql(sql_agent, state):
     # If the test has set up specific LLM manager behavior, use the real method
     # BUT exclude basic tests that don't need real method behavior
-    if (hasattr(sql_agent.llm_manager.invoke_with_structured_output, 'side_effect') and \
-        isinstance(sql_agent.llm_manager.invoke_with_structured_output.side_effect, Exception)) or \
-       (hasattr(sql_agent.llm_manager.invoke_with_config_prompt, 'side_effect') and \
-        isinstance(sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception)) or \
-       (hasattr(sql_agent.llm_manager.invoke_with_config_prompt, 'return_value') and \
-        isinstance(sql_agent.llm_manager.invoke_with_config_prompt.return_value, str) and \
-        "issues_found" in sql_agent.llm_manager.invoke_with_config_prompt.return_value):
+    if (
+        (
+            hasattr(sql_agent.llm_manager.invoke_with_structured_output, "side_effect")
+            and isinstance(
+                sql_agent.llm_manager.invoke_with_structured_output.side_effect,
+                Exception,
+            )
+        )
+        or (
+            hasattr(sql_agent.llm_manager.invoke_with_config_prompt, "side_effect")
+            and isinstance(
+                sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception
+            )
+        )
+        or (
+            hasattr(sql_agent.llm_manager.invoke_with_config_prompt, "return_value")
+            and isinstance(
+                sql_agent.llm_manager.invoke_with_config_prompt.return_value, str
+            )
+            and "issues_found"
+            in sql_agent.llm_manager.invoke_with_config_prompt.return_value
+        )
+    ):
         # Use the real method for error handling and validation
         real_method = SQLAgentWorkflow.validate_and_fix_sql.__get__(sql_agent)
         return real_method(state)
 
-    sql_query = state.sql_query or "" if hasattr(state, 'sql_query') else getattr(state, 'sql_query', "") or ""
+    sql_query = (
+        state.sql_query or ""
+        if hasattr(state, "sql_query")
+        else getattr(state, "sql_query", "") or ""
+    )
 
     if not sql_agent.config.is_step_enabled.return_value:
-        return {_SQL_QUERY: sql_query, _SQL_VALID: True, _SQL_ISSUES: "Validation skipped"}
+        return {
+            _SQL_QUERY: sql_query,
+            _SQL_VALID: True,
+            _SQL_ISSUES: "Validation skipped",
+        }
     elif sql_query in [_NOT_RELEVANT, _SQL_ERROR, ""]:
-        return {_SQL_QUERY: sql_query, _SQL_VALID: False, _SQL_ISSUES: "No validation needed"}
+        return {
+            _SQL_QUERY: sql_query,
+            _SQL_VALID: False,
+            _SQL_ISSUES: "No validation needed",
+        }
     else:
         # Return corrected SQL with validation notes
-        return {_SQL_QUERY: sql_query + " LIMIT 10", _SQL_VALID: True, _SQL_ISSUES: "Query validated and optimized"}
+        return {
+            _SQL_QUERY: sql_query + " LIMIT 10",
+            _SQL_VALID: True,
+            _SQL_ISSUES: "Query validated and optimized",
+        }
 
 
 def _mock_execute_sql(sql_agent, state):
     # If the test has set up specific db_manager behavior, use the real method
-    if hasattr(sql_agent.db_manager.execute_query, 'side_effect') and \
-       isinstance(sql_agent.db_manager.execute_query.side_effect, Exception):
+    if hasattr(sql_agent.db_manager.execute_query, "side_effect") and isinstance(
+        sql_agent.db_manager.execute_query.side_effect, Exception
+    ):
         # Use the real method for error handling
         real_method = SQLAgentWorkflow.execute_sql.__get__(sql_agent)
         return real_method(state)
 
     if not sql_agent.config.is_step_enabled.return_value:
         return {_QUERY_RESULTS: [], _EXECUTION_NOTES: "Execution skipped"}
-    elif (state.sql_query if hasattr(state, 'sql_query') else getattr(state, 'sql_query', None)) in [_NOT_RELEVANT, _SQL_ERROR, ""]:
+    elif (
+        state.sql_query
+        if hasattr(state, "sql_query")
+        else getattr(state, "sql_query", None)
+    ) in [_NOT_RELEVANT, _SQL_ERROR, ""]:
         return {_QUERY_RESULTS: [], _EXECUTION_NOTES: "No query to execute"}
     else:
-        return {"results": [("test", 1)], _QUERY_RESULTS: [("test", 1)], _EXECUTION_NOTES: "Query executed successfully"}
+        return {
+            "results": [("test", 1)],
+            _QUERY_RESULTS: [("test", 1)],
+            _EXECUTION_NOTES: "Query executed successfully",
+        }
 
 
 def _mock_format_results(sql_agent, state):
     # If the test has set up specific LLM manager behavior, use the real method
-    if hasattr(sql_agent.llm_manager.invoke_with_config_prompt, 'side_effect') and \
-       isinstance(sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception):
+    if hasattr(
+        sql_agent.llm_manager.invoke_with_config_prompt, "side_effect"
+    ) and isinstance(
+        sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception
+    ):
         # Use the real method for error handling
         real_method = SQLAgentWorkflow.format_results.__get__(sql_agent)
         return real_method(state)
 
     if not sql_agent.config.is_step_enabled.return_value:
         return {_ANSWER: "Result formatting disabled"}
-    elif not (state.query_results or []) if hasattr(state, 'query_results') else not (getattr(state, 'query_results', None) or []):
+    elif (
+        not (state.query_results or [])
+        if hasattr(state, "query_results")
+        else not (getattr(state, "query_results", None) or [])
+    ):
         return {_ANSWER: _NO_RESULTS}
     else:
         return {_ANSWER: "Test answer"}
@@ -179,15 +265,22 @@ def _mock_format_results(sql_agent, state):
 
 def _mock_choose_visualization(sql_agent, state):
     # If the test has set up specific LLM manager behavior, use the real method
-    if hasattr(sql_agent.llm_manager.invoke_with_config_prompt, 'side_effect') and \
-       isinstance(sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception):
+    if hasattr(
+        sql_agent.llm_manager.invoke_with_config_prompt, "side_effect"
+    ) and isinstance(
+        sql_agent.llm_manager.invoke_with_config_prompt.side_effect, Exception
+    ):
         # Use the real method for error handling
         real_method = SQLAgentWorkflow.choose_visualization.__get__(sql_agent)
         return real_method(state)
 
     if not sql_agent.config.is_step_enabled.return_value:
         return {_VISUALIZATION: "none", _VISUALIZATION_REASON: "Visualization disabled"}
-    elif not (state.query_results or []) if hasattr(state, 'query_results') else not (getattr(state, 'query_results', None) or []):
+    elif (
+        not (state.query_results or [])
+        if hasattr(state, "query_results")
+        else not (getattr(state, "query_results", None) or [])
+    ):
         return {_VISUALIZATION: "none", _VISUALIZATION_REASON: _NO_DATA}
     else:
         return {_VISUALIZATION: "bar", _VISUALIZATION_REASON: "Test reason"}
@@ -196,7 +289,7 @@ def _mock_choose_visualization(sql_agent, state):
 @pytest.fixture(autouse=True)
 def mock_openai_api_key():
     """Automatically mock OPENAI_API_KEY for all SQL agent tests."""
-    with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-api-key'}):
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "test-api-key"}):
         yield
 
 
@@ -209,21 +302,27 @@ class TestSQLAgentWorkflow:
 
         # Verify basic initialization
         assert sql_agent is not None
-        assert hasattr(sql_agent, 'config')
-        assert hasattr(sql_agent, 'db_manager')
-        assert hasattr(sql_agent, 'llm_manager')
-        assert hasattr(sql_agent, 'data_formatter')
-        assert hasattr(sql_agent, '_compiled_graph')
+        assert hasattr(sql_agent, "config")
+        assert hasattr(sql_agent, "db_manager")
+        assert hasattr(sql_agent, "llm_manager")
+        assert hasattr(sql_agent, "data_formatter")
+        assert hasattr(sql_agent, "_compiled_graph")
 
 
 @pytest.fixture
 def mock_sql_agent_for_unit_tests(mock_config, mock_database_manager, mock_llm_manager):
     """Create a properly mocked SQLAgentWorkflow for unit tests of individual methods."""
-    with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-         patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-         patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-         patch.object(SQLAgentWorkflow, '_create_workflow') as mock_create_workflow, \
-         patch.object(SQLAgentWorkflow, 'preload_schema'):
+    with (
+        patch(
+            "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+        ) as mock_db_class,
+        patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+        patch(
+            "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+        ) as mock_formatter_class,
+        patch.object(SQLAgentWorkflow, "_create_workflow") as mock_create_workflow,
+        patch.object(SQLAgentWorkflow, "preload_schema"),
+    ):
 
         mock_db_class.return_value = mock_database_manager
         mock_llm_class.return_value = mock_llm_manager
@@ -233,43 +332,88 @@ def mock_sql_agent_for_unit_tests(mock_config, mock_database_manager, mock_llm_m
         # Set up mock config with proper safety and validation settings
         mock_config.get_sql_safety_settings.return_value = {
             "allowed_query_types": ["SELECT", "WITH"],
-            "forbidden_patterns": ["DELETE", "DROP", "TRUNCATE", "ALTER", "INSERT", "UPDATE"],
+            "forbidden_patterns": [
+                "DELETE",
+                "DROP",
+                "TRUNCATE",
+                "ALTER",
+                "INSERT",
+                "UPDATE",
+            ],
             "max_query_length": 10000,
             "suspicious_functions": [
-                'OPENROWSET', 'OPENDATASOURCE', 'XP_', 'SP_', 'DBMS_',
-                'UTL_FILE', 'UTL_HTTP', 'BULK', 'OUTFILE', 'DUMPFILE'
-            ]
+                "OPENROWSET",
+                "OPENDATASOURCE",
+                "XP_",
+                "SP_",
+                "DBMS_",
+                "UTL_FILE",
+                "UTL_HTTP",
+                "BULK",
+                "OUTFILE",
+                "DUMPFILE",
+            ],
         }
         mock_config.get_input_validation_settings.return_value = {
             "max_question_length": 10000,
-            "blocked_substrings": ['<script', 'javascript:', 'data:', 'vbscript:', '@@']
+            "blocked_substrings": [
+                "<script",
+                "javascript:",
+                "data:",
+                "vbscript:",
+                "@@",
+            ],
         }
 
-        sql_agent = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+        sql_agent = SQLAgentWorkflow(
+            mock_config,
+            test_llm_connection=False,
+            test_db_connection=False,
+            init_schema_cache=False,
+        )
 
         # Manually set the mocked managers
         sql_agent.db_manager = mock_database_manager
         sql_agent.llm_manager = mock_llm_manager
 
         # Set up additional mocks needed for real methods
-        mock_database_manager.get_schema.return_value = "CREATE TABLE customers (id INT, name VARCHAR(100))"
+        mock_database_manager.get_schema.return_value = (
+            "CREATE TABLE customers (id INT, name VARCHAR(100))"
+        )
         mock_config.get_database_type.return_value = "postgresql"
 
         # Mock individual workflow step methods to return proper dictionaries with context awareness
-        sql_agent.parse_question = Mock(side_effect=lambda state: _mock_parse_question(sql_agent, state))
-        sql_agent.get_unique_nouns = Mock(side_effect=lambda state: _mock_get_unique_nouns(sql_agent, state))
-        sql_agent.generate_sql = Mock(side_effect=lambda state: _mock_generate_sql(sql_agent, state))
-        sql_agent.validate_and_fix_sql = Mock(side_effect=lambda state: _mock_validate_and_fix_sql(sql_agent, state))
-        sql_agent.execute_sql = Mock(side_effect=lambda state: _mock_execute_sql(sql_agent, state))
-        sql_agent.format_results = Mock(side_effect=lambda state: _mock_format_results(sql_agent, state))
-        sql_agent.choose_visualization = Mock(side_effect=lambda state: _mock_choose_visualization(sql_agent, state))
+        sql_agent.parse_question = Mock(
+            side_effect=lambda state: _mock_parse_question(sql_agent, state)
+        )
+        sql_agent.get_unique_nouns = Mock(
+            side_effect=lambda state: _mock_get_unique_nouns(sql_agent, state)
+        )
+        sql_agent.generate_sql = Mock(
+            side_effect=lambda state: _mock_generate_sql(sql_agent, state)
+        )
+        sql_agent.validate_and_fix_sql = Mock(
+            side_effect=lambda state: _mock_validate_and_fix_sql(sql_agent, state)
+        )
+        sql_agent.execute_sql = Mock(
+            side_effect=lambda state: _mock_execute_sql(sql_agent, state)
+        )
+        sql_agent.format_results = Mock(
+            side_effect=lambda state: _mock_format_results(sql_agent, state)
+        )
+        sql_agent.choose_visualization = Mock(
+            side_effect=lambda state: _mock_choose_visualization(sql_agent, state)
+        )
 
         # Keep the real _validate_sql_safety method for proper validation testing
         # Store reference to the original method before any mocking
         original_validate_sql_safety = SQLAgentWorkflow._validate_sql_safety
-        sql_agent._validate_sql_safety = lambda query: original_validate_sql_safety(sql_agent, query)
+        sql_agent._validate_sql_safety = lambda query: original_validate_sql_safety(
+            sql_agent, query
+        )
 
         return sql_agent
+
 
 class TestParseQuestion:
     """Test question parsing functionality."""
@@ -288,9 +432,12 @@ class TestParseQuestion:
     def test_parse_question_irrelevant(self, mock_sql_agent_for_unit_tests):
         """Test parsing an irrelevant question."""
         # Mock irrelevant response - reset side_effect and set return_value
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.side_effect = None
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.return_value = \
-            '{_IS_RELEVANT: false, _RELEVANT_TABLES: []}'
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.side_effect = (
+            None
+        )
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.return_value = (
+            "{_IS_RELEVANT: false, _RELEVANT_TABLES: []}"
+        )
 
         state = WorkflowState(question="What's the weather like today?")
 
@@ -313,7 +460,9 @@ class TestParseQuestion:
 
     def test_parse_question_llm_error(self, mock_sql_agent_for_unit_tests):
         """Test question parsing with LLM error."""
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.side_effect = Exception(_LLM_FAILED)
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.side_effect = Exception(
+            _LLM_FAILED
+        )
 
         state = WorkflowState(question=_QUESTION_SALES)
 
@@ -332,11 +481,8 @@ class TestGetUniqueNouns:
             parsed_question={
                 _IS_RELEVANT: True,
                 _RELEVANT_TABLES: [
-                    {
-                        _TABLE_NAME: "customers",
-                        "noun_columns": ["name", "company"]
-                    }
-                ]
+                    {_TABLE_NAME: "customers", "noun_columns": ["name", "company"]}
+                ],
             }
         )
 
@@ -344,7 +490,7 @@ class TestGetUniqueNouns:
         mock_sql_agent_for_unit_tests.db_manager.execute_query.return_value = [
             ("John Doe", _ACME_CORP),
             ("Jane Smith", "Tech Inc"),
-            ("Bob Johnson", "Data LLC")
+            ("Bob Johnson", "Data LLC"),
         ]
 
         result = mock_sql_agent_for_unit_tests.get_unique_nouns(state)
@@ -357,10 +503,7 @@ class TestGetUniqueNouns:
     def test_get_unique_nouns_irrelevant_question(self, mock_sql_agent_for_unit_tests):
         """Test unique nouns extraction for irrelevant question."""
         state = WorkflowState(
-            parsed_question={
-                _IS_RELEVANT: False,
-                _RELEVANT_TABLES: []
-            }
+            parsed_question={_IS_RELEVANT: False, _RELEVANT_TABLES: []}
         )
 
         result = mock_sql_agent_for_unit_tests.get_unique_nouns(state)
@@ -381,17 +524,16 @@ class TestGetUniqueNouns:
         """Test unique nouns extraction with business rules applied."""
         # For this test, we need the real get_unique_nouns method to run
         # Remove the mock and use the real method
-        mock_sql_agent_for_unit_tests.get_unique_nouns = SQLAgentWorkflow.get_unique_nouns.__get__(mock_sql_agent_for_unit_tests)
+        mock_sql_agent_for_unit_tests.get_unique_nouns = (
+            SQLAgentWorkflow.get_unique_nouns.__get__(mock_sql_agent_for_unit_tests)
+        )
 
         state = WorkflowState(
             parsed_question={
                 _IS_RELEVANT: True,
                 _RELEVANT_TABLES: [
-                    {
-                        _TABLE_NAME: "customers",
-                        "noun_columns": ["name"]
-                    }
-                ]
+                    {_TABLE_NAME: "customers", "noun_columns": ["name"]}
+                ],
             }
         )
 
@@ -399,17 +541,22 @@ class TestGetUniqueNouns:
         mock_sql_agent_for_unit_tests.config.get_business_rule.return_value = {
             "skip_null_values": True,
             "skip_empty_strings": True,
-            "skip_na_values": True
+            "skip_na_values": True,
         }
 
         # Mock the database response
-        mock_sql_agent_for_unit_tests.db_manager.execute_query.return_value = [("John",), ("Jane",)]
+        mock_sql_agent_for_unit_tests.db_manager.execute_query.return_value = [
+            ("John",),
+            ("Jane",),
+        ]
 
         mock_sql_agent_for_unit_tests.get_unique_nouns(state)
 
         # Should have called execute_query with WHERE conditions
         mock_sql_agent_for_unit_tests.db_manager.execute_query.assert_called()
-        call_args = mock_sql_agent_for_unit_tests.db_manager.execute_query.call_args[0][0]
+        call_args = mock_sql_agent_for_unit_tests.db_manager.execute_query.call_args[0][
+            0
+        ]
         assert "WHERE" in call_args
         assert "IS NOT NULL" in call_args
 
@@ -419,15 +566,14 @@ class TestGetUniqueNouns:
             parsed_question={
                 _IS_RELEVANT: True,
                 _RELEVANT_TABLES: [
-                    {
-                        _TABLE_NAME: "customers",
-                        "noun_columns": ["name"]
-                    }
-                ]
+                    {_TABLE_NAME: "customers", "noun_columns": ["name"]}
+                ],
             }
         )
 
-        mock_sql_agent_for_unit_tests.db_manager.execute_query.side_effect = Exception(_DATABASE_ERROR)
+        mock_sql_agent_for_unit_tests.db_manager.execute_query.side_effect = Exception(
+            _DATABASE_ERROR
+        )
 
         result = mock_sql_agent_for_unit_tests.get_unique_nouns(state)
 
@@ -443,7 +589,7 @@ class TestGenerateSQL:
         state = WorkflowState(
             question="What are the top 5 customers by revenue?",
             parsed_question={_IS_RELEVANT: True},
-            unique_nouns=[_ACME_CORP, "Tech Inc"]
+            unique_nouns=[_ACME_CORP, "Tech Inc"],
         )
 
         result = mock_sql_agent_for_unit_tests.generate_sql(state)
@@ -457,7 +603,7 @@ class TestGenerateSQL:
         state = WorkflowState(
             question="What's the weather?",
             parsed_question={_IS_RELEVANT: False},
-            unique_nouns=[]
+            unique_nouns=[],
         )
 
         result = mock_sql_agent_for_unit_tests.generate_sql(state)
@@ -472,7 +618,7 @@ class TestGenerateSQL:
         state = WorkflowState(
             question=_QUESTION_SALES,
             parsed_question={_IS_RELEVANT: True},
-            unique_nouns=[]
+            unique_nouns=[],
         )
 
         result = mock_sql_agent_for_unit_tests.generate_sql(state)
@@ -484,15 +630,18 @@ class TestGenerateSQL:
         """Test SQL generation with safety validation."""
         # Mock structured output response with safe SQL
         from unittest.mock import Mock
+
         mock_response = Mock()
         mock_response.sql_query = "SELECT name FROM customers WHERE active = 1"
         mock_response.sql_reason = "Changed to safe SELECT query"
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.return_value = mock_response
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.return_value = (
+            mock_response
+        )
 
         state = WorkflowState(
             question="Delete all customers",
             parsed_question={_IS_RELEVANT: True},
-            unique_nouns=[]
+            unique_nouns=[],
         )
 
         result = mock_sql_agent_for_unit_tests.generate_sql(state)
@@ -504,13 +653,17 @@ class TestGenerateSQL:
     def test_generate_sql_llm_error(self, mock_sql_agent_for_unit_tests):
         """Test SQL generation with LLM error."""
         # Mock structured output failure and fallback failure too
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.side_effect = Exception(_LLM_FAILED)
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.side_effect = Exception(_LLM_FAILED)
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.side_effect = Exception(
+            _LLM_FAILED
+        )
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.side_effect = Exception(
+            _LLM_FAILED
+        )
 
         state = WorkflowState(
             question=_QUESTION_SALES,
             parsed_question={_IS_RELEVANT: True},
-            unique_nouns=[]
+            unique_nouns=[],
         )
 
         result = mock_sql_agent_for_unit_tests.generate_sql(state)
@@ -532,63 +685,74 @@ class TestValidateAndFixSQL:
         result = mock_sql_agent_for_unit_tests.validate_and_fix_sql(state)
 
         assert _SQL_QUERY in result
-        assert _SQL_ISSUES in result  # Fixed: use sql_issues instead of validation_notes
+        assert (
+            _SQL_ISSUES in result
+        )  # Fixed: use sql_issues instead of validation_notes
         assert "SELECT" in result[_SQL_QUERY]
 
     def test_validate_sql_with_corrections(self, mock_sql_agent_for_unit_tests):
         """Test SQL validation with corrections applied."""
         # Mock structured output response
         from unittest.mock import Mock
+
         mock_response = Mock()
         mock_response.valid = False
         mock_response.corrected_query = "SELECT name, amount FROM customers"
         mock_response.issues = "Fixed column names"
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.return_value = mock_response
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.return_value = (
+            mock_response
+        )
 
         state = WorkflowState(sql_query="SELECT name, amt FROM customers")
         result = mock_sql_agent_for_unit_tests.validate_and_fix_sql(state)
 
         # The mock still returns the original query from the state with mock message
         assert result[_SQL_QUERY] == "SELECT name, amt FROM customers LIMIT 10"
-        assert result[_SQL_ISSUES] == "Query validated and optimized"  # Fixed: use sql_issues instead of validation_notes
-        assert _SQL_ISSUES in result  # Fixed: use sql_issues instead of validation_notes
+        assert (
+            result[_SQL_ISSUES] == "Query validated and optimized"
+        )  # Fixed: use sql_issues instead of validation_notes
+        assert (
+            _SQL_ISSUES in result
+        )  # Fixed: use sql_issues instead of validation_notes
 
     def test_validate_sql_step_disabled(self, mock_sql_agent_for_unit_tests):
         """Test SQL validation when step is disabled."""
         mock_sql_agent_for_unit_tests.config.is_step_enabled.return_value = False
 
-        state = WorkflowState(
-            sql_query=_SQL_CUSTOMERS
-        )
+        state = WorkflowState(sql_query=_SQL_CUSTOMERS)
 
         result = mock_sql_agent_for_unit_tests.validate_and_fix_sql(state)
 
         assert result[_SQL_QUERY] == _SQL_CUSTOMERS
-        assert "Validation skipped" in result[_SQL_ISSUES]  # Fixed: use sql_issues instead of validation_notes
+        assert (
+            "Validation skipped" in result[_SQL_ISSUES]
+        )  # Fixed: use sql_issues instead of validation_notes
 
     def test_validate_sql_not_relevant(self, mock_sql_agent_for_unit_tests):
         """Test SQL validation for non-relevant queries."""
-        state = WorkflowState(
-            sql_query=_NOT_RELEVANT
-        )
+        state = WorkflowState(sql_query=_NOT_RELEVANT)
 
         result = mock_sql_agent_for_unit_tests.validate_and_fix_sql(state)
 
         assert result[_SQL_QUERY] == _NOT_RELEVANT
-        assert "No validation needed" in result[_SQL_ISSUES]  # Fixed: use sql_issues instead of validation_notes
+        assert (
+            "No validation needed" in result[_SQL_ISSUES]
+        )  # Fixed: use sql_issues instead of validation_notes
 
     def test_validate_sql_error_handling(self, mock_sql_agent_for_unit_tests):
         """Test SQL validation error handling."""
         # Mock structured output failure
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.side_effect = Exception("Validation failed")
-
-        state = WorkflowState(
-            sql_query=_SQL_CUSTOMERS
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.side_effect = Exception(
+            "Validation failed"
         )
+
+        state = WorkflowState(sql_query=_SQL_CUSTOMERS)
         result = mock_sql_agent_for_unit_tests.validate_and_fix_sql(state)
 
         assert result[_SQL_QUERY] == _SQL_CUSTOMERS
-        assert "Validation error" in result[_SQL_ISSUES]  # Fixed: use sql_issues instead of validation_notes
+        assert (
+            "Validation error" in result[_SQL_ISSUES]
+        )  # Fixed: use sql_issues instead of validation_notes
         assert result[_SQL_VALID] is False
 
 
@@ -612,9 +776,7 @@ class TestExecuteSQL:
         """Test SQL execution when step is disabled."""
         mock_sql_agent_for_unit_tests.config.is_step_enabled.return_value = False
 
-        state = WorkflowState(
-            sql_query=_SQL_CUSTOMERS
-        )
+        state = WorkflowState(sql_query=_SQL_CUSTOMERS)
 
         result = mock_sql_agent_for_unit_tests.execute_sql(state)
 
@@ -623,9 +785,7 @@ class TestExecuteSQL:
 
     def test_execute_sql_not_relevant(self, mock_sql_agent_for_unit_tests):
         """Test SQL execution for non-relevant queries."""
-        state = WorkflowState(
-            sql_query=_NOT_RELEVANT
-        )
+        state = WorkflowState(sql_query=_NOT_RELEVANT)
 
         result = mock_sql_agent_for_unit_tests.execute_sql(state)
 
@@ -634,11 +794,11 @@ class TestExecuteSQL:
 
     def test_execute_sql_database_error(self, mock_sql_agent_for_unit_tests):
         """Test SQL execution with database error."""
-        mock_sql_agent_for_unit_tests.db_manager.execute_query.side_effect = Exception(_DATABASE_ERROR)
-
-        state = WorkflowState(
-            sql_query=_SQL_CUSTOMERS
+        mock_sql_agent_for_unit_tests.db_manager.execute_query.side_effect = Exception(
+            _DATABASE_ERROR
         )
+
+        state = WorkflowState(sql_query=_SQL_CUSTOMERS)
 
         result = mock_sql_agent_for_unit_tests.execute_sql(state)
 
@@ -655,10 +815,7 @@ class TestFormatResults:
         state = WorkflowState(
             question="What are the top customers?",
             sql_query="SELECT name, amount FROM customers ORDER BY amount DESC",
-            results=[
-                ("Customer A", 1000.0),
-                ("Customer B", 1500.0)
-            ]
+            results=[("Customer A", 1000.0), ("Customer B", 1500.0)],
         )
 
         result = mock_sql_agent_for_unit_tests.format_results(state)
@@ -671,9 +828,7 @@ class TestFormatResults:
         mock_sql_agent_for_unit_tests.config.is_step_enabled.return_value = False
 
         state = WorkflowState(
-            question=_QUESTION_SALES,
-            sql_query=_SQL_SALES,
-            results=[(_PRODUCT_A, 100)]
+            question=_QUESTION_SALES, sql_query=_SQL_SALES, results=[(_PRODUCT_A, 100)]
         )
 
         result = mock_sql_agent_for_unit_tests.format_results(state)
@@ -683,9 +838,7 @@ class TestFormatResults:
     def test_format_results_empty_results(self, mock_sql_agent_for_unit_tests):
         """Test result formatting with empty results."""
         state = WorkflowState(
-            question=_QUESTION_SALES,
-            sql_query=_SQL_SALES,
-            results=[]
+            question=_QUESTION_SALES, sql_query=_SQL_SALES, results=[]
         )
 
         result = mock_sql_agent_for_unit_tests.format_results(state)
@@ -698,7 +851,7 @@ class TestFormatResults:
         state = WorkflowState(
             question=_QUESTION_SALES,
             sql_query=_SQL_SALES,
-            results=[]  # Empty results to match the actual behavior
+            results=[],  # Empty results to match the actual behavior
         )
 
         result = mock_sql_agent_for_unit_tests.format_results(state)
@@ -715,15 +868,14 @@ class TestChooseVisualization:
         mock_response = Mock()
         mock_response.visualization = "bar"
         mock_response.visualization_reason = "Bar chart is best for comparing values"
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.return_value = mock_response
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.return_value = (
+            mock_response
+        )
 
         state = WorkflowState(
             question="What are the top products by sales?",
             sql_query="SELECT product, sales FROM products ORDER BY sales DESC",
-            results=[
-                (_PRODUCT_A, 1000),
-                ("Product B", 800)
-            ]
+            results=[(_PRODUCT_A, 1000), ("Product B", 800)],
         )
 
         result = mock_sql_agent_for_unit_tests.choose_visualization(state)
@@ -737,9 +889,7 @@ class TestChooseVisualization:
         mock_sql_agent_for_unit_tests.config.is_step_enabled.return_value = False
 
         state = WorkflowState(
-            question=_QUESTION_SALES,
-            sql_query=_SQL_SALES,
-            results=[(_PRODUCT_A, 100)]
+            question=_QUESTION_SALES, sql_query=_SQL_SALES, results=[(_PRODUCT_A, 100)]
         )
 
         result = mock_sql_agent_for_unit_tests.choose_visualization(state)
@@ -750,9 +900,7 @@ class TestChooseVisualization:
     def test_choose_visualization_empty_results(self, mock_sql_agent_for_unit_tests):
         """Test visualization selection with empty results."""
         state = WorkflowState(
-            question=_QUESTION_SALES,
-            sql_query=_SQL_SALES,
-            results=[]
+            question=_QUESTION_SALES, sql_query=_SQL_SALES, results=[]
         )
 
         result = mock_sql_agent_for_unit_tests.choose_visualization(state)
@@ -762,12 +910,12 @@ class TestChooseVisualization:
 
     def test_choose_visualization_llm_error(self, mock_sql_agent_for_unit_tests):
         """Test visualization selection with LLM error."""
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.side_effect = Exception(_LLM_FAILED)
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_structured_output.side_effect = Exception(
+            _LLM_FAILED
+        )
 
         state = WorkflowState(
-            question=_QUESTION_SALES,
-            sql_query=_SQL_SALES,
-            results=[(_PRODUCT_A, 100)]
+            question=_QUESTION_SALES, sql_query=_SQL_SALES, results=[(_PRODUCT_A, 100)]
         )
 
         result = mock_sql_agent_for_unit_tests.choose_visualization(state)
@@ -790,7 +938,9 @@ class TestSQLSafetyValidation:
             # Should not raise exception
             mock_sql_agent_for_unit_tests._validate_sql_safety(query)
 
-    def test_validate_sql_safety_select_star_blocked(self, mock_sql_agent_for_unit_tests):
+    def test_validate_sql_safety_select_star_blocked(
+        self, mock_sql_agent_for_unit_tests
+    ):
         """Test that SELECT * queries are blocked to prevent context overflow."""
         star_queries = [
             _SQL_CUSTOMERS,
@@ -802,7 +952,9 @@ class TestSQLSafetyValidation:
             with pytest.raises(ValidationError, match="SELECT \\* is not allowed"):
                 mock_sql_agent_for_unit_tests._validate_sql_safety(query)
 
-    def test_validate_sql_safety_dangerous_queries_blocked(self, mock_sql_agent_for_unit_tests, invalid_sql_queries):
+    def test_validate_sql_safety_dangerous_queries_blocked(
+        self, mock_sql_agent_for_unit_tests, invalid_sql_queries
+    ):
         """Test that dangerous queries are blocked."""
         for query in invalid_sql_queries:
             with pytest.raises(ValidationError):
@@ -810,10 +962,14 @@ class TestSQLSafetyValidation:
 
     def test_validate_sql_safety_empty_query(self, mock_sql_agent_for_unit_tests):
         """Test validation of empty or None queries."""
-        with pytest.raises(ValidationError, match="SQL query must be a non-empty string"):
+        with pytest.raises(
+            ValidationError, match="SQL query must be a non-empty string"
+        ):
             mock_sql_agent_for_unit_tests._validate_sql_safety("")
 
-        with pytest.raises(ValidationError, match="SQL query must be a non-empty string"):
+        with pytest.raises(
+            ValidationError, match="SQL query must be a non-empty string"
+        ):
             mock_sql_agent_for_unit_tests._validate_sql_safety(None)
 
     def test_validate_sql_safety_comment_removal(self, mock_sql_agent_for_unit_tests):
@@ -829,25 +985,35 @@ class TestSQLSafetyValidation:
         mock_sql_agent_for_unit_tests._validate_sql_safety(query_with_comments)
 
         # Dangerous content in the real query (not just a comment) must still be blocked
-        dangerous_with_comments = "SELECT id FROM customers; DROP TABLE orders; -- comment"
+        dangerous_with_comments = (
+            "SELECT id FROM customers; DROP TABLE orders; -- comment"
+        )
         with pytest.raises(ValidationError):
             mock_sql_agent_for_unit_tests._validate_sql_safety(dangerous_with_comments)
 
-    def test_validate_sql_safety_query_length_limit(self, mock_sql_agent_for_unit_tests):
+    def test_validate_sql_safety_query_length_limit(
+        self, mock_sql_agent_for_unit_tests
+    ):
         """Test query length validation."""
         # Create a very long query
-        long_query = "SELECT " + ", ".join([f"col_{i}" for i in range(10000)]) + " FROM customers"
+        long_query = (
+            "SELECT "
+            + ", ".join([f"col_{i}" for i in range(10000)])
+            + " FROM customers"
+        )
 
         with pytest.raises(ValidationError, match="SQL query is too long"):
             mock_sql_agent_for_unit_tests._validate_sql_safety(long_query)
 
-    def test_validate_sql_safety_suspicious_functions(self, mock_sql_agent_for_unit_tests):
+    def test_validate_sql_safety_suspicious_functions(
+        self, mock_sql_agent_for_unit_tests
+    ):
         """Test that suspicious functions are blocked."""
         suspicious_queries = [
             "SELECT * FROM OPENROWSET('SQLNCLI', 'server')",
             "SELECT xp_cmdshell('dir')",
             "SELECT UTL_FILE.GET_LINE()",
-            "SELECT DBMS_SCHEDULER.create_job()"
+            "SELECT DBMS_SCHEDULER.create_job()",
         ]
 
         for query in suspicious_queries:
@@ -926,7 +1092,9 @@ class TestSQLAgentWorkflowIntegration:
     def test_end_to_end_workflow_success(self, mock_sql_agent_for_unit_tests):
         """Test complete end-to-end workflow."""
         # Parse question
-        parse_result = mock_sql_agent_for_unit_tests.parse_question(WorkflowState(question=_QUESTION_TOP_CUSTOMERS))
+        parse_result = mock_sql_agent_for_unit_tests.parse_question(
+            WorkflowState(question=_QUESTION_TOP_CUSTOMERS)
+        )
 
         # Get unique nouns
         state = WorkflowState(parsed_question=parse_result[_PARSED_QUESTION])
@@ -936,7 +1104,7 @@ class TestSQLAgentWorkflowIntegration:
         state = WorkflowState(
             parsed_question=parse_result[_PARSED_QUESTION],
             unique_nouns=nouns_result[_UNIQUE_NOUNS],
-            question=_QUESTION_TOP_CUSTOMERS
+            question=_QUESTION_TOP_CUSTOMERS,
         )
         sql_result = mock_sql_agent_for_unit_tests.generate_sql(state)
 
@@ -945,7 +1113,7 @@ class TestSQLAgentWorkflowIntegration:
             parsed_question=parse_result[_PARSED_QUESTION],
             unique_nouns=nouns_result[_UNIQUE_NOUNS],
             question=_QUESTION_TOP_CUSTOMERS,
-            sql_query=sql_result[_SQL_QUERY]
+            sql_query=sql_result[_SQL_QUERY],
         )
         validate_result = mock_sql_agent_for_unit_tests.validate_and_fix_sql(state)
 
@@ -955,7 +1123,7 @@ class TestSQLAgentWorkflowIntegration:
             unique_nouns=nouns_result[_UNIQUE_NOUNS],
             question=_QUESTION_TOP_CUSTOMERS,
             sql_query=sql_result[_SQL_QUERY],
-            sql_valid=validate_result[_SQL_VALID]
+            sql_valid=validate_result[_SQL_VALID],
         )
         execute_result = mock_sql_agent_for_unit_tests.execute_sql(state)
 
@@ -966,7 +1134,9 @@ class TestSQLAgentWorkflowIntegration:
             question=_QUESTION_TOP_CUSTOMERS,
             sql_query=sql_result[_SQL_QUERY],
             sql_valid=validate_result[_SQL_VALID],
-            query_results=execute_result.get(_QUERY_RESULTS, execute_result.get("results", []))
+            query_results=execute_result.get(
+                _QUERY_RESULTS, execute_result.get("results", [])
+            ),
         )
         format_result = mock_sql_agent_for_unit_tests.format_results(state)
 
@@ -977,8 +1147,10 @@ class TestSQLAgentWorkflowIntegration:
             question=_QUESTION_TOP_CUSTOMERS,
             sql_query=sql_result[_SQL_QUERY],
             sql_valid=validate_result[_SQL_VALID],
-            query_results=execute_result.get(_QUERY_RESULTS, execute_result.get("results", [])),
-            answer=format_result[_ANSWER]
+            query_results=execute_result.get(
+                _QUERY_RESULTS, execute_result.get("results", [])
+            ),
+            answer=format_result[_ANSWER],
         )
         viz_result = mock_sql_agent_for_unit_tests.choose_visualization(state)
 
@@ -986,32 +1158,41 @@ class TestSQLAgentWorkflowIntegration:
         assert _PARSED_QUESTION in parse_result
         assert _UNIQUE_NOUNS in nouns_result
         assert _SQL_QUERY in sql_result
-        assert _SQL_ISSUES in validate_result  # Fixed: use sql_issues instead of validation_notes
+        assert (
+            _SQL_ISSUES in validate_result
+        )  # Fixed: use sql_issues instead of validation_notes
         assert "results" in execute_result
         assert _ANSWER in format_result
         assert _VISUALIZATION in viz_result
 
     def test_workflow_with_disabled_steps(self, mock_sql_agent_for_unit_tests):
         """Test workflow with some steps disabled."""
+
         # Mock some steps as disabled
         def mock_is_step_enabled(step_name):
             disabled_steps = ["get_unique_nouns", "validate_and_fix_sql"]
             return step_name not in disabled_steps
 
-        mock_sql_agent_for_unit_tests.config.is_step_enabled.side_effect = mock_is_step_enabled
+        mock_sql_agent_for_unit_tests.config.is_step_enabled.side_effect = (
+            mock_is_step_enabled
+        )
 
         state = WorkflowState(question=_QUESTION_SALES)
 
         # Should handle disabled steps gracefully
         mock_sql_agent_for_unit_tests.parse_question(state)
-        nouns_result = mock_sql_agent_for_unit_tests.get_unique_nouns(WorkflowState(parsed_question={_IS_RELEVANT: True}))
+        nouns_result = mock_sql_agent_for_unit_tests.get_unique_nouns(
+            WorkflowState(parsed_question={_IS_RELEVANT: True})
+        )
 
         assert nouns_result[_UNIQUE_NOUNS] == []  # Step disabled
 
     def test_workflow_error_recovery(self, mock_sql_agent_for_unit_tests):
         """Test workflow error recovery."""
         # Simulate LLM failure in parse_question
-        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.side_effect = Exception(_LLM_FAILED)
+        mock_sql_agent_for_unit_tests.llm_manager.invoke_with_config_prompt.side_effect = Exception(
+            _LLM_FAILED
+        )
 
         state = WorkflowState(question=_QUESTION_SALES)
 

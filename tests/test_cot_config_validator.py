@@ -19,12 +19,13 @@
 """Comprehensive tests for CoTConfigValidator."""
 
 import pytest
+
 from askrita.config_manager import ChainOfThoughtsConfig
 from askrita.utils.cot_config_validator import (
-    CoTConfigValidator,
     CoTConfigValidationError,
-    validate_cot_config,
+    CoTConfigValidator,
     validate_and_fix_cot_config,
+    validate_cot_config,
 )
 
 
@@ -67,31 +68,43 @@ class TestCoTConfigValidator:
     # _validate_max_reasoning_length
     # ------------------------------------------------------------------
     def test_max_reasoning_length_not_int(self):
-        errors = self.validator._validate_max_reasoning_length("not_int", "max_reasoning_length")
+        errors = self.validator._validate_max_reasoning_length(
+            "not_int", "max_reasoning_length"
+        )
         assert any("integer" in e for e in errors)
 
     def test_max_reasoning_length_too_small(self):
-        errors = self.validator._validate_max_reasoning_length(30, "max_reasoning_length")
+        errors = self.validator._validate_max_reasoning_length(
+            30, "max_reasoning_length"
+        )
         assert any("at least 50" in e for e in errors)
 
     def test_max_reasoning_length_too_large(self):
-        errors = self.validator._validate_max_reasoning_length(20000, "max_reasoning_length")
+        errors = self.validator._validate_max_reasoning_length(
+            20000, "max_reasoning_length"
+        )
         assert any("10000" in e for e in errors)
 
     def test_max_reasoning_length_small_warning(self):
         # Value between 50-99 triggers a warning but no error
-        errors = self.validator._validate_max_reasoning_length(60, "max_reasoning_length")
+        errors = self.validator._validate_max_reasoning_length(
+            60, "max_reasoning_length"
+        )
         assert errors == []
 
     def test_max_reasoning_length_valid(self):
-        errors = self.validator._validate_max_reasoning_length(500, "max_reasoning_length")
+        errors = self.validator._validate_max_reasoning_length(
+            500, "max_reasoning_length"
+        )
         assert errors == []
 
     # ------------------------------------------------------------------
     # _validate_display_preferences
     # ------------------------------------------------------------------
     def test_display_preferences_not_dict(self):
-        errors = self.validator._validate_display_preferences("bad", "display_preferences")
+        errors = self.validator._validate_display_preferences(
+            "bad", "display_preferences"
+        )
         assert any("dictionary" in e for e in errors)
 
     def test_display_preferences_missing_keys(self):
@@ -108,7 +121,9 @@ class TestCoTConfigValidator:
             "show_step_timing": True,
             "show_confidence_scores": True,
         }
-        errors = self.validator._validate_display_preferences(prefs, "display_preferences")
+        errors = self.validator._validate_display_preferences(
+            prefs, "display_preferences"
+        )
         assert any("boolean" in e for e in errors)
 
     def test_display_preferences_show_timing_without_include_timing(self):
@@ -122,7 +137,9 @@ class TestCoTConfigValidator:
             "show_confidence_scores": True,
             "include_timing": False,  # triggers logical check
         }
-        errors = self.validator._validate_display_preferences(prefs, "display_preferences")
+        errors = self.validator._validate_display_preferences(
+            prefs, "display_preferences"
+        )
         # The check looks for show_step_timing=True AND include_timing=False
         assert any("include_timing" in e for e in errors)
 
@@ -137,7 +154,9 @@ class TestCoTConfigValidator:
             "show_confidence_scores": True,
             "include_confidence": False,
         }
-        errors = self.validator._validate_display_preferences(prefs, "display_preferences")
+        errors = self.validator._validate_display_preferences(
+            prefs, "display_preferences"
+        )
         assert any("include_confidence" in e for e in errors)
 
     def test_display_preferences_valid(self):
@@ -150,7 +169,9 @@ class TestCoTConfigValidator:
             "show_step_timing": True,
             "show_confidence_scores": True,
         }
-        errors = self.validator._validate_display_preferences(prefs, "display_preferences")
+        errors = self.validator._validate_display_preferences(
+            prefs, "display_preferences"
+        )
         assert errors == []
 
     # ------------------------------------------------------------------
@@ -172,7 +193,9 @@ class TestCoTConfigValidator:
         assert any("boolean" in e for e in errors)
 
     def test_validate_include_step_details_invalid(self):
-        errors = self.validator._validate_include_step_details("nope", "include_step_details")
+        errors = self.validator._validate_include_step_details(
+            "nope", "include_step_details"
+        )
         assert any("boolean" in e for e in errors)
 
     def test_validate_track_retries_invalid(self):
@@ -215,7 +238,9 @@ class TestCoTConfigValidator:
             "show_step_timing": True,
             "show_confidence_scores": False,
         }
-        config = _valid_config(enabled=True, include_timing=False, display_preferences=prefs)
+        config = _valid_config(
+            enabled=True, include_timing=False, display_preferences=prefs
+        )
         errors = self.validator._validate_cross_fields(config)
         assert any("step timing" in e.lower() for e in errors)
 
@@ -229,13 +254,17 @@ class TestCoTConfigValidator:
             "show_step_timing": False,
             "show_confidence_scores": True,
         }
-        config = _valid_config(enabled=True, include_confidence=False, display_preferences=prefs)
+        config = _valid_config(
+            enabled=True, include_confidence=False, display_preferences=prefs
+        )
         errors = self.validator._validate_cross_fields(config)
         assert any("confidence" in e.lower() for e in errors)
 
     def test_cross_fields_performance_warning(self):
         """Large max_reasoning_length with step_details triggers warning (no error)."""
-        config = _valid_config(enabled=True, include_step_details=True, max_reasoning_length=5000)
+        config = _valid_config(
+            enabled=True, include_step_details=True, max_reasoning_length=5000
+        )
         errors = self.validator._validate_cross_fields(config)
         assert errors == []  # just a warning, no error
 
@@ -250,7 +279,9 @@ class TestCoTConfigValidator:
             "show_confidence_scores": False,
             "show_step_details": True,
         }
-        config = _valid_config(enabled=True, include_step_details=False, display_preferences=prefs)
+        config = _valid_config(
+            enabled=True, include_step_details=False, display_preferences=prefs
+        )
         errors = self.validator._validate_cross_fields(config)
         assert errors == []  # warning only
 

@@ -19,15 +19,18 @@
 """Tests for NoSQLAgentWorkflow pure-logic methods (no live LLM/DB needed)."""
 
 import os
-import pytest
 from unittest.mock import MagicMock, patch
 
-from askrita.sqlagent.workflows.NoSQLAgentWorkflow import NoSQLAgentWorkflow
-from askrita.sqlagent.State import WorkflowState
+import pytest
+
 from askrita.exceptions import ValidationError
+from askrita.sqlagent.State import WorkflowState
+from askrita.sqlagent.workflows.NoSQLAgentWorkflow import NoSQLAgentWorkflow
 
 _REVENUE_QUESTION = "What is the revenue?"
-_SAMPLE_QUERY = "db.orders.aggregate([{$group: {_id: null, total: {$sum: '$revenue'}}}])"
+_SAMPLE_QUERY = (
+    "db.orders.aggregate([{$group: {_id: null, total: {$sum: '$revenue'}}}])"
+)
 
 
 @pytest.fixture(autouse=True)
@@ -65,11 +68,25 @@ def _make_workflow():
     mock_data_formatter = MagicMock()
     mock_compiled_graph = MagicMock()
 
-    with patch("askrita.sqlagent.workflows.NoSQLAgentWorkflow.LLMManager", return_value=mock_llm):
-        with patch("askrita.sqlagent.workflows.NoSQLAgentWorkflow.NoSQLDatabaseManager", return_value=mock_db_manager):
-            with patch("askrita.sqlagent.workflows.NoSQLAgentWorkflow.DataFormatter", return_value=mock_data_formatter):
-                with patch("askrita.sqlagent.workflows.NoSQLAgentWorkflow.create_pii_detector", return_value=None):
-                    with patch("askrita.sqlagent.workflows.NoSQLAgentWorkflow.StateGraph") as mock_sg:
+    with patch(
+        "askrita.sqlagent.workflows.NoSQLAgentWorkflow.LLMManager",
+        return_value=mock_llm,
+    ):
+        with patch(
+            "askrita.sqlagent.workflows.NoSQLAgentWorkflow.NoSQLDatabaseManager",
+            return_value=mock_db_manager,
+        ):
+            with patch(
+                "askrita.sqlagent.workflows.NoSQLAgentWorkflow.DataFormatter",
+                return_value=mock_data_formatter,
+            ):
+                with patch(
+                    "askrita.sqlagent.workflows.NoSQLAgentWorkflow.create_pii_detector",
+                    return_value=None,
+                ):
+                    with patch(
+                        "askrita.sqlagent.workflows.NoSQLAgentWorkflow.StateGraph"
+                    ) as mock_sg:
                         mock_sg.return_value.compile.return_value = mock_compiled_graph
                         workflow = NoSQLAgentWorkflow(
                             config_manager=mock_config,
@@ -113,6 +130,7 @@ def _make_state(**kwargs):
 # query() validation
 # ---------------------------------------------------------------------------
 
+
 class TestQueryValidation:
     def test_empty_question_raises_validation_error(self):
         wf = _make_workflow()
@@ -139,6 +157,7 @@ class TestQueryValidation:
 # ---------------------------------------------------------------------------
 # chat() validation
 # ---------------------------------------------------------------------------
+
 
 class TestChatValidation:
     def test_empty_messages_raises(self):
@@ -177,6 +196,7 @@ class TestChatValidation:
 # _validate_query_safety
 # ---------------------------------------------------------------------------
 
+
 class TestValidateQuerySafety:
     def test_valid_aggregate_passes(self):
         wf = _make_workflow()
@@ -205,7 +225,9 @@ class TestValidateQuerySafety:
     def test_merge_stage_raises(self):
         wf = _make_workflow()
         with pytest.raises(ValidationError):
-            wf._validate_query_safety("db.orders.aggregate([{$merge: {into: 'target'}}])")
+            wf._validate_query_safety(
+                "db.orders.aggregate([{$merge: {into: 'target'}}])"
+            )
 
     def test_delete_one_raises(self):
         wf = _make_workflow()
@@ -247,6 +269,7 @@ class TestValidateQuerySafety:
 # _should_continue_workflow
 # ---------------------------------------------------------------------------
 
+
 class TestShouldContinueWorkflow:
     def test_no_clarification_returns_continue(self):
         wf = _make_workflow()
@@ -283,6 +306,7 @@ class TestShouldContinueWorkflow:
 # _should_retry_query_generation
 # ---------------------------------------------------------------------------
 
+
 class TestShouldRetryQueryGeneration:
     def test_needs_clarification_returns_end(self):
         wf = _make_workflow()
@@ -313,9 +337,11 @@ class TestShouldRetryQueryGeneration:
 # _get_cached_schema
 # ---------------------------------------------------------------------------
 
+
 class TestGetCachedSchema:
     def test_returns_cached_when_fresh(self):
         from datetime import datetime
+
         wf = _make_workflow()
         wf._workflow_schema_cache = "db.orders schema"
         wf._workflow_schema_cache_time = datetime.now()
@@ -345,6 +371,7 @@ class TestGetCachedSchema:
 
     def test_refetches_on_expired_cache(self):
         from datetime import datetime, timedelta
+
         wf = _make_workflow()
         wf._workflow_schema_cache = "old schema"
         wf._workflow_schema_cache_time = datetime.now() - timedelta(seconds=7200)
@@ -359,10 +386,12 @@ class TestGetCachedSchema:
 # clear_schema_cache
 # ---------------------------------------------------------------------------
 
+
 class TestClearSchemaCache:
     def test_clears_when_set(self):
         wf = _make_workflow()
         from datetime import datetime
+
         wf._workflow_schema_cache = "some schema"
         wf._workflow_schema_cache_time = datetime.now()
         wf.clear_schema_cache()
@@ -378,6 +407,7 @@ class TestClearSchemaCache:
 # ---------------------------------------------------------------------------
 # CoT listener management
 # ---------------------------------------------------------------------------
+
 
 class TestCotListeners:
     def test_register_listener(self):
@@ -416,6 +446,7 @@ class TestCotListeners:
 # execute_query step - early exits
 # ---------------------------------------------------------------------------
 
+
 class TestExecuteQueryStep:
     def test_step_disabled_returns_empty(self):
         wf = _make_workflow()
@@ -451,7 +482,9 @@ class TestExecuteQueryStep:
     def test_exception_captured_in_error(self):
         wf = _make_workflow()
         wf.config.is_step_enabled = MagicMock(return_value=True)
-        wf.db_manager.execute_query = MagicMock(side_effect=RuntimeError("connection lost"))
+        wf.db_manager.execute_query = MagicMock(
+            side_effect=RuntimeError("connection lost")
+        )
         state = _make_state(sql_query=_SAMPLE_QUERY)
         result = wf.execute_query(state)
         assert result["results"] == []
@@ -461,6 +494,7 @@ class TestExecuteQueryStep:
 # ---------------------------------------------------------------------------
 # format_results step - early exits
 # ---------------------------------------------------------------------------
+
 
 class TestFormatResultsStep:
     def test_step_disabled_returns_disabled_message(self):
@@ -512,6 +546,7 @@ class TestFormatResultsStep:
 # choose_and_format_visualization step - early exits
 # ---------------------------------------------------------------------------
 
+
 class TestChooseAndFormatVisualizationStep:
     def test_step_disabled_returns_none(self):
         wf = _make_workflow()
@@ -532,6 +567,7 @@ class TestChooseAndFormatVisualizationStep:
 # ---------------------------------------------------------------------------
 # generate_followup_questions step - early exits
 # ---------------------------------------------------------------------------
+
 
 class TestGenerateFollowupQuestionsStep:
     def test_step_disabled_returns_empty(self):
@@ -560,6 +596,7 @@ class TestGenerateFollowupQuestionsStep:
 # _track_step and _complete_step
 # ---------------------------------------------------------------------------
 
+
 class TestTrackAndCompleteStep:
     def test_track_step_returns_step_name(self):
         wf = _make_workflow()
@@ -580,6 +617,7 @@ class TestTrackAndCompleteStep:
         wf._complete_step("parse_question")
         assert len(events) == 1
         from askrita.sqlagent.progress_tracker import ProgressStatus
+
         assert events[0].status == ProgressStatus.COMPLETED
 
     def test_complete_step_with_error(self):
@@ -588,6 +626,7 @@ class TestTrackAndCompleteStep:
         wf.progress_callback = events.append
         wf._complete_step("parse_question", error="something failed")
         from askrita.sqlagent.progress_tracker import ProgressStatus
+
         assert events[0].status == ProgressStatus.FAILED
 
     def test_track_step_with_tracker(self):
@@ -611,6 +650,7 @@ class TestTrackAndCompleteStep:
 # ---------------------------------------------------------------------------
 # _summarize_conversation_context
 # ---------------------------------------------------------------------------
+
 
 class TestSummarizeConversationContext:
     def test_single_message_returns_empty(self):
@@ -649,6 +689,7 @@ class TestSummarizeConversationContext:
 # ---------------------------------------------------------------------------
 # get_graph
 # ---------------------------------------------------------------------------
+
 
 class TestGetGraph:
     def test_get_graph_returns_compiled(self):

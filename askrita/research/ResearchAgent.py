@@ -239,7 +239,9 @@ class ResearchAgent:
         # but statistical tests require full-population or large-sample data.
         self._research_max_results = research_max_results
         self.config.database.max_results = research_max_results
-        logger.info(f"Research mode: database.max_results set to {research_max_results:,}")
+        logger.info(
+            f"Research mode: database.max_results set to {research_max_results:,}"
+        )
 
         # Disable SQL Agent steps not needed for research.
         # execute_sql is disabled so the SQL Agent only generates and validates SQL;
@@ -435,28 +437,38 @@ Aggregated results (1 row per group) have insufficient variance and cannot be te
             return True, len(first_row)
         if isinstance(first_row, dict):
             keys = list(first_row.keys())
-            if keys and all(k.startswith(_COL_PREFIX) and k[4:].isdigit() for k in keys):
+            if keys and all(
+                k.startswith(_COL_PREFIX) and k[4:].isdigit() for k in keys
+            ):
                 return True, len(keys)
         return False, 0
 
-    def _remap_raw_rows(self, raw_rows: list, column_names: Optional[List[str]]) -> list:
+    def _remap_raw_rows(
+        self, raw_rows: list, column_names: Optional[List[str]]
+    ) -> list:
         """Remap raw DB rows using resolved column names."""
         data_rows = []
         for row in raw_rows:
             if isinstance(row, dict):
                 row_keys = list(row.keys())
-                if column_names and len(column_names) == len(row) and all(
-                    k.startswith(_COL_PREFIX) for k in row_keys
+                if (
+                    column_names
+                    and len(column_names) == len(row)
+                    and all(k.startswith(_COL_PREFIX) for k in row_keys)
                 ):
                     sorted_keys = sorted(row_keys, key=lambda k: int(k.split("_")[1]))
-                    data_rows.append({column_names[i]: row[k] for i, k in enumerate(sorted_keys)})
+                    data_rows.append(
+                        {column_names[i]: row[k] for i, k in enumerate(sorted_keys)}
+                    )
                 else:
                     data_rows.append(row)
             elif isinstance(row, (list, tuple)):
                 if column_names and len(column_names) == len(row):
                     data_rows.append(dict(zip(column_names, row)))
                 else:
-                    data_rows.append({f"{_COL_PREFIX}{i}": v for i, v in enumerate(row)})
+                    data_rows.append(
+                        {f"{_COL_PREFIX}{i}": v for i, v in enumerate(row)}
+                    )
             else:
                 data_rows.append({"value": row})
         return data_rows
@@ -525,7 +537,9 @@ Aggregated results (1 row per group) have insufficient variance and cannot be te
                 if sql:
                     sql_map[idx] = sql
                 else:
-                    logger.warning(f"  SQL generation returned empty for query {idx + 1}")
+                    logger.warning(
+                        f"  SQL generation returned empty for query {idx + 1}"
+                    )
                     sql_map[idx] = ""
             except Exception as e:
                 logger.error(f"  SQL generation failed for query {idx + 1}: {e}")
@@ -540,7 +554,9 @@ Aggregated results (1 row per group) have insufficient variance and cannot be te
         max_workers = min(len(queries), 5)
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
-                executor.submit(self._execute_query, i, queries, sql_map, collected, sample_sizes)
+                executor.submit(
+                    self._execute_query, i, queries, sql_map, collected, sample_sizes
+                )
                 for i in range(len(queries))
             ]
             concurrent.futures.wait(futures)
@@ -560,11 +576,15 @@ Aggregated results (1 row per group) have insufficient variance and cannot be te
     @staticmethod
     def _score_test(tr, hypothesis_tokens: set) -> float:
         """Score a test result for ranking; higher is better."""
-        min_n = min(tr.sample_sizes.values()) if getattr(tr, "sample_sizes", None) else 0
+        min_n = (
+            min(tr.sample_sizes.values()) if getattr(tr, "sample_sizes", None) else 0
+        )
         p = float(getattr(tr, _P_VALUE, 1.0) or 1.0)
         has_es = 1.0 if getattr(tr, _EFFECT_SIZE, None) is not None else 0.0
         sentinel_penalty = (
-            -1000.0 if getattr(tr, "test_name", "") == "Sample Size Check Failed" else 0.0
+            -1000.0
+            if getattr(tr, "test_name", "") == "Sample Size Check Failed"
+            else 0.0
         )
         info = getattr(tr, "additional_info", {}) or {}
         value_col = str(info.get(_VALUE_COLUMN, ""))
@@ -574,10 +594,18 @@ Aggregated results (1 row per group) have insufficient variance and cannot be te
             column_match_bonus += 200.0
         if group_col in hypothesis_tokens:
             column_match_bonus += 200.0
-        return sentinel_penalty + column_match_bonus + (min_n * 10.0) + ((1.0 - p) * 5.0) + has_es
+        return (
+            sentinel_penalty
+            + column_match_bonus
+            + (min_n * 10.0)
+            + ((1.0 - p) * 5.0)
+            + has_es
+        )
 
     @staticmethod
-    def _populate_best_test_metrics(best_test, computed_metrics: dict, n_tests: int) -> None:
+    def _populate_best_test_metrics(
+        best_test, computed_metrics: dict, n_tests: int
+    ) -> None:
         """Write key metrics from the best statistical test into computed_metrics."""
         computed_metrics["test_name"] = best_test.test_name
         computed_metrics["test_statistic"] = best_test.test_statistic
@@ -585,7 +613,9 @@ Aggregated results (1 row per group) have insufficient variance and cannot be te
         computed_metrics["is_significant"] = best_test.is_significant
         if best_test.effect_size is not None:
             computed_metrics[_EFFECT_SIZE] = best_test.effect_size
-            computed_metrics["effect_interpretation"] = best_test.effect_size_interpretation
+            computed_metrics["effect_interpretation"] = (
+                best_test.effect_size_interpretation
+            )
         for group, mean in best_test.group_means.items():
             computed_metrics[f"mean_{group}"] = mean
         info = getattr(best_test, "additional_info", {}) or {}
@@ -598,8 +628,12 @@ Aggregated results (1 row per group) have insufficient variance and cannot be te
         }
         if _BONFERRONI_P in info:
             computed_metrics[_BONFERRONI_P] = info[_BONFERRONI_P]
-            computed_metrics[_BONFERRONI_SIGNIFICANT] = info.get(_BONFERRONI_SIGNIFICANT)
-            computed_metrics["n_tests_corrected"] = info.get("n_tests_corrected_for", n_tests)
+            computed_metrics[_BONFERRONI_SIGNIFICANT] = info.get(
+                _BONFERRONI_SIGNIFICANT
+            )
+            computed_metrics["n_tests_corrected"] = info.get(
+                "n_tests_corrected_for", n_tests
+            )
 
     def _modeling(self, state: ResearchWorkflowState) -> Dict[str, Any]:
         """Phase 4: REAL statistical analysis using scipy/pandas."""
@@ -647,11 +681,17 @@ Aggregated results (1 row per group) have insufficient variance and cannot be te
 
         hypothesis_tokens = set(re.findall(r"[A-Za-z_]\w*", state.hypothesis or ""))
 
-        best_test = max(test_results, key=lambda tr: self._score_test(tr, hypothesis_tokens)) if test_results else None
+        best_test = (
+            max(test_results, key=lambda tr: self._score_test(tr, hypothesis_tokens))
+            if test_results
+            else None
+        )
 
         # Store key metrics from the best test only (prevents "last query wins" -> always INCONCLUSIVE)
         if best_test:
-            self._populate_best_test_metrics(best_test, computed_metrics, len(test_results))
+            self._populate_best_test_metrics(
+                best_test, computed_metrics, len(test_results)
+            )
 
         # Fallback if no statistical tests could be run
         if not computed_findings:
@@ -741,7 +781,11 @@ DO NOT invent statistics. Only interpret what was computed above."""
             # Override confidence based on computed statistics.
             # Prefer Bonferroni-corrected significance when multiple tests were run.
             confidence = self._compute_evaluation_confidence(
-                p_value, is_significant, bonferroni_sig, bonferroni_p, effect_size,
+                p_value,
+                is_significant,
+                bonferroni_sig,
+                bonferroni_p,
+                effect_size,
                 fallback=result.confidence,
             )
 
@@ -764,7 +808,13 @@ DO NOT invent statistics. Only interpret what was computed above."""
             }
 
     def _compute_evaluation_confidence(
-        self, p_value, is_significant, bonferroni_sig, bonferroni_p, effect_size, fallback: int
+        self,
+        p_value,
+        is_significant,
+        bonferroni_sig,
+        bonferroni_p,
+        effect_size,
+        fallback: int,
     ) -> int:
         """Compute confidence score from computed statistical metrics."""
         if p_value is None or is_significant is None:
@@ -864,6 +914,7 @@ Generate:
     def _extract_column_alias(col: str, index: int) -> str:
         """Extract the column name or alias from a single SELECT column expression."""
         import re
+
         as_match = re.search(r'\s+AS\s+[`"\']?(\w+)[`"\']?\s*$', col, re.IGNORECASE)
         if as_match:
             return as_match.group(1)

@@ -14,9 +14,9 @@
 
 """Tests for askrita/utils/llm_models.py – covers all branches."""
 
-import os
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestGetLlmModel:
@@ -57,8 +57,8 @@ class TestGetLlmModel:
     def test_default_model_and_params_forwarded(self, monkeypatch):
         """Default model name, temperature, and max_tokens are passed to ChatOpenAI."""
         monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+        from askrita.utils.constants import MAX_TOKENS, TEMPERATURE, GPT_4o
         from askrita.utils.llm_models import get_llm_model
-        from askrita.utils.constants import GPT_4o, MAX_TOKENS, TEMPERATURE
 
         with patch("askrita.utils.llm_models.ChatOpenAI") as mock_openai:
             mock_openai.return_value = MagicMock()

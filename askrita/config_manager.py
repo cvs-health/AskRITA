@@ -407,9 +407,7 @@ class ConfigManager:
     def _load_config_from_path(self) -> None:
         """Load raw config data from the YAML file at self.config_path."""
         if not os.path.exists(self.config_path):
-            raise FileNotFoundError(
-                f"Configuration file not found: {self.config_path}"
-            )
+            raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
         with open(self.config_path, "r") as f:
             self._config_data = yaml.safe_load(f) or {}
         self._config_data = self._substitute_env_vars(self._config_data)
@@ -684,23 +682,33 @@ class ConfigManager:
                 )
         return validated
 
-    def _parse_schema_descriptions(self, schema_desc_data: dict) -> SchemaDescriptionsConfig:
+    def _parse_schema_descriptions(
+        self, schema_desc_data: dict
+    ) -> SchemaDescriptionsConfig:
         """Parse all nested fields of a schema_descriptions config dict."""
         auto_config = schema_desc_data.get("automatic_extraction", {})
         if isinstance(auto_config, dict):
-            schema_desc_data["automatic_extraction"] = AutomaticExtractionConfig(**auto_config)
+            schema_desc_data["automatic_extraction"] = AutomaticExtractionConfig(
+                **auto_config
+            )
 
         tables_data = schema_desc_data.get("tables", {})
         if isinstance(tables_data, dict):
-            schema_desc_data["tables"] = self._parse_schema_table_descriptions(tables_data)
+            schema_desc_data["tables"] = self._parse_schema_table_descriptions(
+                tables_data
+            )
 
         columns_data = schema_desc_data.get("columns", {})
         if isinstance(columns_data, dict):
-            schema_desc_data["columns"] = self._parse_schema_column_descriptions(columns_data)
+            schema_desc_data["columns"] = self._parse_schema_column_descriptions(
+                columns_data
+            )
 
         business_terms_data = schema_desc_data.get("business_terms", {})
         if business_terms_data:
-            schema_desc_data["business_terms"] = self._parse_schema_business_terms(business_terms_data)
+            schema_desc_data["business_terms"] = self._parse_schema_business_terms(
+                business_terms_data
+            )
 
         return SchemaDescriptionsConfig(**schema_desc_data)
 
@@ -713,12 +721,16 @@ class ConfigManager:
         if "cross_project_access" in db_config:
             cross_project_data = db_config.get("cross_project_access", {})
             if isinstance(cross_project_data, dict):
-                db_config["cross_project_access"] = CrossProjectAccessConfig(**cross_project_data)
+                db_config["cross_project_access"] = CrossProjectAccessConfig(
+                    **cross_project_data
+                )
 
         if "schema_descriptions" in db_config:
             schema_desc_data = db_config.get("schema_descriptions", {})
             if isinstance(schema_desc_data, dict):
-                db_config["schema_descriptions"] = self._parse_schema_descriptions(schema_desc_data)
+                db_config["schema_descriptions"] = self._parse_schema_descriptions(
+                    schema_desc_data
+                )
 
         if "sql_syntax" in db_config:
             sql_syntax_data = db_config.get("sql_syntax", {})
@@ -756,6 +768,7 @@ class ConfigManager:
         """Run optional CoT config validation, logging warnings on failure."""
         try:
             from .utils.enhanced_chain_of_thoughts import validate_cot_config
+
             validation_errors = validate_cot_config(config)
             if validation_errors:
                 logger.warning(
@@ -953,8 +966,11 @@ class ConfigManager:
     def _collect_missing_prompts(self) -> list:
         """Return a list of missing/malformed prompt identifiers."""
         core_required = [
-            "parse_question", "generate_sql", "validate_sql",
-            "format_results", "choose_visualization",
+            "parse_question",
+            "generate_sql",
+            "validate_sql",
+            "format_results",
+            "choose_visualization",
         ]
         optional = ["generate_followup_questions", "format_data_universal"]
         prompts_section = self._config_data.get("prompts", {})
@@ -976,7 +992,9 @@ class ConfigManager:
 
     def _log_missing_prompts_error(self, missing_prompts: list) -> None:
         """Log a detailed error message for missing/malformed prompts."""
-        logger.error("CONFIGURATION ERROR: Missing required prompts for SQL agent workflow")
+        logger.error(
+            "CONFIGURATION ERROR: Missing required prompts for SQL agent workflow"
+        )
         logger.error("")
         logger.error("Missing prompts:")
         for prompt in missing_prompts:
@@ -984,8 +1002,12 @@ class ConfigManager:
         logger.error("")
         logger.error("TO FIX THIS ISSUE:")
         logger.error("1. Add a 'prompts:' section to your configuration file")
-        logger.error("2. Copy the complete prompts from: example-configs/example-zscaler-config.yaml")
-        logger.error("3. Or run: cp example-configs/example-zscaler-config.yaml your-config.yaml")
+        logger.error(
+            "2. Copy the complete prompts from: example-configs/example-zscaler-config.yaml"
+        )
+        logger.error(
+            "3. Or run: cp example-configs/example-zscaler-config.yaml your-config.yaml"
+        )
         logger.error("")
         logger.error("Required structure in your YAML config:")
         logger.error("prompts:")
@@ -999,7 +1021,9 @@ class ConfigManager:
         logger.error("      [system prompt text...]")
         logger.error("  # ... (and 3 more prompts)")
         logger.error("")
-        logger.error("Full working example: example-configs/example-zscaler-config.yaml")
+        logger.error(
+            "Full working example: example-configs/example-zscaler-config.yaml"
+        )
 
     def _validate_required_prompts(self) -> bool:
         """Validate that required prompts are present for SQL agent workflow."""
@@ -1014,6 +1038,7 @@ class ConfigManager:
     def _validate_openai_config(self, llm_config) -> bool:
         """Validate OpenAI-specific configuration. Returns False if invalid."""
         import os
+
         if not os.getenv("OPENAI_API_KEY"):
             logger.error("CONFIGURATION ERROR: Missing OpenAI API key")
             logger.error("")
@@ -1022,11 +1047,17 @@ class ConfigManager:
             logger.error("")
             logger.error("export OPENAI_API_KEY='your-api-key-here'")
             logger.error("")
-            logger.error("Or add it to your shell profile (.bashrc, .zshrc, etc.) for persistence:")
-            logger.error("echo 'export OPENAI_API_KEY=\"your-api-key-here\"' >> ~/.bashrc")
+            logger.error(
+                "Or add it to your shell profile (.bashrc, .zshrc, etc.) for persistence:"
+            )
+            logger.error(
+                "echo 'export OPENAI_API_KEY=\"your-api-key-here\"' >> ~/.bashrc"
+            )
             logger.error("")
             logger.error("Get your API key from: https://platform.openai.com/api-keys")
-            logger.error("The API key is no longer configured in YAML for security reasons.")
+            logger.error(
+                "The API key is no longer configured in YAML for security reasons."
+            )
             return False
         if not llm_config.model:
             logger.error("CONFIGURATION ERROR: Missing OpenAI model")
@@ -1047,7 +1078,9 @@ class ConfigManager:
             and llm_config.azure_certificate_path
         )
         if not has_cert_auth:
-            missing.append("certificate authentication (all three: azure_tenant_id, azure_client_id, azure_certificate_path)")
+            missing.append(
+                "certificate authentication (all three: azure_tenant_id, azure_client_id, azure_certificate_path)"
+            )
         if not missing:
             return True
         logger.error("CONFIGURATION ERROR: Missing Azure OpenAI configuration")
@@ -1095,18 +1128,24 @@ class ConfigManager:
             logger.error('  project_id: "your-gcp-project-id"')
             logger.error('  location: "us-central1"  # optional')
             logger.error("")
-            logger.error("  # Authentication Option 1: Service Account (recommended for production)")
+            logger.error(
+                "  # Authentication Option 1: Service Account (recommended for production)"
+            )
             logger.error('  credentials_path: "/path/to/service-account.json"')
             logger.error("")
             logger.error("  # Authentication Option 2: gcloud CLI (for development)")
             logger.error("  gcloud_cli_auth: true")
             logger.error("")
             logger.error("If using gcloud_cli_auth=true, run 'gcloud auth login' and")
-            logger.error("   'gcloud config set project YOUR_PROJECT_ID' before running your code.")
+            logger.error(
+                "   'gcloud config set project YOUR_PROJECT_ID' before running your code."
+            )
             return False
         if has_gcloud_cli_auth:
             logger.info("Using gcloud CLI authentication for Vertex AI")
-            logger.info("Make sure you've run 'gcloud auth login' and 'gcloud config set project YOUR_PROJECT_ID'")
+            logger.info(
+                "Make sure you've run 'gcloud auth login' and 'gcloud config set project YOUR_PROJECT_ID'"
+            )
             logger.info("   in the same terminal session before running this code.")
         return True
 
@@ -1138,20 +1177,28 @@ class ConfigManager:
             logger.error("database:")
             logger.error('  connection_string: "bigquery://project-id/dataset-name"')
             logger.error("")
-            logger.error("  # Authentication Option 1: Service Account (recommended for production)")
+            logger.error(
+                "  # Authentication Option 1: Service Account (recommended for production)"
+            )
             logger.error('  bigquery_credentials_path: "/path/to/service-account.json"')
             logger.error('  bigquery_project_id: "your-project-id"  # optional')
             logger.error("")
             logger.error("  # Authentication Option 2: gcloud CLI (for development)")
             logger.error("  bigquery_gcloud_cli_auth: true")
             logger.error("")
-            logger.error("💡 If using bigquery_gcloud_cli_auth=true, run 'gcloud auth login' and")
-            logger.error("   'gcloud config set project YOUR_PROJECT_ID' before running your code.")
+            logger.error(
+                "💡 If using bigquery_gcloud_cli_auth=true, run 'gcloud auth login' and"
+            )
+            logger.error(
+                "   'gcloud config set project YOUR_PROJECT_ID' before running your code."
+            )
             return False
 
         if has_gcloud_cli_auth:
             logger.info("🔑 Using gcloud CLI authentication for BigQuery")
-            logger.info("⚠️  Make sure you've run 'gcloud auth login' and 'gcloud config set project YOUR_PROJECT_ID'")
+            logger.info(
+                "⚠️  Make sure you've run 'gcloud auth login' and 'gcloud config set project YOUR_PROJECT_ID'"
+            )
             logger.info("   in the same terminal session before running this code.")
         return True
 

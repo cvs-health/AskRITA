@@ -19,21 +19,22 @@
 """Tests for database_strategies.py – targets missing coverage lines."""
 
 import os
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from askrita.exceptions import DatabaseError
 from askrita.sqlagent.database.database_strategies import (
     BigQueryStrategy,
-    SnowflakeStrategy,
-    PostgreSQLStrategy,
     DB2Strategy,
+    PostgreSQLStrategy,
+    SnowflakeStrategy,
 )
-from askrita.exceptions import DatabaseError
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_config(credentials_path=None):
     config = MagicMock()
@@ -62,6 +63,7 @@ def _make_db(run_result="[(1,)]"):
 # BigQueryStrategy
 # ---------------------------------------------------------------------------
 
+
 class TestBigQueryStrategy:
     def test_get_connection_type(self):
         assert BigQueryStrategy().get_connection_type() == "bigquery"
@@ -71,26 +73,35 @@ class TestBigQueryStrategy:
         cred_file.write_text("{}")
         config = _make_config(credentials_path=str(cred_file))
 
-        with patch("askrita.sqlagent.database.database_strategies.default") as mock_default:
+        with patch(
+            "askrita.sqlagent.database.database_strategies.default"
+        ) as mock_default:
             mock_default.return_value = (MagicMock(), "my-project")
             BigQueryStrategy().setup_auth(config)
             assert os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") == str(cred_file)
 
     def test_setup_auth_missing_credentials_path_falls_back_to_adc(self):
         config = _make_config(credentials_path="/nonexistent/creds.json")
-        with patch("askrita.sqlagent.database.database_strategies.default") as mock_default:
+        with patch(
+            "askrita.sqlagent.database.database_strategies.default"
+        ) as mock_default:
             mock_default.return_value = (MagicMock(), "proj")
             BigQueryStrategy().setup_auth(config)  # Should not raise
 
     def test_setup_auth_no_credentials_uses_adc(self):
         config = _make_config(credentials_path=None)
-        with patch("askrita.sqlagent.database.database_strategies.default") as mock_default:
+        with patch(
+            "askrita.sqlagent.database.database_strategies.default"
+        ) as mock_default:
             mock_default.return_value = (MagicMock(), "proj")
             BigQueryStrategy().setup_auth(config)
 
     def test_setup_auth_adc_fails_raises_database_error(self):
         config = _make_config(credentials_path=None)
-        with patch("askrita.sqlagent.database.database_strategies.default", side_effect=Exception("auth failed")):
+        with patch(
+            "askrita.sqlagent.database.database_strategies.default",
+            side_effect=Exception("auth failed"),
+        ):
             with pytest.raises(DatabaseError, match="BigQuery authentication failed"):
                 BigQueryStrategy().setup_auth(config)
 
@@ -103,7 +114,9 @@ class TestBigQueryStrategy:
     def test_test_connection_success(self):
         db = _make_db()
         config = _make_config()
-        with patch("askrita.sqlagent.database.database_strategies.BigQueryValidationChain") as mock_chain:
+        with patch(
+            "askrita.sqlagent.database.database_strategies.BigQueryValidationChain"
+        ) as mock_chain:
             mock_chain.return_value.validate.return_value = True
             result = BigQueryStrategy().test_connection(db, config)
         assert result is True
@@ -111,7 +124,9 @@ class TestBigQueryStrategy:
     def test_test_connection_failure(self):
         db = _make_db()
         config = _make_config()
-        with patch("askrita.sqlagent.database.database_strategies.BigQueryValidationChain") as mock_chain:
+        with patch(
+            "askrita.sqlagent.database.database_strategies.BigQueryValidationChain"
+        ) as mock_chain:
             mock_chain.return_value.validate.return_value = False
             result = BigQueryStrategy().test_connection(db, config)
         assert result is False
@@ -119,28 +134,40 @@ class TestBigQueryStrategy:
     def test_test_connection_exception_returns_false(self):
         db = _make_db()
         config = _make_config()
-        with patch("askrita.sqlagent.database.database_strategies.BigQueryValidationChain", side_effect=RuntimeError("bq error")):
+        with patch(
+            "askrita.sqlagent.database.database_strategies.BigQueryValidationChain",
+            side_effect=RuntimeError("bq error"),
+        ):
             result = BigQueryStrategy().test_connection(db, config)
         assert result is False
 
     def test_test_connection_auth_error_logged(self):
         db = _make_db()
         config = _make_config()
-        with patch("askrita.sqlagent.database.database_strategies.BigQueryValidationChain", side_effect=Exception("authentication access denied")):
+        with patch(
+            "askrita.sqlagent.database.database_strategies.BigQueryValidationChain",
+            side_effect=Exception("authentication access denied"),
+        ):
             result = BigQueryStrategy().test_connection(db, config)
         assert result is False
 
     def test_test_connection_project_error_logged(self):
         db = _make_db()
         config = _make_config()
-        with patch("askrita.sqlagent.database.database_strategies.BigQueryValidationChain", side_effect=Exception("project not found")):
+        with patch(
+            "askrita.sqlagent.database.database_strategies.BigQueryValidationChain",
+            side_effect=Exception("project not found"),
+        ):
             result = BigQueryStrategy().test_connection(db, config)
         assert result is False
 
     def test_test_connection_jobs_create_error_logged(self):
         db = _make_db()
         config = _make_config()
-        with patch("askrita.sqlagent.database.database_strategies.BigQueryValidationChain", side_effect=Exception("bigquery.jobs.create permission denied")):
+        with patch(
+            "askrita.sqlagent.database.database_strategies.BigQueryValidationChain",
+            side_effect=Exception("bigquery.jobs.create permission denied"),
+        ):
             result = BigQueryStrategy().test_connection(db, config)
         assert result is False
 
@@ -160,13 +187,16 @@ class TestBigQueryStrategy:
         assert result == "ORIGINAL SCHEMA"
 
     def test_get_safe_connection_info(self):
-        result = BigQueryStrategy().get_safe_connection_info("bigquery://project/dataset")
+        result = BigQueryStrategy().get_safe_connection_info(
+            "bigquery://project/dataset"
+        )
         assert "bigquery://" not in result
 
 
 # ---------------------------------------------------------------------------
 # SnowflakeStrategy
 # ---------------------------------------------------------------------------
+
 
 class TestSnowflakeStrategy:
     def test_get_connection_type(self):
@@ -206,13 +236,16 @@ class TestSnowflakeStrategy:
         assert result == "SCHEMA"
 
     def test_get_safe_connection_info(self):
-        result = SnowflakeStrategy().get_safe_connection_info("snowflake://user:pass@account/db")
+        result = SnowflakeStrategy().get_safe_connection_info(
+            "snowflake://user:pass@account/db"
+        )
         assert "snowflake://" not in result
 
 
 # ---------------------------------------------------------------------------
 # PostgreSQLStrategy
 # ---------------------------------------------------------------------------
+
 
 class TestPostgreSQLStrategy:
     def test_get_connection_type(self):
@@ -242,18 +275,23 @@ class TestPostgreSQLStrategy:
         assert result == "SCHEMA"
 
     def test_get_safe_connection_info_with_at(self):
-        result = PostgreSQLStrategy().get_safe_connection_info("postgresql://user:pass@host:5432/db")
+        result = PostgreSQLStrategy().get_safe_connection_info(
+            "postgresql://user:pass@host:5432/db"
+        )
         assert "user" not in result
         assert "pass" not in result
 
     def test_get_safe_connection_info_without_at(self):
-        result = PostgreSQLStrategy().get_safe_connection_info("postgresql://host:5432/db")
+        result = PostgreSQLStrategy().get_safe_connection_info(
+            "postgresql://host:5432/db"
+        )
         assert isinstance(result, str)
 
 
 # ---------------------------------------------------------------------------
 # DB2Strategy
 # ---------------------------------------------------------------------------
+
 
 class TestDB2Strategy:
     def test_get_connection_type(self):
@@ -288,13 +326,17 @@ class TestDB2Strategy:
         assert result == "SCHEMA"
 
     def test_get_safe_connection_info_db2_prefix(self):
-        result = DB2Strategy().get_safe_connection_info("db2://user:pass@host:50000/SAMPLE")
+        result = DB2Strategy().get_safe_connection_info(
+            "db2://user:pass@host:50000/SAMPLE"
+        )
         assert "user" not in result
         assert "pass" not in result
         assert "host:50000/SAMPLE" in result
 
     def test_get_safe_connection_info_ibm_db_sa_prefix(self):
-        result = DB2Strategy().get_safe_connection_info("ibm_db_sa://user:pass@host:50000/DB")
+        result = DB2Strategy().get_safe_connection_info(
+            "ibm_db_sa://user:pass@host:50000/DB"
+        )
         assert "user" not in result
         assert "host:50000/DB" in result
 

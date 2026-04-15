@@ -19,28 +19,29 @@
 """Comprehensive tests for enhanced_chain_of_thoughts.py."""
 
 import threading
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+import pytest
+
+from askrita.config_manager import ChainOfThoughtsConfig
 from askrita.utils.enhanced_chain_of_thoughts import (
-    StepStatus,
-    StepType,
-    StepRegistry,
-    get_step_registry,
     ChainOfThoughtsStep,
     CoTPerformanceMetrics,
     EnhancedChainOfThoughtsTracker,
+    StepRegistry,
+    StepStatus,
     StepTracker,
+    StepType,
+    get_step_registry,
     track_step,
     validate_cot_config,
 )
-from askrita.config_manager import ChainOfThoughtsConfig
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_config(**kwargs):
     defaults = dict(
@@ -73,6 +74,7 @@ def _make_tracker(enabled=True, config=None):
 # ---------------------------------------------------------------------------
 # StepRegistry
 # ---------------------------------------------------------------------------
+
 
 class TestStepRegistry:
     def test_register_and_get(self):
@@ -134,8 +136,13 @@ class TestStepRegistry:
     def test_register_with_reasoning_template(self):
         registry = StepRegistry()
         registry.register_step(
-            "sql_step", "generation",
-            reasoning_template={"start": "Starting SQL", "success": "SQL done", "failure": "Failed: {error}"}
+            "sql_step",
+            "generation",
+            reasoning_template={
+                "start": "Starting SQL",
+                "success": "SQL done",
+                "failure": "Failed: {error}",
+            },
         )
         info = registry.get_step_info("sql_step")
         assert info.reasoning_template["start"] == "Starting SQL"
@@ -161,6 +168,7 @@ class TestStepRegistry:
 # ---------------------------------------------------------------------------
 # ChainOfThoughtsStep
 # ---------------------------------------------------------------------------
+
 
 class TestChainOfThoughtsStep:
     def _make_step(self, **kwargs):
@@ -214,6 +222,7 @@ class TestChainOfThoughtsStep:
 # CoTPerformanceMetrics
 # ---------------------------------------------------------------------------
 
+
 class TestCoTPerformanceMetrics:
     def test_calculate_average(self):
         m = CoTPerformanceMetrics(total_tracking_time_ms=100.0, step_count=5)
@@ -230,10 +239,13 @@ class TestCoTPerformanceMetrics:
 # EnhancedChainOfThoughtsTracker – basic operations
 # ---------------------------------------------------------------------------
 
+
 class TestTrackerBasic:
     def test_start_step_returns_step(self):
         tracker = _make_tracker()
-        step = tracker.start_step("parse_question", "analysis", "Parsing...", "question text")
+        step = tracker.start_step(
+            "parse_question", "analysis", "Parsing...", "question text"
+        )
         assert step is not None
         assert step.step_name == "parse_question"
 
@@ -282,8 +294,9 @@ class TestTrackerBasic:
     def test_start_step_uses_template_reasoning(self):
         registry = get_step_registry()
         registry.register_step(
-            "templated_step", "analysis",
-            reasoning_template={"start": "Starting templated step"}
+            "templated_step",
+            "analysis",
+            reasoning_template={"start": "Starting templated step"},
         )
         tracker = _make_tracker()
         step = tracker.start_step("templated_step")  # no reasoning provided
@@ -292,8 +305,9 @@ class TestTrackerBasic:
     def test_complete_step_uses_template_success(self):
         registry = get_step_registry()
         registry.register_step(
-            "tpl_complete", "analysis",
-            reasoning_template={"success": "Success template"}
+            "tpl_complete",
+            "analysis",
+            reasoning_template={"success": "Success template"},
         )
         tracker = _make_tracker()
         tracker.start_step("tpl_complete")
@@ -303,8 +317,7 @@ class TestTrackerBasic:
     def test_complete_step_uses_template_failure(self):
         registry = get_step_registry()
         registry.register_step(
-            "tpl_fail", "analysis",
-            reasoning_template={"failure": "Failed: {error}"}
+            "tpl_fail", "analysis", reasoning_template={"failure": "Failed: {error}"}
         )
         tracker = _make_tracker()
         tracker.start_step("tpl_fail")
@@ -340,6 +353,7 @@ class TestTrackerBasic:
 # ---------------------------------------------------------------------------
 # Step listeners
 # ---------------------------------------------------------------------------
+
 
 class TestStepListeners:
     def test_register_listener(self):
@@ -386,6 +400,7 @@ class TestStepListeners:
 # finalize_workflow
 # ---------------------------------------------------------------------------
 
+
 class TestFinalizeWorkflow:
     def test_finalize_sets_success(self):
         tracker = _make_tracker()
@@ -408,6 +423,7 @@ class TestFinalizeWorkflow:
 # ---------------------------------------------------------------------------
 # get_summary / get_detailed_chain / get_step_by_name
 # ---------------------------------------------------------------------------
+
 
 class TestSummaryAndChain:
     def test_get_summary_disabled(self):
@@ -462,6 +478,7 @@ class TestSummaryAndChain:
 # StepTracker context manager
 # ---------------------------------------------------------------------------
 
+
 class TestStepTrackerContext:
     def test_basic_usage(self):
         tracker = _make_tracker()
@@ -493,6 +510,7 @@ class TestStepTrackerContext:
 # track_step decorator
 # ---------------------------------------------------------------------------
 
+
 class TestTrackStepDecorator:
     def test_decorator_with_cot_tracker(self):
         tracker = _make_tracker()
@@ -522,6 +540,7 @@ class TestTrackStepDecorator:
 # ---------------------------------------------------------------------------
 # validate_cot_config (module-level function)
 # ---------------------------------------------------------------------------
+
 
 class TestValidateCotConfig:
     def test_valid_config(self):

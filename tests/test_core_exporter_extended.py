@@ -18,22 +18,27 @@
 
 """Extended tests for exporters/core.py – targets missing coverage lines."""
 
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
 from askrita.sqlagent.exporters.core import (
-    _generate_table_headers_from_chart_data,
-    PPTX_AVAILABLE,
     PDF_AVAILABLE,
+    PPTX_AVAILABLE,
+    _generate_table_headers_from_chart_data,
 )
 from askrita.sqlagent.exporters.models import ExportSettings
+from askrita.sqlagent.formatters.DataFormatter import (
+    ChartDataset,
+    DataPoint,
+    UniversalChartData,
+)
 from askrita.sqlagent.State import WorkflowState
-from askrita.sqlagent.formatters.DataFormatter import UniversalChartData, ChartDataset, DataPoint
-
 
 # ---------------------------------------------------------------------------
 # _generate_table_headers_from_chart_data (in core.py)
 # ---------------------------------------------------------------------------
+
 
 class TestCoreGenerateTableHeaders:
     def _make_cd(self, x_label=None, y_label=None, datasets=None):
@@ -57,7 +62,9 @@ class TestCoreGenerateTableHeaders:
         ds = MagicMock()
         ds.label = "Revenue"
         cd.datasets = [ds]
-        result = _generate_table_headers_from_chart_data(cd, [{"Month": "Jan", "Revenue": 100}], ["month", "revenue"])
+        result = _generate_table_headers_from_chart_data(
+            cd, [{"Month": "Jan", "Revenue": 100}], ["month", "revenue"]
+        )
         assert result[0] == "Month"
 
     def test_uses_y_axis_label_when_no_dataset_label(self):
@@ -65,7 +72,9 @@ class TestCoreGenerateTableHeaders:
         ds = MagicMock()
         ds.label = None  # no label on dataset
         cd.datasets = [ds]
-        result = _generate_table_headers_from_chart_data(cd, [{"cat": "A", "val": 1}], ["cat", "val"])
+        result = _generate_table_headers_from_chart_data(
+            cd, [{"cat": "A", "val": 1}], ["cat", "val"]
+        )
         assert "Amount" in result
 
     def test_category_fallback_when_no_x_label_no_fallback(self):
@@ -83,7 +92,9 @@ class TestCoreGenerateTableHeaders:
         cd.datasets = [ds]
         # 3 result keys but headers will have 2 (first + dataset label)
         results = [{"col_a": 1, "col_b": 2, "col_c": 3}]
-        result = _generate_table_headers_from_chart_data(cd, results, ["col_a", "col_b", "col_c"])
+        result = _generate_table_headers_from_chart_data(
+            cd, results, ["col_a", "col_b", "col_c"]
+        )
         assert len(result) == 3
 
     def test_fallback_when_headers_empty(self):
@@ -129,6 +140,7 @@ class TestCreatePptxExport:
 
     def test_basic_export(self):
         from askrita.sqlagent.exporters.core import create_pptx_export
+
         state = self._basic_state()
         settings = self._settings()
         result = create_pptx_export(state, settings)
@@ -137,10 +149,10 @@ class TestCreatePptxExport:
 
     def test_export_with_chart_data(self):
         from askrita.sqlagent.exporters.core import create_pptx_export
-        datasets = [ChartDataset(
-            label="Sales",
-            data=[DataPoint(y=100), DataPoint(y=200)]
-        )]
+
+        datasets = [
+            ChartDataset(label="Sales", data=[DataPoint(y=100), DataPoint(y=200)])
+        ]
         cd = UniversalChartData(type="bar", labels=["Jan", "Feb"], datasets=datasets)
         state = self._basic_state(chart_data=cd)
         settings = self._settings()
@@ -149,6 +161,7 @@ class TestCreatePptxExport:
 
     def test_export_with_data_table(self):
         from askrita.sqlagent.exporters.core import create_pptx_export
+
         state = self._basic_state()
         settings = self._settings(include_data_table=True)
         result = create_pptx_export(state, settings)
@@ -156,6 +169,7 @@ class TestCreatePptxExport:
 
     def test_export_with_sql_and_sql_reason(self):
         from askrita.sqlagent.exporters.core import create_pptx_export
+
         state = self._basic_state(
             sql_reason="Joined tables for aggregation",
             visualization_reason="Bar chart shows comparison",
@@ -166,6 +180,7 @@ class TestCreatePptxExport:
 
     def test_export_no_question_no_answer(self):
         from askrita.sqlagent.exporters.core import create_pptx_export
+
         state = WorkflowState(results=[{"a": 1}])
         settings = self._settings()
         result = create_pptx_export(state, settings)
@@ -173,6 +188,7 @@ class TestCreatePptxExport:
 
     def test_export_with_no_results(self):
         from askrita.sqlagent.exporters.core import create_pptx_export
+
         state = WorkflowState(answer="No data")
         settings = self._settings(include_data_table=True)
         result = create_pptx_export(state, settings)
@@ -180,6 +196,7 @@ class TestCreatePptxExport:
 
     def test_export_with_followup_questions(self):
         from askrita.sqlagent.exporters.core import create_pptx_export
+
         state = self._basic_state(followup_questions=["Q1?", "Q2?"])
         settings = self._settings()
         result = create_pptx_export(state, settings)
@@ -190,6 +207,7 @@ class TestCreatePptxExport:
 class TestCreatePptxNoPptx:
     def test_raises_export_error(self):
         from askrita.sqlagent.exporters.core import create_pptx_export
+
         state = WorkflowState()
         settings = ExportSettings(title="Test")
         with pytest.raises(ImportError, match="PPTX export requires"):
@@ -200,9 +218,7 @@ class TestCreatePptxNoPptx:
 # create_pdf_export – integration (requires reportlab)
 # ---------------------------------------------------------------------------
 
-requires_pdf = pytest.mark.skipif(
-    not PDF_AVAILABLE, reason="reportlab not installed"
-)
+requires_pdf = pytest.mark.skipif(not PDF_AVAILABLE, reason="reportlab not installed")
 
 
 @requires_pdf
@@ -212,6 +228,7 @@ class TestCreatePdfExport:
 
     def test_basic_pdf(self):
         from askrita.sqlagent.exporters.core import create_pdf_export
+
         state = self._state(
             question="What are the sales?",
             answer="Sales are $100",
@@ -223,6 +240,7 @@ class TestCreatePdfExport:
 
     def test_pdf_with_results(self):
         from askrita.sqlagent.exporters.core import create_pdf_export
+
         state = self._state(
             question="Sales by month?",
             answer="January had the highest sales.",
@@ -234,6 +252,7 @@ class TestCreatePdfExport:
 
     def test_pdf_with_sql(self):
         from askrita.sqlagent.exporters.core import create_pdf_export
+
         state = self._state(
             question="Sales?",
             answer="$100",
@@ -245,6 +264,7 @@ class TestCreatePdfExport:
 
     def test_pdf_no_question(self):
         from askrita.sqlagent.exporters.core import create_pdf_export
+
         state = self._state(answer="Some answer")
         settings = ExportSettings(title="No Question PDF")
         result = create_pdf_export(state, settings)
@@ -252,10 +272,10 @@ class TestCreatePdfExport:
 
     def test_pdf_with_chart(self):
         from askrita.sqlagent.exporters.core import create_pdf_export
-        datasets = [ChartDataset(
-            label="Sales",
-            data=[DataPoint(y=100), DataPoint(y=200)]
-        )]
+
+        datasets = [
+            ChartDataset(label="Sales", data=[DataPoint(y=100), DataPoint(y=200)])
+        ]
         cd = UniversalChartData(type="bar", labels=["Jan", "Feb"], datasets=datasets)
         state = self._state(
             question="Sales chart?",
@@ -271,6 +291,7 @@ class TestCreatePdfExport:
 class TestCreatePdfNoPdf:
     def test_raises_export_error(self):
         from askrita.sqlagent.exporters.core import create_pdf_export
+
         state = WorkflowState()
         settings = ExportSettings(title="Test")
         with pytest.raises(ImportError, match="PDF export requires"):

@@ -23,41 +23,48 @@ import numpy as np
 import pandas as pd
 
 from askrita.research.StatisticalAnalyzer import (
+    DescriptiveStats,
     StatisticalAnalyzer,
     StatisticalResult,
-    DescriptiveStats,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_two_group_df(n=30):
     """Return a DataFrame with two groups and a continuous value column."""
     rng = np.random.default_rng(42)
-    return pd.DataFrame({
-        "group": ["A"] * n + ["B"] * n,
-        "value": np.concatenate([rng.normal(10, 2, n), rng.normal(15, 2, n)]),
-    })
+    return pd.DataFrame(
+        {
+            "group": ["A"] * n + ["B"] * n,
+            "value": np.concatenate([rng.normal(10, 2, n), rng.normal(15, 2, n)]),
+        }
+    )
 
 
 def _make_three_group_df(n=20):
     """Return a DataFrame with three groups."""
     rng = np.random.default_rng(42)
-    return pd.DataFrame({
-        "group": ["A"] * n + ["B"] * n + ["C"] * n,
-        "value": np.concatenate([
-            rng.normal(10, 2, n),
-            rng.normal(15, 2, n),
-            rng.normal(20, 2, n),
-        ]),
-    })
+    return pd.DataFrame(
+        {
+            "group": ["A"] * n + ["B"] * n + ["C"] * n,
+            "value": np.concatenate(
+                [
+                    rng.normal(10, 2, n),
+                    rng.normal(15, 2, n),
+                    rng.normal(20, 2, n),
+                ]
+            ),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # StatisticalResult – str / to_prompt_text
 # ---------------------------------------------------------------------------
+
 
 class TestStatisticalResult:
     def test_str_significant(self):
@@ -84,8 +91,12 @@ class TestStatisticalResult:
 
     def test_to_prompt_text_with_effect_size(self):
         r = StatisticalResult(
-            test_name="t-test", test_statistic=2.0, p_value=0.04, is_significant=True,
-            effect_size=0.5, effect_size_interpretation="medium"
+            test_name="t-test",
+            test_statistic=2.0,
+            p_value=0.04,
+            is_significant=True,
+            effect_size=0.5,
+            effect_size_interpretation="medium",
         )
         text = r.to_prompt_text()
         assert "Effect Size" in text
@@ -93,15 +104,21 @@ class TestStatisticalResult:
 
     def test_to_prompt_text_with_confidence_interval(self):
         r = StatisticalResult(
-            test_name="t-test", test_statistic=2.0, p_value=0.04, is_significant=True,
-            confidence_interval=(1.0, 3.0)
+            test_name="t-test",
+            test_statistic=2.0,
+            p_value=0.04,
+            is_significant=True,
+            confidence_interval=(1.0, 3.0),
         )
         text = r.to_prompt_text()
         assert "Confidence Interval" in text
 
     def test_to_prompt_text_with_group_means(self):
         r = StatisticalResult(
-            test_name="t-test", test_statistic=2.0, p_value=0.04, is_significant=True,
+            test_name="t-test",
+            test_statistic=2.0,
+            p_value=0.04,
+            is_significant=True,
             group_means={"A": 10.0, "B": 15.0},
             group_stds={"A": 2.0, "B": 2.5},
             sample_sizes={"A": 30, "B": 30},
@@ -112,42 +129,64 @@ class TestStatisticalResult:
 
     def test_to_prompt_text_large_n_note(self):
         r = StatisticalResult(
-            test_name="t-test", test_statistic=2.0, p_value=0.04, is_significant=True,
-            additional_info={"large_n_note": "LARGE-N WARNING"}
+            test_name="t-test",
+            test_statistic=2.0,
+            p_value=0.04,
+            is_significant=True,
+            additional_info={"large_n_note": "LARGE-N WARNING"},
         )
         text = r.to_prompt_text()
         assert "LARGE-N WARNING" in text
 
     def test_to_prompt_text_was_sampled(self):
         r = StatisticalResult(
-            test_name="t-test", test_statistic=2.0, p_value=0.04, is_significant=True,
+            test_name="t-test",
+            test_statistic=2.0,
+            p_value=0.04,
+            is_significant=True,
             sample_sizes={"A": 500, "B": 500},
-            additional_info={"was_sampled": True, "original_n": 200000}
+            additional_info={"was_sampled": True, "original_n": 200000},
         )
         text = r.to_prompt_text()
         assert "sample" in text.lower()
 
     def test_to_prompt_text_bonferroni(self):
         r = StatisticalResult(
-            test_name="t-test", test_statistic=2.0, p_value=0.04, is_significant=True,
+            test_name="t-test",
+            test_statistic=2.0,
+            p_value=0.04,
+            is_significant=True,
             additional_info={
                 "bonferroni_p": 0.12,
                 "bonferroni_significant": False,
-                "n_tests_corrected_for": 3
-            }
+                "n_tests_corrected_for": 3,
+            },
         )
         text = r.to_prompt_text()
         assert "Bonferroni" in text
 
     def test_to_prompt_text_tukey(self):
         r = StatisticalResult(
-            test_name="ANOVA", test_statistic=5.0, p_value=0.001, is_significant=True,
+            test_name="ANOVA",
+            test_statistic=5.0,
+            p_value=0.001,
+            is_significant=True,
             additional_info={
                 "tukey_hsd_pairwise": [
-                    {"group1": "A", "group2": "B", "p_value": 0.01, "significant": True},
-                    {"group1": "A", "group2": "C", "p_value": 0.5, "significant": False},
+                    {
+                        "group1": "A",
+                        "group2": "B",
+                        "p_value": 0.01,
+                        "significant": True,
+                    },
+                    {
+                        "group1": "A",
+                        "group2": "C",
+                        "p_value": 0.5,
+                        "significant": False,
+                    },
                 ]
-            }
+            },
         )
         text = r.to_prompt_text()
         assert "Tukey HSD" in text
@@ -157,11 +196,19 @@ class TestStatisticalResult:
 # DescriptiveStats – to_prompt_text
 # ---------------------------------------------------------------------------
 
+
 class TestDescriptiveStats:
     def test_to_prompt_text(self):
         ds = DescriptiveStats(
-            variable="value", count=30, mean=10.0, std=2.0,
-            min=5.0, max=15.0, median=10.0, q1=8.5, q3=11.5
+            variable="value",
+            count=30,
+            mean=10.0,
+            std=2.0,
+            min=5.0,
+            max=15.0,
+            median=10.0,
+            q1=8.5,
+            q3=11.5,
         )
         text = ds.to_prompt_text()
         assert "value" in text
@@ -171,6 +218,7 @@ class TestDescriptiveStats:
 # ---------------------------------------------------------------------------
 # StatisticalAnalyzer.sql_results_to_dataframe
 # ---------------------------------------------------------------------------
+
 
 class TestSqlResultsToDataframe:
     def setup_method(self):
@@ -212,6 +260,7 @@ class TestSqlResultsToDataframe:
 # StatisticalAnalyzer.descriptive_stats
 # ---------------------------------------------------------------------------
 
+
 class TestDescriptiveStatsMethod:
     def setup_method(self):
         self.analyzer = StatisticalAnalyzer()
@@ -242,6 +291,7 @@ class TestDescriptiveStatsMethod:
 # StatisticalAnalyzer._check_sample_size
 # ---------------------------------------------------------------------------
 
+
 class TestCheckSampleSize:
     def setup_method(self):
         self.analyzer = StatisticalAnalyzer()
@@ -271,6 +321,7 @@ class TestCheckSampleSize:
 # StatisticalAnalyzer._large_n_note
 # ---------------------------------------------------------------------------
 
+
 class TestLargeNNote:
     def setup_method(self):
         self.analyzer = StatisticalAnalyzer()
@@ -288,24 +339,31 @@ class TestLargeNNote:
 # StatisticalAnalyzer._stratified_sample
 # ---------------------------------------------------------------------------
 
+
 class TestStratifiedSample:
     def setup_method(self):
         self.analyzer = StatisticalAnalyzer()
 
     def test_no_sample_when_below_threshold(self):
         df = _make_two_group_df(n=100)
-        result_df, was_sampled, original_n = self.analyzer._stratified_sample(df, "group")
+        result_df, was_sampled, original_n = self.analyzer._stratified_sample(
+            df, "group"
+        )
         assert not was_sampled
         assert original_n == len(df)
 
     def test_sample_when_above_threshold(self):
         rng = np.random.default_rng(42)
         n = self.analyzer.SAMPLE_THRESHOLD + 1000
-        df = pd.DataFrame({
-            "group": (["A"] * (n // 2)) + (["B"] * (n - n // 2)),
-            "value": rng.normal(0, 1, n),
-        })
-        result_df, was_sampled, original_n = self.analyzer._stratified_sample(df, "group")
+        df = pd.DataFrame(
+            {
+                "group": (["A"] * (n // 2)) + (["B"] * (n - n // 2)),
+                "value": rng.normal(0, 1, n),
+            }
+        )
+        result_df, was_sampled, original_n = self.analyzer._stratified_sample(
+            df, "group"
+        )
         assert was_sampled
         assert original_n == n
         assert len(result_df) <= self.analyzer.TARGET_SAMPLE + 10
@@ -314,6 +372,7 @@ class TestStratifiedSample:
 # ---------------------------------------------------------------------------
 # StatisticalAnalyzer._interpret_effect_size
 # ---------------------------------------------------------------------------
+
 
 class TestInterpretEffectSize:
     def setup_method(self):
@@ -332,13 +391,20 @@ class TestInterpretEffectSize:
         assert self.analyzer._interpret_effect_size(1.0) == "large"
 
     def test_eta_squared_negligible(self):
-        assert self.analyzer._interpret_effect_size(0.005, is_eta_squared=True) == "negligible"
+        assert (
+            self.analyzer._interpret_effect_size(0.005, is_eta_squared=True)
+            == "negligible"
+        )
 
     def test_eta_squared_small(self):
-        assert self.analyzer._interpret_effect_size(0.03, is_eta_squared=True) == "small"
+        assert (
+            self.analyzer._interpret_effect_size(0.03, is_eta_squared=True) == "small"
+        )
 
     def test_eta_squared_medium(self):
-        assert self.analyzer._interpret_effect_size(0.1, is_eta_squared=True) == "medium"
+        assert (
+            self.analyzer._interpret_effect_size(0.1, is_eta_squared=True) == "medium"
+        )
 
     def test_eta_squared_large(self):
         assert self.analyzer._interpret_effect_size(0.2, is_eta_squared=True) == "large"
@@ -347,6 +413,7 @@ class TestInterpretEffectSize:
 # ---------------------------------------------------------------------------
 # StatisticalAnalyzer.compare_groups
 # ---------------------------------------------------------------------------
+
 
 class TestCompareGroups:
     def setup_method(self):
@@ -386,6 +453,7 @@ class TestCompareGroups:
 # StatisticalAnalyzer.correlation
 # ---------------------------------------------------------------------------
 
+
 class TestCorrelation:
     def setup_method(self):
         self.analyzer = StatisticalAnalyzer()
@@ -416,6 +484,7 @@ class TestCorrelation:
 # ---------------------------------------------------------------------------
 # StatisticalAnalyzer.tukey_hsd
 # ---------------------------------------------------------------------------
+
 
 class TestTukeyHsd:
     def setup_method(self):
@@ -451,6 +520,7 @@ class TestTukeyHsd:
 # StatisticalAnalyzer.apply_bonferroni_correction
 # ---------------------------------------------------------------------------
 
+
 class TestBonferroniCorrection:
     def test_single_test_no_change(self):
         r = StatisticalResult(
@@ -461,9 +531,15 @@ class TestBonferroniCorrection:
 
     def test_multiple_tests(self):
         results = [
-            StatisticalResult(test_name="t1", test_statistic=1.0, p_value=0.01, is_significant=True),
-            StatisticalResult(test_name="t2", test_statistic=1.0, p_value=0.02, is_significant=True),
-            StatisticalResult(test_name="t3", test_statistic=1.0, p_value=0.03, is_significant=True),
+            StatisticalResult(
+                test_name="t1", test_statistic=1.0, p_value=0.01, is_significant=True
+            ),
+            StatisticalResult(
+                test_name="t2", test_statistic=1.0, p_value=0.02, is_significant=True
+            ),
+            StatisticalResult(
+                test_name="t3", test_statistic=1.0, p_value=0.03, is_significant=True
+            ),
         ]
         StatisticalAnalyzer.apply_bonferroni_correction(results)
         for r in results:
@@ -472,8 +548,12 @@ class TestBonferroniCorrection:
 
     def test_bonferroni_caps_at_1(self):
         results = [
-            StatisticalResult(test_name="t1", test_statistic=1.0, p_value=0.9, is_significant=False),
-            StatisticalResult(test_name="t2", test_statistic=1.0, p_value=0.9, is_significant=False),
+            StatisticalResult(
+                test_name="t1", test_statistic=1.0, p_value=0.9, is_significant=False
+            ),
+            StatisticalResult(
+                test_name="t2", test_statistic=1.0, p_value=0.9, is_significant=False
+            ),
         ]
         StatisticalAnalyzer.apply_bonferroni_correction(results)
         assert results[0].additional_info["bonferroni_p"] <= 1.0
@@ -482,6 +562,7 @@ class TestBonferroniCorrection:
 # ---------------------------------------------------------------------------
 # StatisticalAnalyzer.chi_square
 # ---------------------------------------------------------------------------
+
 
 class TestChiSquare:
     def setup_method(self):
@@ -493,7 +574,10 @@ class TestChiSquare:
 
     def test_valid_chi_square(self):
         # A clear association
-        data = {"color": ["red"] * 50 + ["blue"] * 50, "buy": ["yes"] * 40 + ["no"] * 10 + ["no"] * 40 + ["yes"] * 10}
+        data = {
+            "color": ["red"] * 50 + ["blue"] * 50,
+            "buy": ["yes"] * 40 + ["no"] * 10 + ["no"] * 40 + ["yes"] * 10,
+        }
         df = pd.DataFrame(data)
         result = self.analyzer.chi_square(df, "color", "buy")
         assert result is not None
@@ -516,6 +600,7 @@ class TestChiSquare:
 # StatisticalAnalyzer._fallback_comparison
 # ---------------------------------------------------------------------------
 
+
 class TestFallbackComparison:
     def setup_method(self):
         self.analyzer = StatisticalAnalyzer()
@@ -534,6 +619,7 @@ class TestFallbackComparison:
 # ---------------------------------------------------------------------------
 # StatisticalAnalyzer._infer_column_meanings
 # ---------------------------------------------------------------------------
+
 
 class TestInferColumnMeanings:
     def setup_method(self):
@@ -567,6 +653,7 @@ class TestInferColumnMeanings:
 # StatisticalAnalyzer.analyze_hypothesis_data – integration
 # ---------------------------------------------------------------------------
 
+
 class TestAnalyzeHypothesisData:
     def setup_method(self):
         self.analyzer = StatisticalAnalyzer()
@@ -577,17 +664,13 @@ class TestAnalyzeHypothesisData:
         assert result["descriptive_stats"] == []
 
     def test_skips_error_entries(self):
-        collected_data = {
-            "q1": {"error": "DB error", "data": []}
-        }
+        collected_data = {"q1": {"error": "DB error", "data": []}}
         result = self.analyzer.analyze_hypothesis_data(collected_data, "hypothesis")
         assert result["statistical_tests"] == []
 
     def test_group_comparison_from_dict_data(self):
         rng = np.random.default_rng(42)
-        data = [
-            {"group": "A", "value": float(v)} for v in rng.normal(10, 2, 30)
-        ] + [
+        data = [{"group": "A", "value": float(v)} for v in rng.normal(10, 2, 30)] + [
             {"group": "B", "value": float(v)} for v in rng.normal(15, 2, 30)
         ]
         collected_data = {
@@ -600,21 +683,30 @@ class TestAnalyzeHypothesisData:
         rng = np.random.default_rng(42)
         x = rng.normal(0, 1, 50)
         data = [{"x": float(xi), "y": float(xi + rng.normal(0, 0.1))} for xi in x]
-        collected_data = {"q1": {"data": data, "question": "Correlation between x and y"}}
+        collected_data = {
+            "q1": {"data": data, "question": "Correlation between x and y"}
+        }
         result = self.analyzer.analyze_hypothesis_data(collected_data, "x y")
         assert len(result["statistical_tests"]) > 0
 
     def test_chi_square_from_two_categorical_columns(self):
         data = [
-            {"color": "red", "size": "large"}, {"color": "red", "size": "small"},
-            {"color": "blue", "size": "large"}, {"color": "blue", "size": "small"},
-            {"color": "red", "size": "large"}, {"color": "red", "size": "small"},
-            {"color": "blue", "size": "large"}, {"color": "blue", "size": "small"},
-            {"color": "red", "size": "large"}, {"color": "blue", "size": "small"},
+            {"color": "red", "size": "large"},
+            {"color": "red", "size": "small"},
+            {"color": "blue", "size": "large"},
+            {"color": "blue", "size": "small"},
+            {"color": "red", "size": "large"},
+            {"color": "red", "size": "small"},
+            {"color": "blue", "size": "large"},
+            {"color": "blue", "size": "small"},
+            {"color": "red", "size": "large"},
+            {"color": "blue", "size": "small"},
         ]
         collected_data = {"q1": {"data": data, "question": "Is color related to size?"}}
         result = self.analyzer.analyze_hypothesis_data(collected_data, "color size")
-        assert "statistical_tests" in result  # may or may not find test; verify no exception raised
+        assert (
+            "statistical_tests" in result
+        )  # may or may not find test; verify no exception raised
 
     def test_aggregated_data_detected_and_skipped(self):
         # Each group has exactly one row – aggregated data
@@ -637,9 +729,18 @@ class TestAnalyzeHypothesisData:
         assert any("LARGE DATASET" in t for t in result["summary_text"])
 
     def test_list_of_lists_data(self):
-        data = [["A", 10.0], ["A", 12.0], ["B", 20.0], ["B", 22.0],
-                ["A", 11.0], ["B", 21.0], ["A", 13.0], ["B", 19.0],
-                ["A", 10.5], ["B", 20.5]]
+        data = [
+            ["A", 10.0],
+            ["A", 12.0],
+            ["B", 20.0],
+            ["B", 22.0],
+            ["A", 11.0],
+            ["B", 21.0],
+            ["A", 13.0],
+            ["B", 19.0],
+            ["A", 10.5],
+            ["B", 20.5],
+        ]
         collected_data = {"q1": {"data": data, "question": "group comparison"}}
         result = self.analyzer.analyze_hypothesis_data(collected_data, "hypothesis")
         # Should not crash
@@ -647,9 +748,11 @@ class TestAnalyzeHypothesisData:
 
     def test_trace_populated(self):
         rng = np.random.default_rng(42)
-        data = [{"group": g, "value": float(v)}
-                for g in ["A"] * 20 + ["B"] * 20
-                for v in rng.normal(0, 1, 1)]
+        data = [
+            {"group": g, "value": float(v)}
+            for g in ["A"] * 20 + ["B"] * 20
+            for v in rng.normal(0, 1, 1)
+        ]
         collected_data = {"q1": {"data": data[:40], "question": "hypothesis"}}
         result = self.analyzer.analyze_hypothesis_data(collected_data, "hypothesis")
         assert len(result["trace"]) >= 1

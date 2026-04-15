@@ -20,22 +20,27 @@
 
 """Extended tests for chart_generator.py – targets missing coverage lines."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from askrita.sqlagent.exporters.chart_generator import (
-    get_chart_data_for_export,
-    generate_chart_bytes,
     VisualizationData,
     add_native_pptx_chart,
+    generate_chart_bytes,
+    get_chart_data_for_export,
+)
+from askrita.sqlagent.formatters.DataFormatter import (
+    ChartDataset,
+    DataPoint,
+    UniversalChartData,
 )
 from askrita.sqlagent.State import WorkflowState
-from askrita.sqlagent.formatters.DataFormatter import UniversalChartData, ChartDataset, DataPoint
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_chart_data(chart_type="bar", labels=None, datasets=None):
     labels = labels or ["A", "B", "C"]
@@ -56,6 +61,7 @@ def _make_state(chart_data=None, results=None, question=None):
 # ---------------------------------------------------------------------------
 # get_chart_data_for_export
 # ---------------------------------------------------------------------------
+
 
 class TestGetChartDataForExport:
     def test_returns_none_when_no_data(self):
@@ -90,6 +96,7 @@ class TestGetChartDataForExport:
 # generate_chart_bytes – various chart types and data formats
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def ensure_matplotlib(monkeypatch):
     """Skip tests if matplotlib is not available."""
@@ -107,8 +114,7 @@ class TestGenerateChartBytesDataFormats:
 
     def test_bar_chart(self):
         data = VisualizationData(
-            labels=["A", "B", "C"],
-            values=[{"data": [10, 20, 30], "label": "Series"}]
+            labels=["A", "B", "C"], values=[{"data": [10, 20, 30], "label": "Series"}]
         )
         result = generate_chart_bytes(data, "bar", "Bar Chart")
         assert result is not None
@@ -116,8 +122,7 @@ class TestGenerateChartBytesDataFormats:
 
     def test_line_chart(self):
         data = VisualizationData(
-            labels=["A", "B", "C"],
-            values=[{"data": [10, 20, 30], "label": "Line"}]
+            labels=["A", "B", "C"], values=[{"data": [10, 20, 30], "label": "Line"}]
         )
         result = generate_chart_bytes(data, "line", "Line Chart")
         assert result is not None
@@ -128,15 +133,14 @@ class TestGenerateChartBytesDataFormats:
             values=[
                 {"data": [10, 20, 30], "label": "S1"},
                 {"data": [5, 15, 25], "label": "S2"},
-            ]
+            ],
         )
         result = generate_chart_bytes(data, "line", "Multi Line")
         assert result is not None
 
     def test_area_chart(self):
         data = VisualizationData(
-            labels=["A", "B", "C"],
-            values=[{"data": [10, 20, 30], "label": "Area"}]
+            labels=["A", "B", "C"], values=[{"data": [10, 20, 30], "label": "Area"}]
         )
         result = generate_chart_bytes(data, "area", "Area Chart")
         assert result is not None
@@ -147,31 +151,28 @@ class TestGenerateChartBytesDataFormats:
             values=[
                 {"data": [10, 20, 30], "label": "S1"},
                 {"data": [5, 15, 25], "label": "S2"},
-            ]
+            ],
         )
         result = generate_chart_bytes(data, "area", "Multi Area")
         assert result is not None
 
     def test_pie_chart(self):
         data = VisualizationData(
-            labels=["X", "Y", "Z"],
-            values=[{"data": [30, 40, 30], "label": "Pie"}]
+            labels=["X", "Y", "Z"], values=[{"data": [30, 40, 30], "label": "Pie"}]
         )
         result = generate_chart_bytes(data, "pie", "Pie Chart")
         assert result is not None
 
     def test_donut_chart(self):
         data = VisualizationData(
-            labels=["X", "Y"],
-            values=[{"data": [60, 40], "label": "Donut"}]
+            labels=["X", "Y"], values=[{"data": [60, 40], "label": "Donut"}]
         )
         result = generate_chart_bytes(data, "donut", "Donut Chart")
         assert result is not None
 
     def test_unknown_chart_type_defaults_to_bar(self):
         data = VisualizationData(
-            labels=["A", "B"],
-            values=[{"data": [10, 20], "label": "S"}]
+            labels=["A", "B"], values=[{"data": [10, 20], "label": "S"}]
         )
         result = generate_chart_bytes(data, "unknown_type", "Unknown")
         assert result is not None
@@ -182,15 +183,14 @@ class TestGenerateChartBytesDataFormats:
             values=[
                 {"data": [10, 20, 30], "label": "S1"},
                 {"data": [5, 15, 25], "label": "S2"},
-            ]
+            ],
         )
         result = generate_chart_bytes(data, "bar", "Multi Bar")
         assert result is not None
 
     def test_style_classic(self):
         data = VisualizationData(
-            labels=["A", "B"],
-            values=[{"data": [10, 20], "label": "S"}]
+            labels=["A", "B"], values=[{"data": [10, 20], "label": "S"}]
         )
         result = generate_chart_bytes(data, "bar", "Bar", style="classic")
         assert result is not None
@@ -198,7 +198,7 @@ class TestGenerateChartBytesDataFormats:
     def test_label_data_length_normalization_extra_labels(self):
         data = VisualizationData(
             labels=["A", "B", "C", "D", "E"],  # 5 labels, only 3 data points
-            values=[{"data": [10, 20, 30], "label": "S"}]
+            values=[{"data": [10, 20, 30], "label": "S"}],
         )
         result = generate_chart_bytes(data, "bar", "Normalized")
         assert result is not None
@@ -206,7 +206,7 @@ class TestGenerateChartBytesDataFormats:
     def test_label_data_length_normalization_extra_data(self):
         data = VisualizationData(
             labels=["A", "B"],  # 2 labels, 4 data points
-            values=[{"data": [10, 20, 30, 40], "label": "S"}]
+            values=[{"data": [10, 20, 30, 40], "label": "S"}],
         )
         result = generate_chart_bytes(data, "bar", "Normalized")
         assert result is not None
@@ -285,32 +285,39 @@ class TestGenerateChartBytesFromUniversalChartData:
         assert result is not None
 
     def test_universal_pie_chart(self):
-        datasets = [ChartDataset(
-            label="Pie",
-            data=[
-                DataPoint(label="A", value=30),
-                DataPoint(label="B", value=70),
-            ]
-        )]
+        datasets = [
+            ChartDataset(
+                label="Pie",
+                data=[
+                    DataPoint(label="A", value=30),
+                    DataPoint(label="B", value=70),
+                ],
+            )
+        ]
         cd = UniversalChartData(type="pie", labels=["A", "B"], datasets=datasets)
         result = generate_chart_bytes(cd, "pie", "Universal Pie")
         assert result is not None
 
     def test_universal_donut_chart(self):
-        datasets = [ChartDataset(
-            label="Donut",
-            data=[DataPoint(label="X", value=40), DataPoint(label="Y", value=60)]
-        )]
+        datasets = [
+            ChartDataset(
+                label="Donut",
+                data=[DataPoint(label="X", value=40), DataPoint(label="Y", value=60)],
+            )
+        ]
         cd = UniversalChartData(type="donut", labels=["X", "Y"], datasets=datasets)
         result = generate_chart_bytes(cd, "donut", "Universal Donut")
         assert result is not None
 
     def test_universal_horizontal_bar(self):
-        datasets = [ChartDataset(
-            label="Horiz",
-            data=[DataPoint(x=10), DataPoint(x=20), DataPoint(x=30)]
-        )]
-        cd = UniversalChartData(type="horizontal_bar", labels=["A", "B", "C"], datasets=datasets)
+        datasets = [
+            ChartDataset(
+                label="Horiz", data=[DataPoint(x=10), DataPoint(x=20), DataPoint(x=30)]
+            )
+        ]
+        cd = UniversalChartData(
+            type="horizontal_bar", labels=["A", "B", "C"], datasets=datasets
+        )
         result = generate_chart_bytes(cd, "horizontal_bar", "Universal Horiz Bar")
         assert result is not None
 
@@ -318,6 +325,7 @@ class TestGenerateChartBytesFromUniversalChartData:
 # ---------------------------------------------------------------------------
 # add_native_pptx_chart
 # ---------------------------------------------------------------------------
+
 
 class TestAddNativePptxChart:
     """Tests for add_native_pptx_chart – mocked pptx dependency."""
@@ -357,7 +365,10 @@ class TestAddNativePptxChart:
         data = {
             "labels": ["X", "Y"],
             "datasets": [
-                {"label": "Pie", "data": [{"label": "X", "value": 30}, {"label": "Y", "value": 70}]}
+                {
+                    "label": "Pie",
+                    "data": [{"label": "X", "value": 30}, {"label": "Y", "value": 70}],
+                }
             ],
         }
         result = add_native_pptx_chart(slide, data, "pie", 0, 0, 100, 100)
@@ -368,7 +379,10 @@ class TestAddNativePptxChart:
         data = {
             "labels": ["A", "B"],
             "datasets": [
-                {"label": "D", "data": [{"label": "A", "value": 40}, {"label": "B", "value": 60}]}
+                {
+                    "label": "D",
+                    "data": [{"label": "A", "value": 40}, {"label": "B", "value": 60}],
+                }
             ],
         }
         result = add_native_pptx_chart(slide, data, "donut", 0, 0, 100, 100)
@@ -449,20 +463,23 @@ class TestAddNativePptxChart:
 
     def test_universal_chart_data_pydantic(self):
         slide = self._make_slide()
-        datasets = [ChartDataset(
-            label="S",
-            data=[DataPoint(y=1), DataPoint(y=2), DataPoint(y=3)]
-        )]
+        datasets = [
+            ChartDataset(
+                label="S", data=[DataPoint(y=1), DataPoint(y=2), DataPoint(y=3)]
+            )
+        ]
         cd = UniversalChartData(type="bar", labels=["A", "B", "C"], datasets=datasets)
         result = add_native_pptx_chart(slide, cd, "bar", 0, 0, 100, 100)
         assert result is True
 
     def test_universal_pie_pydantic(self):
         slide = self._make_slide()
-        datasets = [ChartDataset(
-            label="Pie",
-            data=[DataPoint(label="X", value=30), DataPoint(label="Y", value=70)]
-        )]
+        datasets = [
+            ChartDataset(
+                label="Pie",
+                data=[DataPoint(label="X", value=30), DataPoint(label="Y", value=70)],
+            )
+        ]
         cd = UniversalChartData(type="pie", labels=["X", "Y"], datasets=datasets)
         result = add_native_pptx_chart(slide, cd, "pie", 0, 0, 100, 100)
         assert result is True
@@ -511,8 +528,13 @@ class TestAddNativePptxChart:
 
     def test_no_pptx_returns_false(self):
         slide = self._make_slide()
-        with patch.dict("sys.modules", {"pptx": None, "pptx.chart.data": None, "pptx.enum.chart": None}):
+        with patch.dict(
+            "sys.modules",
+            {"pptx": None, "pptx.chart.data": None, "pptx.enum.chart": None},
+        ):
             with patch("builtins.__import__", side_effect=ImportError):
-                result = add_native_pptx_chart(slide, {"labels": ["A"], "datasets": []}, "bar", 0, 0, 100, 100)
+                result = add_native_pptx_chart(
+                    slide, {"labels": ["A"], "datasets": []}, "bar", 0, 0, 100, 100
+                )
                 # Either False (import failed) or True (if pptx was already loaded)
                 assert isinstance(result, bool)

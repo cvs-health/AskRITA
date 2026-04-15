@@ -27,19 +27,25 @@ Tests cover:
 5. Backward compatibility (no callback provided)
 """
 
-import pytest
-import time
 import os
+import time
 from unittest.mock import Mock, patch
-from askrita.sqlagent.progress_tracker import ProgressData, ProgressStatus, PROGRESS_MESSAGES
-from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
+
+import pytest
+
 from askrita.config_manager import ConfigManager
+from askrita.sqlagent.progress_tracker import (
+    PROGRESS_MESSAGES,
+    ProgressData,
+    ProgressStatus,
+)
+from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 
 
 @pytest.fixture(autouse=True)
 def mock_openai_api_key():
     """Automatically mock OPENAI_API_KEY for all progress tracking tests."""
-    with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-api-key'}):
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "test-api-key"}):
         yield
 
 
@@ -48,10 +54,7 @@ class TestProgressDataClass:
 
     def test_progress_data_initialization_minimal(self):
         """Test ProgressData initialization with minimal parameters."""
-        progress = ProgressData(
-            step_name="test_step",
-            status=ProgressStatus.STARTED
-        )
+        progress = ProgressData(step_name="test_step", status=ProgressStatus.STARTED)
 
         assert progress.step_name == "test_step"
         assert progress.status == ProgressStatus.STARTED
@@ -73,7 +76,7 @@ class TestProgressDataClass:
             error=None,
             step_index=3,
             total_steps=8,
-            step_data=test_data
+            step_data=test_data,
         )
 
         assert progress.step_name == "generate_sql"
@@ -89,7 +92,7 @@ class TestProgressDataClass:
         progress = ProgressData(
             step_name="execute_sql",
             status=ProgressStatus.FAILED,
-            error="Connection timeout"
+            error="Connection timeout",
         )
 
         assert progress.status == ProgressStatus.FAILED
@@ -105,7 +108,7 @@ class TestProgressDataClass:
             error=None,
             step_index=1,
             total_steps=5,
-            step_data=test_data
+            step_data=test_data,
         )
 
         result = progress.to_dict()
@@ -124,12 +127,13 @@ class TestProgressDataClass:
     def test_progress_data_default_message(self):
         """Test that default messages are used when none provided."""
         progress = ProgressData(
-            step_name="parse_question",
-            status=ProgressStatus.STARTED
+            step_name="parse_question", status=ProgressStatus.STARTED
         )
 
         # Should use message from PROGRESS_MESSAGES
-        assert progress.message == PROGRESS_MESSAGES.get("parse_question", "parse_question started")
+        assert progress.message == PROGRESS_MESSAGES.get(
+            "parse_question", "parse_question started"
+        )
 
 
 class TestProgressStatus:
@@ -162,7 +166,7 @@ class TestProgressMessages:
             "format_results",
             "generate_followup_questions",
             "choose_visualization",
-            "choose_and_format_visualization"
+            "choose_and_format_visualization",
         ]
 
         for step in expected_steps:
@@ -182,7 +186,7 @@ class TestWorkflowProgressTracking:
             config,
             test_llm_connection=False,
             test_db_connection=False,
-            init_schema_cache=False
+            init_schema_cache=False,
         )
 
         # Should initialize successfully without callback
@@ -198,7 +202,7 @@ class TestWorkflowProgressTracking:
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=callback
+            progress_callback=callback,
         )
 
         assert workflow.progress_callback is callback
@@ -210,7 +214,7 @@ class TestWorkflowProgressTracking:
             config,
             test_llm_connection=False,
             test_db_connection=False,
-            init_schema_cache=False
+            init_schema_cache=False,
         )
 
         # Should not raise error
@@ -227,7 +231,7 @@ class TestWorkflowProgressTracking:
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=callback
+            progress_callback=callback,
         )
 
         workflow._track_step("test_step")
@@ -251,7 +255,7 @@ class TestWorkflowProgressTracking:
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=callback
+            progress_callback=callback,
         )
 
         test_data = {"key": "value", "count": 42}
@@ -267,7 +271,7 @@ class TestWorkflowProgressTracking:
             config,
             test_llm_connection=False,
             test_db_connection=False,
-            init_schema_cache=False
+            init_schema_cache=False,
         )
 
         # Should not raise error
@@ -283,7 +287,7 @@ class TestWorkflowProgressTracking:
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=callback
+            progress_callback=callback,
         )
 
         workflow._complete_step("test_step")
@@ -305,7 +309,7 @@ class TestWorkflowProgressTracking:
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=callback
+            progress_callback=callback,
         )
 
         workflow._complete_step("test_step", error="Test error message")
@@ -326,7 +330,7 @@ class TestWorkflowProgressTracking:
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=callback
+            progress_callback=callback,
         )
 
         test_data = {"sql": "SELECT 1", "rows": 100}
@@ -352,7 +356,7 @@ class TestProgressCallbackErrorHandling:
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=failing_callback
+            progress_callback=failing_callback,
         )
 
         # Should not raise exception
@@ -367,7 +371,7 @@ class TestProgressCallbackErrorHandling:
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=None
+            progress_callback=None,
         )
 
         # Should not raise
@@ -381,10 +385,7 @@ class TestProgressTrackingTimestamps:
     def test_timestamp_is_current_time(self):
         """Test that timestamp reflects current time."""
         before = time.time()
-        progress = ProgressData(
-            step_name="test",
-            status=ProgressStatus.STARTED
-        )
+        progress = ProgressData(step_name="test", status=ProgressStatus.STARTED)
         after = time.time()
 
         assert before <= progress.timestamp <= after
@@ -409,18 +410,20 @@ class TestProgressTrackingIntegration:
         progress_events = []
 
         def tracking_callback(progress: ProgressData):
-            progress_events.append({
-                'step': progress.step_name,
-                'status': progress.status,
-                'error': progress.error
-            })
+            progress_events.append(
+                {
+                    "step": progress.step_name,
+                    "status": progress.status,
+                    "error": progress.error,
+                }
+            )
 
         workflow = SQLAgentWorkflow(
             config,
             test_llm_connection=False,
             test_db_connection=False,
             init_schema_cache=False,
-            progress_callback=tracking_callback
+            progress_callback=tracking_callback,
         )
 
         # Simulate step tracking
@@ -429,10 +432,10 @@ class TestProgressTrackingIntegration:
 
         # Verify events
         assert len(progress_events) == 2
-        assert progress_events[0]['step'] == "parse_question"
-        assert progress_events[0]['status'] == ProgressStatus.STARTED
-        assert progress_events[1]['step'] == "parse_question"
-        assert progress_events[1]['status'] == ProgressStatus.COMPLETED
+        assert progress_events[0]["step"] == "parse_question"
+        assert progress_events[0]["status"] == ProgressStatus.STARTED
+        assert progress_events[1]["step"] == "parse_question"
+        assert progress_events[1]["status"] == ProgressStatus.COMPLETED
 
     def test_progress_data_serialization_for_json(self):
         """Test that progress data can be serialized to JSON."""
@@ -441,7 +444,7 @@ class TestProgressTrackingIntegration:
         progress = ProgressData(
             step_name="test",
             status=ProgressStatus.COMPLETED,
-            step_data={"count": 42, "sql": "SELECT 1"}
+            step_data={"count": 42, "sql": "SELECT 1"},
         )
 
         # Should be JSON serializable
@@ -450,9 +453,9 @@ class TestProgressTrackingIntegration:
 
         # Should be deserializable
         data = json.loads(json_str)
-        assert data['step_name'] == "test"
-        assert data['status'] == "completed"
-        assert data['step_data']['count'] == 42
+        assert data["step_name"] == "test"
+        assert data["status"] == "completed"
+        assert data["step_data"]["count"] == 42
 
 
 class TestProgressTrackingBackwardCompatibility:
@@ -463,7 +466,9 @@ class TestProgressTrackingBackwardCompatibility:
         config = ConfigManager()
 
         # Old way - should still work
-        workflow = SQLAgentWorkflow(config, test_llm_connection=False, test_db_connection=False)
+        workflow = SQLAgentWorkflow(
+            config, test_llm_connection=False, test_db_connection=False
+        )
         assert workflow is not None
         assert workflow.progress_callback is None
 
@@ -475,7 +480,7 @@ class TestProgressTrackingBackwardCompatibility:
             config,
             test_llm_connection=False,
             test_db_connection=False,
-            init_schema_cache=False
+            init_schema_cache=False,
         )
 
         # Measure time without callback
@@ -491,4 +496,3 @@ class TestProgressTrackingBackwardCompatibility:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-

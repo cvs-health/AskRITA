@@ -20,16 +20,17 @@
 """Targeted tests for config_manager.py missing coverage lines."""
 
 import os
-import pytest
-import yaml
 from unittest.mock import patch
 
+import pytest
+import yaml
+
 from askrita.config_manager import (
-    ConfigManager,
     AutomaticExtractionConfig,
-    TableDescriptionConfig,
-    ColumnDescriptionConfig,
     ChainOfThoughtsConfig,
+    ColumnDescriptionConfig,
+    ConfigManager,
+    TableDescriptionConfig,
 )
 from askrita.exceptions import ConfigurationError
 
@@ -51,6 +52,7 @@ def _write_yaml(path, data):
 # ---------------------------------------------------------------------------
 # _deep_merge
 # ---------------------------------------------------------------------------
+
 
 class TestDeepMerge:
     def test_deep_merge_flat(self):
@@ -80,6 +82,7 @@ class TestDeepMerge:
 # ConfigManager._config_data – edge: loading error other than YAML/permission
 # ---------------------------------------------------------------------------
 
+
 class TestLoadConfigErrors:
     def test_other_exception_raises_config_error(self, tmp_path):
         """A generic exception during loading raises ConfigurationError."""
@@ -87,13 +90,16 @@ class TestLoadConfigErrors:
         config_file.write_text("valid: yaml\n")
 
         with patch("builtins.open", side_effect=OSError("disk error")):
-            with pytest.raises(ConfigurationError, match="Configuration loading failed"):
+            with pytest.raises(
+                ConfigurationError, match="Configuration loading failed"
+            ):
                 ConfigManager(str(config_file))
 
 
 # ---------------------------------------------------------------------------
 # ConfigManager.database property – schema_descriptions branch
 # ---------------------------------------------------------------------------
+
 
 class TestDatabasePropertySchemaDescriptions:
     def _config_with_schema(self, schema_dict):
@@ -105,56 +111,66 @@ class TestDatabasePropertySchemaDescriptions:
         }
 
     def test_schema_with_automatic_extraction(self, tmp_path):
-        config_data = self._config_with_schema({
-            "automatic_extraction": {
-                "enabled": True,
-                "fallback_to_column_name": True,
-                "include_data_types": False,
-                "extract_comments": True,
+        config_data = self._config_with_schema(
+            {
+                "automatic_extraction": {
+                    "enabled": True,
+                    "fallback_to_column_name": True,
+                    "include_data_types": False,
+                    "extract_comments": True,
+                }
             }
-        })
+        )
         f = tmp_path / _CONFIG_YAML
         _write_yaml(str(f), config_data)
         cm = ConfigManager(str(f))
         db = cm.database
-        assert isinstance(db.schema_descriptions.automatic_extraction, AutomaticExtractionConfig)
+        assert isinstance(
+            db.schema_descriptions.automatic_extraction, AutomaticExtractionConfig
+        )
 
     def test_schema_with_tables(self, tmp_path):
-        config_data = self._config_with_schema({
-            "tables": {
-                "orders": {
-                    "description": "Order table",
-                    "business_purpose": "Track orders",
+        config_data = self._config_with_schema(
+            {
+                "tables": {
+                    "orders": {
+                        "description": "Order table",
+                        "business_purpose": "Track orders",
+                    }
                 }
             }
-        })
+        )
         f = tmp_path / _CONFIG_YAML
         _write_yaml(str(f), config_data)
         cm = ConfigManager(str(f))
         db = cm.database
-        assert isinstance(db.schema_descriptions.tables["orders"], TableDescriptionConfig)
+        assert isinstance(
+            db.schema_descriptions.tables["orders"], TableDescriptionConfig
+        )
 
     def test_schema_with_columns_dict(self, tmp_path):
-        config_data = self._config_with_schema({
-            "columns": {
-                _ORDERS_AMOUNT: {
-                    "description": "Order amount",
-                    "mode": "override",
+        config_data = self._config_with_schema(
+            {
+                "columns": {
+                    _ORDERS_AMOUNT: {
+                        "description": "Order amount",
+                        "mode": "override",
+                    }
                 }
             }
-        })
+        )
         f = tmp_path / _CONFIG_YAML
         _write_yaml(str(f), config_data)
         cm = ConfigManager(str(f))
         db = cm.database
-        assert isinstance(db.schema_descriptions.columns[_ORDERS_AMOUNT], ColumnDescriptionConfig)
+        assert isinstance(
+            db.schema_descriptions.columns[_ORDERS_AMOUNT], ColumnDescriptionConfig
+        )
 
     def test_schema_with_columns_string_shorthand(self, tmp_path):
-        config_data = self._config_with_schema({
-            "columns": {
-                _ORDERS_AMOUNT: "Amount in dollars"  # string shorthand
-            }
-        })
+        config_data = self._config_with_schema(
+            {"columns": {_ORDERS_AMOUNT: "Amount in dollars"}}  # string shorthand
+        )
         f = tmp_path / _CONFIG_YAML
         _write_yaml(str(f), config_data)
         cm = ConfigManager(str(f))
@@ -164,12 +180,14 @@ class TestDatabasePropertySchemaDescriptions:
         assert isinstance(col, ColumnDescriptionConfig)
 
     def test_schema_with_business_terms(self, tmp_path):
-        config_data = self._config_with_schema({
-            "business_terms": {
-                "LTR": "Long Term Relationship",
-                "ARR": "Annual Recurring Revenue",
+        config_data = self._config_with_schema(
+            {
+                "business_terms": {
+                    "LTR": "Long Term Relationship",
+                    "ARR": "Annual Recurring Revenue",
+                }
             }
-        })
+        )
         f = tmp_path / _CONFIG_YAML
         _write_yaml(str(f), config_data)
         cm = ConfigManager(str(f))
@@ -177,12 +195,14 @@ class TestDatabasePropertySchemaDescriptions:
         assert "LTR" in db.schema_descriptions.business_terms
 
     def test_schema_with_non_string_business_term_warns(self, tmp_path):
-        config_data = self._config_with_schema({
-            "business_terms": {
-                "VALID": "A string definition",
-                "INVALID": 12345,  # non-string – should warn
+        config_data = self._config_with_schema(
+            {
+                "business_terms": {
+                    "VALID": "A string definition",
+                    "INVALID": 12345,  # non-string – should warn
+                }
             }
-        })
+        )
         f = tmp_path / _CONFIG_YAML
         _write_yaml(str(f), config_data)
         cm = ConfigManager(str(f))
@@ -193,7 +213,9 @@ class TestDatabasePropertySchemaDescriptions:
     def test_schema_with_sql_syntax(self):
         """Test sql_syntax branch by directly injecting into _config_data."""
         cm = ConfigManager(None)
-        cm._config_data["database"]["sql_syntax"] = {"cast_to_string": "CAST({} AS STRING)"}
+        cm._config_data["database"]["sql_syntax"] = {
+            "cast_to_string": "CAST({} AS STRING)"
+        }
         db = cm.database
         assert db.sql_syntax is not None
 
@@ -213,6 +235,7 @@ class TestDatabasePropertySchemaDescriptions:
 # ---------------------------------------------------------------------------
 # ConfigManager property accessors with null values
 # ---------------------------------------------------------------------------
+
 
 class TestPropertyNullHandling:
     """Test that None/null values in config sections are handled gracefully.
@@ -268,6 +291,7 @@ class TestPropertyNullHandling:
 # ConfigManager.get_prompt and get_business_rule
 # ---------------------------------------------------------------------------
 
+
 class TestGetPromptAndBusinessRule:
     def test_get_existing_prompt(self, tmp_path):
         config_data = {
@@ -289,11 +313,7 @@ class TestGetPromptAndBusinessRule:
         assert cm.get_prompt("nonexistent") == ""
 
     def test_get_business_rule_existing(self, tmp_path):
-        config_data = {
-            "business_rules": {
-                "max_rows": 500
-            }
-        }
+        config_data = {"business_rules": {"max_rows": 500}}
         f = tmp_path / _CONFIG_YAML
         _write_yaml(str(f), config_data)
         cm = ConfigManager(str(f))
@@ -307,6 +327,7 @@ class TestGetPromptAndBusinessRule:
 # ---------------------------------------------------------------------------
 # ConfigManager.chain_of_thoughts – validation branches
 # ---------------------------------------------------------------------------
+
 
 class TestChainOfThoughtsProperty:
     def test_valid_cot_config(self, tmp_path):
@@ -346,7 +367,7 @@ class TestChainOfThoughtsProperty:
         cm._config_data["chain_of_thoughts"] = {"enabled": False}
         with patch(
             "askrita.utils.enhanced_chain_of_thoughts.validate_cot_config",
-            side_effect=ImportError("no module")
+            side_effect=ImportError("no module"),
         ):
             cot = cm.chain_of_thoughts
         assert isinstance(cot, ChainOfThoughtsConfig)
@@ -357,7 +378,7 @@ class TestChainOfThoughtsProperty:
         cm._config_data["chain_of_thoughts"] = {"enabled": True}
         with patch(
             "askrita.utils.enhanced_chain_of_thoughts.validate_cot_config",
-            side_effect=RuntimeError("unexpected error")
+            side_effect=RuntimeError("unexpected error"),
         ):
             cot = cm.chain_of_thoughts
         assert isinstance(cot, ChainOfThoughtsConfig)
@@ -366,6 +387,7 @@ class TestChainOfThoughtsProperty:
 # ---------------------------------------------------------------------------
 # ConfigManager.get_input_validation_settings
 # ---------------------------------------------------------------------------
+
 
 class TestGetInputValidationSettings:
     def test_returns_dict(self):

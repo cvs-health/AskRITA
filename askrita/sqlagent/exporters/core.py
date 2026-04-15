@@ -124,12 +124,16 @@ def _generate_table_headers_from_chart_data(chart_data, results, fallback_header
     if not chart_data or not results:
         return fallback_headers
 
-    headers = [_first_column_header(chart_data, fallback_headers)] + _dataset_headers(chart_data)
+    headers = [_first_column_header(chart_data, fallback_headers)] + _dataset_headers(
+        chart_data
+    )
 
     if results and isinstance(results[0], dict):
         result_keys = list(results[0].keys())
         if len(headers) != len(result_keys):
-            return [_header_for_key(chart_data, i, key) for i, key in enumerate(result_keys)]
+            return [
+                _header_for_key(chart_data, i, key) for i, key in enumerate(result_keys)
+            ]
 
     return headers if headers else fallback_headers
 
@@ -178,7 +182,9 @@ def _pptx_add_summary_slide(prs, output_state, primary_color, dark_gray):
     content_placeholder = slide.placeholders[1]
     slide.shapes._spTree.remove(content_placeholder._element)
 
-    left_column = slide.shapes.add_textbox(Inches(0.5), Inches(1.5), Inches(4.5), Inches(5.5))
+    left_column = slide.shapes.add_textbox(
+        Inches(0.5), Inches(1.5), Inches(4.5), Inches(5.5)
+    )
     left_frame = left_column.text_frame
     left_frame.word_wrap = True
     p1 = left_frame.paragraphs[0]
@@ -213,7 +219,9 @@ def _pptx_add_summary_slide(prs, output_state, primary_color, dark_gray):
         p5.font.size = Pt(13)
         p5.font.color.rgb = dark_gray
 
-    right_column = slide.shapes.add_textbox(Inches(5.2), Inches(1.5), Inches(4.3), Inches(5.5))
+    right_column = slide.shapes.add_textbox(
+        Inches(5.2), Inches(1.5), Inches(4.3), Inches(5.5)
+    )
     right_frame = right_column.text_frame
     right_frame.word_wrap = True
     p1_right = right_frame.paragraphs[0]
@@ -273,7 +281,9 @@ def _pptx_add_viz_slide(prs, output_state, primary_color, dark_gray, light_gray)
     if hasattr(chart_data, "title") and chart_data.title:
         p1.text = chart_data.title
     else:
-        display_chart_type = chart_type if chart_type and chart_type != "none" else "Data"
+        display_chart_type = (
+            chart_type if chart_type and chart_type != "none" else "Data"
+        )
         p1.text = f"Data Visualization: {display_chart_type.title()} Chart"
     p1.font.size = Pt(24)
     p1.font.bold = True
@@ -289,8 +299,13 @@ def _pptx_add_viz_slide(prs, output_state, primary_color, dark_gray, light_gray)
 
     try:
         chart_added = add_native_pptx_chart(
-            slide, chart_data, chart_type,
-            Inches(0.5), Inches(1.8), Inches(9), Inches(5.2),
+            slide,
+            chart_data,
+            chart_type,
+            Inches(0.5),
+            Inches(1.8),
+            Inches(9),
+            Inches(5.2),
         )
         if chart_added:
             logger.info("Native PowerPoint chart added successfully")
@@ -300,7 +315,9 @@ def _pptx_add_viz_slide(prs, output_state, primary_color, dark_gray, light_gray)
         logger.error(f"Chart generation error: {chart_error}")
 
     if hasattr(chart_data, "yAxes") and chart_data.yAxes and len(chart_data.yAxes) > 1:
-        note_box = slide.shapes.add_textbox(Inches(0.5), Inches(7.2), Inches(9), Inches(0.5))
+        note_box = slide.shapes.add_textbox(
+            Inches(0.5), Inches(7.2), Inches(9), Inches(0.5)
+        )
         note_frame = note_box.text_frame
         note_frame.word_wrap = True
         note_frame.clear()
@@ -326,14 +343,19 @@ def _pptx_fallback_headers_from_row(first_row, sql_query):
         fallback_headers = [f"Column_{i + 1}" for i in range(len(first_row))]
         if sql_query:
             import re
-            select_match = re.search(r"SELECT\s+(.*?)\s+FROM", sql_query, re.IGNORECASE | re.DOTALL)
+
+            select_match = re.search(
+                r"SELECT\s+(.*?)\s+FROM", sql_query, re.IGNORECASE | re.DOTALL
+            )
             if select_match:
                 columns = [
                     col.strip().split(" AS ")[-1].split(".")[-1].strip('`"[]')
                     for col in select_match.group(1).split(",")
                 ]
                 if len(columns) == len(first_row):
-                    logger.info(f"Extracted {len(columns)} column names from SQL for PPTX table")
+                    logger.info(
+                        f"Extracted {len(columns)} column names from SQL for PPTX table"
+                    )
                     return columns
         return fallback_headers
     return []
@@ -354,7 +376,9 @@ def _pptx_row_values(row_data, headers, fallback_headers):
     return [str(row_data)]
 
 
-def _pptx_add_data_table_slide(prs, output_state, content_slide_layout, primary_color, dark_gray, light_gray):
+def _pptx_add_data_table_slide(
+    prs, output_state, content_slide_layout, primary_color, dark_gray, light_gray
+):
     """Add the Data Table slide (slide 4) if data is available."""
     slide = prs.slides.add_slide(content_slide_layout)
     title = slide.shapes.title
@@ -370,10 +394,14 @@ def _pptx_add_data_table_slide(prs, output_state, content_slide_layout, primary_
     if not table_data:
         return
 
-    fallback_headers = _pptx_fallback_headers_from_row(table_data[0], output_state.sql_query)
+    fallback_headers = _pptx_fallback_headers_from_row(
+        table_data[0], output_state.sql_query
+    )
     chart_data, _ = get_chart_data_for_export(output_state)
     if chart_data:
-        headers = _generate_table_headers_from_chart_data(chart_data, table_data, fallback_headers)
+        headers = _generate_table_headers_from_chart_data(
+            chart_data, table_data, fallback_headers
+        )
         logger.info(f"Generated PPTX headers from chart metadata: {headers}")
     else:
         headers = fallback_headers
@@ -383,7 +411,12 @@ def _pptx_add_data_table_slide(prs, output_state, content_slide_layout, primary_
         return
 
     table_shape = slide.shapes.add_table(
-        len(table_data) + 1, len(headers), Inches(0.5), Inches(1.5), Inches(9), Inches(5.5)
+        len(table_data) + 1,
+        len(headers),
+        Inches(0.5),
+        Inches(1.5),
+        Inches(9),
+        Inches(5.5),
     )
     table = table_shape.table
 
@@ -412,7 +445,9 @@ def _pptx_add_data_table_slide(prs, output_state, content_slide_layout, primary_
             para.alignment = PP_ALIGN.CENTER
 
 
-def _pptx_add_sql_slide(prs, output_state, content_slide_layout, primary_color, dark_gray, light_gray):
+def _pptx_add_sql_slide(
+    prs, output_state, content_slide_layout, primary_color, dark_gray, light_gray
+):
     """Add the SQL Query slide (slide 5)."""
     slide = prs.slides.add_slide(content_slide_layout)
     title = slide.shapes.title
@@ -438,7 +473,9 @@ def _pptx_add_sql_slide(prs, output_state, content_slide_layout, primary_color, 
     sql_box.line.width = Pt(1)
 
 
-def _pptx_add_followup_slide(prs, output_state, content_slide_layout, primary_color, dark_gray):
+def _pptx_add_followup_slide(
+    prs, output_state, content_slide_layout, primary_color, dark_gray
+):
     """Add the Follow-up Questions slide (slide 6)."""
     slide = prs.slides.add_slide(content_slide_layout)
     title = slide.shapes.title
@@ -482,9 +519,7 @@ def _pptx_add_closing_slide(prs, settings, primary_color, light_gray):
 
     thank_you_box = slide.shapes.add_textbox(Inches(1), Inches(3), Inches(8), Inches(2))
     thank_you_frame = thank_you_box.text_frame
-    thank_you_frame.text = (
-        f"Thank you\n\nReport generated by {settings.company_name}\nAskRITA Analytics Platform"
-    )
+    thank_you_frame.text = f"Thank you\n\nReport generated by {settings.company_name}\nAskRITA Analytics Platform"
     for paragraph in thank_you_frame.paragraphs:
         paragraph.font.size = Pt(24)
         paragraph.font.color.rgb = primary_color
@@ -521,17 +556,35 @@ def create_pptx_export(output_state: WorkflowState, settings: ExportSettings) ->
         light_gray = RGBColor(242, 242, 242)
 
         _pptx_add_title_slide(prs, settings, primary_color, secondary_color, dark_gray)
-        content_slide_layout = _pptx_add_summary_slide(prs, output_state, primary_color, dark_gray)
+        content_slide_layout = _pptx_add_summary_slide(
+            prs, output_state, primary_color, dark_gray
+        )
         _pptx_add_viz_slide(prs, output_state, primary_color, dark_gray, light_gray)
 
         if settings.include_data_table and output_state.results:
-            _pptx_add_data_table_slide(prs, output_state, content_slide_layout, primary_color, dark_gray, light_gray)
+            _pptx_add_data_table_slide(
+                prs,
+                output_state,
+                content_slide_layout,
+                primary_color,
+                dark_gray,
+                light_gray,
+            )
 
         if settings.include_sql and output_state.sql_query:
-            _pptx_add_sql_slide(prs, output_state, content_slide_layout, primary_color, dark_gray, light_gray)
+            _pptx_add_sql_slide(
+                prs,
+                output_state,
+                content_slide_layout,
+                primary_color,
+                dark_gray,
+                light_gray,
+            )
 
         if output_state.followup_questions:
-            _pptx_add_followup_slide(prs, output_state, content_slide_layout, primary_color, dark_gray)
+            _pptx_add_followup_slide(
+                prs, output_state, content_slide_layout, primary_color, dark_gray
+            )
 
         _pptx_add_closing_slide(prs, settings, primary_color, light_gray)
 
@@ -553,13 +606,21 @@ def _pdf_append_chart(story, output_state, settings):
     if not (chart_data and chart_type and chart_type != "none"):
         return
     try:
-        chart_title = chart_data.title if hasattr(chart_data, "title") and chart_data.title else "Data Analysis Results"
-        chart_bytes = generate_chart_bytes(chart_data, chart_type, chart_title, settings.chart_style)
+        chart_title = (
+            chart_data.title
+            if hasattr(chart_data, "title") and chart_data.title
+            else "Data Analysis Results"
+        )
+        chart_bytes = generate_chart_bytes(
+            chart_data, chart_type, chart_title, settings.chart_style
+        )
         if chart_bytes:
             styles = getSampleStyleSheet()
             story.append(Paragraph("Data Visualization", styles["Heading2"]))
             try:
-                story.append(Image(io.BytesIO(chart_bytes), width=7 * inch, height=4.5 * inch))
+                story.append(
+                    Image(io.BytesIO(chart_bytes), width=7 * inch, height=4.5 * inch)
+                )
                 story.append(Spacer(1, 20))
                 logger.info("Chart added to PDF")
             except Exception as img_error:
@@ -575,10 +636,12 @@ def _pdf_append_data_table(story, output_state):
 
     table_data = output_state.results[:20]
     if len(output_state.results) > 20:
-        story.append(Paragraph(
-            f"Showing first 20 rows of {len(output_state.results)} total results",
-            styles["Normal"],
-        ))
+        story.append(
+            Paragraph(
+                f"Showing first 20 rows of {len(output_state.results)} total results",
+                styles["Normal"],
+            )
+        )
 
     if not table_data:
         return
@@ -590,7 +653,9 @@ def _pdf_append_data_table(story, output_state):
     fallback_headers = list(first_row.keys())
     chart_data, _ = get_chart_data_for_export(output_state)
     if chart_data:
-        headers = _generate_table_headers_from_chart_data(chart_data, table_data, fallback_headers)
+        headers = _generate_table_headers_from_chart_data(
+            chart_data, table_data, fallback_headers
+        )
         logger.info(f"Generated PDF headers from chart metadata: {headers}")
     else:
         headers = fallback_headers
@@ -598,22 +663,37 @@ def _pdf_append_data_table(story, output_state):
 
     table_rows = [[str(h) for h in headers]]
     for row_dict in table_data:
-        table_rows.append([
-            str(row_dict.get(fallback_headers[i] if i < len(fallback_headers) else headers[i], ""))
-            for i in range(len(headers))
-        ])
+        table_rows.append(
+            [
+                str(
+                    row_dict.get(
+                        (
+                            fallback_headers[i]
+                            if i < len(fallback_headers)
+                            else headers[i]
+                        ),
+                        "",
+                    )
+                )
+                for i in range(len(headers))
+            ]
+        )
 
     table = Table(table_rows)
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 12),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-        ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
-        ("GRID", (0, 0), (-1, -1), 1, colors.black),
-    ]))
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ]
+        )
+    )
     story.append(table)
     story.append(Spacer(1, 20))
 
@@ -645,34 +725,56 @@ def create_pdf_export(output_state: WorkflowState, settings: ExportSettings) -> 
         story = []
 
         title_style = ParagraphStyle(
-            "CustomTitle", parent=styles["Heading1"], fontSize=24,
-            alignment=TA_CENTER, spaceAfter=30,
+            "CustomTitle",
+            parent=styles["Heading1"],
+            fontSize=24,
+            alignment=TA_CENTER,
+            spaceAfter=30,
         )
         story.append(Paragraph(settings.title, title_style))
         story.append(Paragraph(f"{settings.company_name}", styles["Normal"]))
-        story.append(Paragraph(
-            f"Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}",
-            styles["Normal"],
-        ))
+        story.append(
+            Paragraph(
+                f"Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}",
+                styles["Normal"],
+            )
+        )
         story.append(Spacer(1, 20))
 
         story.append(Paragraph("Query Analysis", styles["Heading2"]))
         if output_state.question:
-            story.append(Paragraph(f"<b>Question:</b> {output_state.question}", styles["Normal"]))
+            story.append(
+                Paragraph(f"<b>Question:</b> {output_state.question}", styles["Normal"])
+            )
             story.append(Spacer(1, 6))
         if output_state.answer:
-            story.append(Paragraph(f"<b>Answer:</b> {output_state.answer}", styles["Normal"]))
+            story.append(
+                Paragraph(f"<b>Answer:</b> {output_state.answer}", styles["Normal"])
+            )
         if output_state.sql_reason:
-            story.append(Paragraph(f"<b>SQL Generation Reasoning:</b> {output_state.sql_reason}", styles["Normal"]))
+            story.append(
+                Paragraph(
+                    f"<b>SQL Generation Reasoning:</b> {output_state.sql_reason}",
+                    styles["Normal"],
+                )
+            )
         if output_state.visualization_reason:
-            story.append(Paragraph(f"<b>Visualization Choice:</b> {output_state.visualization_reason}", styles["Normal"]))
+            story.append(
+                Paragraph(
+                    f"<b>Visualization Choice:</b> {output_state.visualization_reason}",
+                    styles["Normal"],
+                )
+            )
         story.append(Spacer(1, 12))
 
         if settings.include_sql and output_state.sql_query:
             story.append(Paragraph("<b>SQL Query:</b>", styles["Normal"]))
             sql_style = ParagraphStyle(
-                "SQL", parent=styles["Code"], fontSize=10,
-                leftIndent=20, backgroundColor=colors.lightgrey,
+                "SQL",
+                parent=styles["Code"],
+                fontSize=10,
+                leftIndent=20,
+                backgroundColor=colors.lightgrey,
             )
             story.append(Paragraph(output_state.sql_query, sql_style))
             story.append(Spacer(1, 20))

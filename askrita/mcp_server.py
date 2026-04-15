@@ -33,6 +33,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from mcp.types import TextContent, Tool
 
+
 class SafeLogFormatter(logging.Formatter):
     """Formatter that sanitizes log messages to prevent log injection (CRLF)."""
 

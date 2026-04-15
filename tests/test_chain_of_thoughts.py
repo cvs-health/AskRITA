@@ -15,20 +15,20 @@
 """Tests for chain_of_thoughts.py – targets missing coverage lines."""
 
 from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from askrita.utils.chain_of_thoughts import (
     ChainOfThoughtsStep,
     ChainOfThoughtsTracker,
-    get_step_type,
     create_step_reasoning_templates,
+    get_step_type,
     save_chain_of_thoughts_preferences,
 )
-
 
 # ---------------------------------------------------------------------------
 # ChainOfThoughtsStep
 # ---------------------------------------------------------------------------
+
 
 class TestChainOfThoughtsStepComplete:
     def _make_step(self, step_name="parse_question"):
@@ -102,6 +102,7 @@ class TestChainOfThoughtsStepComplete:
 # ChainOfThoughtsTracker
 # ---------------------------------------------------------------------------
 
+
 class TestChainOfThoughtsTracker:
     def test_start_step_when_disabled(self):
         tracker = ChainOfThoughtsTracker(enabled=False)
@@ -110,7 +111,9 @@ class TestChainOfThoughtsTracker:
 
     def test_start_step_creates_step(self):
         tracker = ChainOfThoughtsTracker()
-        step = tracker.start_step("parse_question", "analysis", reasoning="r", input_summary="q")
+        step = tracker.start_step(
+            "parse_question", "analysis", reasoning="r", input_summary="q"
+        )
         assert step is not None
         assert step.step_name == "parse_question"
         assert len(tracker.steps) == 1
@@ -287,6 +290,7 @@ class TestChainOfThoughtsTracker:
 # get_step_type function
 # ---------------------------------------------------------------------------
 
+
 class TestGetStepTypeFunction:
     def test_known_step_returns_type(self):
         result = get_step_type("parse_question")
@@ -310,6 +314,7 @@ class TestGetStepTypeFunction:
 # create_step_reasoning_templates
 # ---------------------------------------------------------------------------
 
+
 class TestCreateStepReasoningTemplates:
     def test_returns_dict(self):
         templates = create_step_reasoning_templates()
@@ -327,10 +332,15 @@ class TestCreateStepReasoningTemplates:
 
     def test_import_error_fallback(self):
         """Test ImportError from step_registry falls back to hardcoded templates."""
-        with patch("askrita.utils.chain_of_thoughts.create_step_reasoning_templates") as mock_fn:
+        with patch(
+            "askrita.utils.chain_of_thoughts.create_step_reasoning_templates"
+        ) as mock_fn:
             mock_fn.side_effect = ImportError("no module")
         # Import the real function and call it
-        from askrita.utils.chain_of_thoughts import create_step_reasoning_templates as real_fn
+        from askrita.utils.chain_of_thoughts import (
+            create_step_reasoning_templates as real_fn,
+        )
+
         result = real_fn()
         assert isinstance(result, dict)
 
@@ -338,6 +348,7 @@ class TestCreateStepReasoningTemplates:
 # ---------------------------------------------------------------------------
 # save_chain_of_thoughts_preferences
 # ---------------------------------------------------------------------------
+
 
 class TestSaveChainOfThoughtsPreferences:
     def test_returns_dict(self):

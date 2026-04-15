@@ -22,35 +22,39 @@
 
 import pytest
 
+from askrita.sqlagent.exporters.core import create_pdf_export, create_pptx_export
+from askrita.sqlagent.exporters.excel_exporter import (
+    XLSXWRITER_AVAILABLE,
+    create_excel_export,
+)
 from askrita.sqlagent.exporters.models import ExportSettings
-from askrita.sqlagent.exporters.core import create_pptx_export, create_pdf_export
-from askrita.sqlagent.exporters.excel_exporter import create_excel_export, XLSXWRITER_AVAILABLE
 from askrita.sqlagent.State import WorkflowState
 
 # Check availability of optional export dependencies
 try:
     import pptx  # noqa: F401
+
     PPTX_AVAILABLE = True
 except ImportError:
     PPTX_AVAILABLE = False
 
 try:
     import reportlab  # noqa: F401
+
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
 requires_pptx = pytest.mark.skipif(
-    not PPTX_AVAILABLE,
-    reason="python-pptx not installed (optional export dependency)"
+    not PPTX_AVAILABLE, reason="python-pptx not installed (optional export dependency)"
 )
 requires_reportlab = pytest.mark.skipif(
     not REPORTLAB_AVAILABLE,
-    reason="reportlab not installed (optional export dependency)"
+    reason="reportlab not installed (optional export dependency)",
 )
 requires_xlsxwriter = pytest.mark.skipif(
     not XLSXWRITER_AVAILABLE,
-    reason="xlsxwriter not installed (optional export dependency)"
+    reason="xlsxwriter not installed (optional export dependency)",
 )
 
 
@@ -69,25 +73,25 @@ def sample_output_state():
                         {"category": "Q1", "y": 300000},
                         {"category": "Q2", "y": 400000},
                         {"category": "Q3", "y": 350000},
-                        {"category": "Q4", "y": 450000}
-                    ]
+                        {"category": "Q4", "y": 450000},
+                    ],
                 }
             ],
             "labels": ["Q1", "Q2", "Q3", "Q4"],
             "xAxisLabel": "Quarter",
-            "yAxisLabel": "Sales ($)"
+            "yAxisLabel": "Sales ($)",
         },
         sql_query="SELECT quarter, SUM(sales) FROM sales_data WHERE year = 2024 GROUP BY quarter",
         results=[
             {"quarter": "Q1", "sum": 300000},
             {"quarter": "Q2", "sum": 400000},
             {"quarter": "Q3", "sum": 350000},
-            {"quarter": "Q4", "sum": 450000}
+            {"quarter": "Q4", "sum": 450000},
         ],
         followup_questions=[
             "What was the average sale per quarter?",
-            "How does this compare to 2023?"
-        ]
+            "How does this compare to 2023?",
+        ],
     )
 
 
@@ -95,8 +99,7 @@ def sample_output_state():
 def export_settings():
     """Default export settings."""
     return ExportSettings(
-        company_name="Test Company",
-        brand_primary_color=(31, 119, 180)
+        company_name="Test Company", brand_primary_color=(31, 119, 180)
     )
 
 
@@ -116,7 +119,7 @@ class TestExportSettings:
         settings = ExportSettings(
             brand_primary_color=(255, 0, 0),
             company_name="Custom Corp",
-            include_sql=True
+            include_sql=True,
         )
         assert settings.brand_primary_color == (255, 0, 0)
         assert settings.company_name == "Custom Corp"
@@ -136,7 +139,7 @@ class TestPPTXExport:
         assert len(result) > 0
 
         # Should be a valid PPTX file (starts with PK for ZIP)
-        assert result[:2] == b'PK'
+        assert result[:2] == b"PK"
 
     def test_create_pptx_export_no_chart(self, export_settings):
         """Test PPTX export without chart data."""
@@ -145,7 +148,7 @@ class TestPPTXExport:
             chart_data=None,
             sql_query="SELECT * FROM test",
             results=[{"col1": "value1"}],
-            followup_questions=[]
+            followup_questions=[],
         )
 
         result = create_pptx_export(state, export_settings)
@@ -159,7 +162,7 @@ class TestPPTXExport:
             sql_query=None,
             results=None,
             chart_data=None,
-            followup_questions=None
+            followup_questions=None,
         )
 
         result = create_pptx_export(state, export_settings)
@@ -180,7 +183,7 @@ class TestPDFExport:
         assert len(result) > 0
 
         # Should be a valid PDF file
-        assert result[:4] == b'%PDF'
+        assert result[:4] == b"%PDF"
 
     def test_create_pdf_export_no_chart(self, export_settings):
         """Test PDF export without chart data."""
@@ -189,13 +192,13 @@ class TestPDFExport:
             chart_data=None,
             sql_query="SELECT * FROM test",
             results=[{"col1": "value1"}],
-            followup_questions=[]
+            followup_questions=[],
         )
 
         result = create_pdf_export(state, export_settings)
         assert isinstance(result, bytes)
         assert len(result) > 0
-        assert result[:4] == b'%PDF'
+        assert result[:4] == b"%PDF"
 
     def test_create_pdf_export_with_multi_axis(self, export_settings):
         """Test PDF export with multi-axis chart."""
@@ -208,23 +211,23 @@ class TestPDFExport:
                     {
                         "label": "Revenue",
                         "data": [{"category": "A", "y": 100}],
-                        "yAxisId": "left-axis"
+                        "yAxisId": "left-axis",
                     },
                     {
                         "label": "Profit %",
                         "data": [{"category": "A", "y": 20}],
-                        "yAxisId": "right-axis"
-                    }
+                        "yAxisId": "right-axis",
+                    },
                 ],
                 "labels": ["A"],
                 "yAxes": [
                     {"axisId": "left-axis", "position": "left"},
-                    {"axisId": "right-axis", "position": "right"}
-                ]
+                    {"axisId": "right-axis", "position": "right"},
+                ],
             },
             sql_query="SELECT * FROM test",
             results=[{"category": "A", "revenue": 100, "profit_pct": 20}],
-            followup_questions=[]
+            followup_questions=[],
         )
 
         result = create_pdf_export(state, export_settings)
@@ -245,7 +248,7 @@ class TestExcelExport:
         assert len(result) > 0
 
         # Should be a valid Excel file (ZIP format)
-        assert result[:2] == b'PK'
+        assert result[:2] == b"PK"
 
     def test_create_excel_export_no_chart(self, export_settings):
         """Test Excel export without chart data."""
@@ -254,7 +257,7 @@ class TestExcelExport:
             chart_data=None,
             sql_query="SELECT * FROM test",
             results=[{"col1": "value1", "col2": 123}],
-            followup_questions=[]
+            followup_questions=[],
         )
 
         result = create_excel_export(state, export_settings)
@@ -268,7 +271,7 @@ class TestExcelExport:
             chart_data=None,
             sql_query="SELECT * FROM test WHERE 1=0",
             results=[],
-            followup_questions=[]
+            followup_questions=[],
         )
 
         result = create_excel_export(state, export_settings)
@@ -285,27 +288,37 @@ class TestExcelExport:
                 "datasets": [
                     {
                         "label": "Revenue",
-                        "data": [{"category": "A", "y": 100}, {"category": "B", "y": 200}],
-                        "yAxisId": "left-axis"
+                        "data": [
+                            {"category": "A", "y": 100},
+                            {"category": "B", "y": 200},
+                        ],
+                        "yAxisId": "left-axis",
                     },
                     {
                         "label": "Profit %",
-                        "data": [{"category": "A", "y": 20}, {"category": "B", "y": 25}],
-                        "yAxisId": "right-axis"
-                    }
+                        "data": [
+                            {"category": "A", "y": 20},
+                            {"category": "B", "y": 25},
+                        ],
+                        "yAxisId": "right-axis",
+                    },
                 ],
                 "labels": ["A", "B"],
                 "yAxes": [
                     {"axisId": "left-axis", "position": "left", "label": "Revenue ($)"},
-                    {"axisId": "right-axis", "position": "right", "label": "Profit (%)"}
-                ]
+                    {
+                        "axisId": "right-axis",
+                        "position": "right",
+                        "label": "Profit (%)",
+                    },
+                ],
             },
             sql_query="SELECT * FROM test",
             results=[
                 {"category": "A", "revenue": 100, "profit_pct": 20},
-                {"category": "B", "revenue": 200, "profit_pct": 25}
+                {"category": "B", "revenue": 200, "profit_pct": 25},
             ],
-            followup_questions=[]
+            followup_questions=[],
         )
 
         result = create_excel_export(state, export_settings)
@@ -324,7 +337,7 @@ class TestExportEdgeCases:
             chart_data=None,
             sql_query="SELECT * FROM test WHERE name = 'O''Reilly'",
             results=[{"name": "O'Reilly & Co."}],
-            followup_questions=["What about <tags>?"]
+            followup_questions=["What about <tags>?"],
         )
 
         result = create_pptx_export(state, export_settings)
@@ -339,7 +352,7 @@ class TestExportEdgeCases:
             chart_data=None,
             sql_query="SELECT * FROM test",
             results=[{"col": "value"}],
-            followup_questions=[]
+            followup_questions=[],
         )
 
         result = create_pdf_export(state, export_settings)
@@ -354,13 +367,22 @@ class TestExportEdgeCases:
             chart_data=None,
             sql_query="SELECT * FROM test",
             results=[
-                {"int_col": 123, "float_col": 45.67, "str_col": "text", "bool_col": True},
-                {"int_col": 456, "float_col": 89.01, "str_col": "more", "bool_col": False}
+                {
+                    "int_col": 123,
+                    "float_col": 45.67,
+                    "str_col": "text",
+                    "bool_col": True,
+                },
+                {
+                    "int_col": 456,
+                    "float_col": 89.01,
+                    "str_col": "more",
+                    "bool_col": False,
+                },
             ],
-            followup_questions=[]
+            followup_questions=[],
         )
 
         result = create_excel_export(state, export_settings)
         assert isinstance(result, bytes)
         assert len(result) > 0
-

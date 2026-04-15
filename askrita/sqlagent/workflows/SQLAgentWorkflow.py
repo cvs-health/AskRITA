@@ -375,7 +375,9 @@ class SQLAgentWorkflow:
             if error:
                 self._cot_tracker.complete_current_step(
                     step_name=step_name,
-                    reasoning=reasoning_template.get("failure", f"{step_name} failed: {error}"),
+                    reasoning=reasoning_template.get(
+                        "failure", f"{step_name} failed: {error}"
+                    ),
                     output_summary=output_summary,
                     details=combined_details,
                     confidence_score=0.0,
@@ -384,7 +386,9 @@ class SQLAgentWorkflow:
             else:
                 self._cot_tracker.complete_current_step(
                     step_name=step_name,
-                    reasoning=reasoning_template.get("success", f"Completed {step_name}"),
+                    reasoning=reasoning_template.get(
+                        "success", f"Completed {step_name}"
+                    ),
                     output_summary=output_summary,
                     details=combined_details,
                     confidence_score=0.9,
@@ -393,18 +397,22 @@ class SQLAgentWorkflow:
             logger.exception("Failed to complete chain-of-thought step '%s'", step_name)
 
         try:
-            cot_step_payload = self._cot_tracker.steps[-1].to_dict() if self._cot_tracker.steps else {}
+            cot_step_payload = (
+                self._cot_tracker.steps[-1].to_dict() if self._cot_tracker.steps else {}
+            )
         except Exception:
             cot_step_payload = {}
 
-        self._notify_cot_listeners({
-            "event_type": "cot_step_completed",
-            "step_name": step_name,
-            "error": error,
-            "details": combined_details,
-            "progress_data": step_data or {},
-            "cot_step": cot_step_payload,
-        })
+        self._notify_cot_listeners(
+            {
+                "event_type": "cot_step_completed",
+                "step_name": step_name,
+                "error": error,
+                "details": combined_details,
+                "progress_data": step_data or {},
+                "cot_step": cot_step_payload,
+            }
+        )
 
     def _complete_step(
         self,
@@ -804,12 +812,17 @@ class SQLAgentWorkflow:
     def _extract_table_desc_from_schema(schema: str, match_start: int) -> Optional[str]:
         """Return the table description from a comment line preceding a CREATE TABLE block."""
         import re
+
         lines_before = schema[:match_start].split("\n")
         for line in reversed(lines_before[-10:]):
             if line.strip().startswith("-- Table:"):
                 desc_match = re.search(r"-- Table:\s*([^(]+)(?:\(([^)]+)\))?", line)
                 if desc_match:
-                    table_desc = desc_match.group(2) if desc_match.group(2) else desc_match.group(1).strip()
+                    table_desc = (
+                        desc_match.group(2)
+                        if desc_match.group(2)
+                        else desc_match.group(1).strip()
+                    )
                     return table_desc.replace("ALWAYS USE FULL NAME:", "").strip()
         return None
 
@@ -817,6 +830,7 @@ class SQLAgentWorkflow:
     def _parse_column_lines(columns_text: str) -> dict:
         """Parse a column-definition block into a {col_name: {type, nullable, ?description}} dict."""
         import re
+
         if "\n" in columns_text:
             raw_lines = [l.strip() for l in columns_text.split("\n") if l.strip()]
         else:
@@ -837,7 +851,9 @@ class SQLAgentWorkflow:
                 if "--" in col_line:
                     desc_part = col_line.split("--", 1)[1].strip()
                     if desc_part:
-                        entry["description"] = desc_part.replace("(auto-generated)", "").strip()
+                        entry["description"] = desc_part.replace(
+                            "(auto-generated)", ""
+                        ).strip()
                 columns[col_name] = entry
         return columns
 
@@ -860,11 +876,19 @@ class SQLAgentWorkflow:
 
         for match in re.finditer(table_pattern, schema, re.DOTALL | re.IGNORECASE):
             full_table_name = match.group(1).strip('`"')
-            table_name = full_table_name.split(".")[-1] if "." in full_table_name else full_table_name
+            table_name = (
+                full_table_name.split(".")[-1]
+                if "." in full_table_name
+                else full_table_name
+            )
             table_desc = self._extract_table_desc_from_schema(schema, match.start())
             columns = self._parse_column_lines(match.group(2))
 
-            table_info = {"columns": columns, "full_name": full_table_name, "simple_name": table_name}
+            table_info = {
+                "columns": columns,
+                "full_name": full_table_name,
+                "simple_name": table_name,
+            }
             if table_desc:
                 table_info["description"] = table_desc
             result["tables"][full_table_name] = table_info
@@ -910,7 +934,9 @@ class SQLAgentWorkflow:
 
     def _validate_question_input(self, question: str) -> None:
         """Validate the raw question string against configured length and substring rules."""
-        validation_settings = getattr(self.config, "get_input_validation_settings", lambda: {})() or {}
+        validation_settings = (
+            getattr(self.config, "get_input_validation_settings", lambda: {})() or {}
+        )
         max_q_len = int(validation_settings.get("max_question_length", 10000))
         if len(question) > max_q_len:
             raise ValidationError(f"Question too long (max {max_q_len} characters)")
@@ -921,7 +947,9 @@ class SQLAgentWorkflow:
         q_lower = question.lower()
         for pattern in suspicious_patterns:
             if pattern in q_lower:
-                raise ValidationError(f"Question contains potentially unsafe content: {pattern}")
+                raise ValidationError(
+                    f"Question contains potentially unsafe content: {pattern}"
+                )
 
     def _init_cot_tracker(self, question: str) -> None:
         """Initialise (or clear) the Chain-of-Thoughts tracker and wire up the step listener."""
@@ -935,17 +963,19 @@ class SQLAgentWorkflow:
         self._cot_tracker.question = question.strip()
 
         def tracker_step_listener(step_data):
-            self._notify_cot_listeners({
-                "event_type": "cot_step_completed",
-                "step_name": step_data.get("step_name"),
-                "status": step_data.get("status"),
-                "reasoning": step_data.get("reasoning"),
-                "output_summary": step_data.get("output_summary"),
-                "duration_ms": step_data.get("duration_ms"),
-                "confidence_score": step_data.get("confidence_score"),
-                "error_message": step_data.get("error_message"),
-                "cot_step": step_data,
-            })
+            self._notify_cot_listeners(
+                {
+                    "event_type": "cot_step_completed",
+                    "step_name": step_data.get("step_name"),
+                    "status": step_data.get("status"),
+                    "reasoning": step_data.get("reasoning"),
+                    "output_summary": step_data.get("output_summary"),
+                    "duration_ms": step_data.get("duration_ms"),
+                    "confidence_score": step_data.get("confidence_score"),
+                    "error_message": step_data.get("error_message"),
+                    "cot_step": step_data,
+                }
+            )
 
         self._cot_tracker.register_step_listener(tracker_step_listener)
 
@@ -960,10 +990,14 @@ class SQLAgentWorkflow:
                 enable_streaming=True,
             )
         except Exception as e:
-            logger.warning(f"Failed to create callback handler, continuing without it: {e}")
+            logger.warning(
+                f"Failed to create callback handler, continuing without it: {e}"
+            )
 
         if callback_handler:
-            result = self._compiled_graph.invoke(initial_state, config={"callbacks": [callback_handler]})
+            result = self._compiled_graph.invoke(
+                initial_state, config={"callbacks": [callback_handler]}
+            )
         else:
             result = self._compiled_graph.invoke(initial_state)
 
@@ -971,14 +1005,18 @@ class SQLAgentWorkflow:
         return result
 
     @staticmethod
-    def _build_workflow_state(result: dict, initial_state: WorkflowState) -> WorkflowState:
+    def _build_workflow_state(
+        result: dict, initial_state: WorkflowState
+    ) -> WorkflowState:
         """Construct a WorkflowState from the raw LangGraph result dict."""
         return WorkflowState(
             question=result.get("question", initial_state.question),
             answer=result.get("answer", "Unable to generate answer"),
             analysis=result.get("analysis", ""),
             visualization=result.get("visualization", "none"),
-            visualization_reason=result.get("visualization_reason", "No visualization generated"),
+            visualization_reason=result.get(
+                "visualization_reason", "No visualization generated"
+            ),
             sql_query=result.get("sql_query", ""),
             sql_reason=result.get("sql_reason", ""),
             sql_valid=result.get("sql_valid", False),
@@ -1031,7 +1069,9 @@ class SQLAgentWorkflow:
             result = self._invoke_graph(initial_state)
 
             if not isinstance(result, dict):
-                raise QueryError("Workflow returned invalid result format - expected dict from LangGraph")
+                raise QueryError(
+                    "Workflow returned invalid result format - expected dict from LangGraph"
+                )
 
             workflow_state = self._build_workflow_state(result, initial_state)
 
@@ -1056,7 +1096,9 @@ class SQLAgentWorkflow:
         finally:
             if self._cot_tracker:
                 if getattr(self._cot_tracker, "enabled", False):
-                    self._finalize_cot(success=False, final_answer="", error="Workflow aborted")
+                    self._finalize_cot(
+                        success=False, final_answer="", error="Workflow aborted"
+                    )
                 self._cot_tracker = None
 
     def _convert_results_to_execution_result(
@@ -1130,7 +1172,9 @@ class SQLAgentWorkflow:
             x, y = self._extract_viz_axes(state.chart_data)
             options = self._extract_viz_options(state.chart_data)
 
-        return VisualizationSpec(kind=viz_kind, x=x, y=y, series=series, options=options)
+        return VisualizationSpec(
+            kind=viz_kind, x=x, y=y, series=series, options=options
+        )
 
     def to_chain_of_thoughts_output(
         self,
@@ -1371,12 +1415,22 @@ class SQLAgentWorkflow:
         """
         self._track_step(
             WorkflowSteps.PARSE_QUESTION,
-            {"question": state.question[: DisplayLimits.INPUT_SUMMARY] if state.question else ""},
+            {
+                "question": (
+                    state.question[: DisplayLimits.INPUT_SUMMARY]
+                    if state.question
+                    else ""
+                )
+            },
         )
 
         if not self.config.is_step_enabled(WorkflowSteps.PARSE_QUESTION):
             logger.info("parse_question step is disabled, skipping")
-            result = ParsedQuestionResult(parsed_question=ParseQuestionResponse(is_relevant=True, relevant_tables=[]))
+            result = ParsedQuestionResult(
+                parsed_question=ParseQuestionResponse(
+                    is_relevant=True, relevant_tables=[]
+                )
+            )
             return {"parsed_question": result.model_dump()["parsed_question"]}
 
         question = state.question
@@ -1391,21 +1445,35 @@ class SQLAgentWorkflow:
 
             model_name = self.config.llm.model
             optimized_context = optimize_context_for_model(
-                schema=schema, unique_nouns=[], question=question,
-                parsed_question={}, model_name=model_name,
+                schema=schema,
+                unique_nouns=[],
+                question=question,
+                parsed_question={},
+                model_name=model_name,
             )
 
             parsed_response = self.llm_manager.invoke_with_structured_output(
-                "parse_question", ParseQuestionResponse,
-                schema=optimized_context["schema"], question=optimized_context["question"],
+                "parse_question",
+                ParseQuestionResponse,
+                schema=optimized_context["schema"],
+                question=optimized_context["question"],
             )
 
-            logger.info(f"Original LLM parsing result: relevant={parsed_response.is_relevant}")
-            if hasattr(parsed_response, "relevance_reason") and parsed_response.relevance_reason:
-                logger.info(f"LLM provided relevance reasoning: {parsed_response.relevance_reason}")
+            logger.info(
+                f"Original LLM parsing result: relevant={parsed_response.is_relevant}"
+            )
+            if (
+                hasattr(parsed_response, "relevance_reason")
+                and parsed_response.relevance_reason
+            ):
+                logger.info(
+                    f"LLM provided relevance reasoning: {parsed_response.relevance_reason}"
+                )
 
             result = ParsedQuestionResult(parsed_question=parsed_response)
-            needs_clarification, clarification_prompt, clarification_questions = self._parse_clarification(parsed_response)
+            needs_clarification, clarification_prompt, clarification_questions = (
+                self._parse_clarification(parsed_response)
+            )
 
             self._complete_step(
                 WorkflowSteps.PARSE_QUESTION,
@@ -1415,25 +1483,37 @@ class SQLAgentWorkflow:
                     "tables_identified": len(parsed_response.relevant_tables),
                     "table_names": (
                         [table.table_name for table in parsed_response.relevant_tables]
-                        if parsed_response.relevant_tables else []
+                        if parsed_response.relevant_tables
+                        else []
                     ),
                     "needs_clarification": needs_clarification,
-                    "clarification_prompt": clarification_prompt if needs_clarification else None,
+                    "clarification_prompt": (
+                        clarification_prompt if needs_clarification else None
+                    ),
                 },
             )
 
             response = {"parsed_question": result.model_dump()["parsed_question"]}
 
-            if hasattr(parsed_response, "relevance_reason") and parsed_response.relevance_reason:
-                response["parsed_question"]["relevance_reason"] = parsed_response.relevance_reason
-                logger.info(f"Including LLM relevance reasoning in response: {parsed_response.relevance_reason}")
+            if (
+                hasattr(parsed_response, "relevance_reason")
+                and parsed_response.relevance_reason
+            ):
+                response["parsed_question"][
+                    "relevance_reason"
+                ] = parsed_response.relevance_reason
+                logger.info(
+                    f"Including LLM relevance reasoning in response: {parsed_response.relevance_reason}"
+                )
 
             if needs_clarification:
-                response.update({
-                    "needs_clarification": needs_clarification,
-                    "clarification_prompt": clarification_prompt,
-                    "clarification_questions": clarification_questions,
-                })
+                response.update(
+                    {
+                        "needs_clarification": needs_clarification,
+                        "clarification_prompt": clarification_prompt,
+                        "clarification_questions": clarification_questions,
+                    }
+                )
 
             return response
 
@@ -1442,11 +1522,15 @@ class SQLAgentWorkflow:
             self._complete_step(
                 WorkflowSteps.PARSE_QUESTION,
                 error=str(e),
-                step_data={"question_length": len(question) if question else 0, DetailKeys.ERROR_TYPE: type(e).__name__},
+                step_data={
+                    "question_length": len(question) if question else 0,
+                    DetailKeys.ERROR_TYPE: type(e).__name__,
+                },
             )
             result = ParsedQuestionResult(
                 parsed_question=ParseQuestionResponse(
-                    is_relevant=False, relevant_tables=[],
+                    is_relevant=False,
+                    relevant_tables=[],
                     relevance_reason="I encountered an error while analyzing your question. Please try rephrasing your question or ask about the available data in this database.",
                 )
             )
@@ -1566,23 +1650,33 @@ class SQLAgentWorkflow:
             return {"unique_nouns": []}
 
     def _build_sql_additional_context(
-        self, has_conversation_context: bool, messages: list, execution_error, retry_count: int
+        self,
+        has_conversation_context: bool,
+        messages: list,
+        execution_error,
+        retry_count: int,
     ) -> dict:
         """Build the additional_context dict passed to the SQL generation LLM call."""
         additional_context = {"database_type": self.config.get_database_type()}
         if has_conversation_context:
-            additional_context["conversation_context"] = self._summarize_conversation_context(messages)
+            additional_context["conversation_context"] = (
+                self._summarize_conversation_context(messages)
+            )
             logger.info("Including conversation context for SQL generation")
         if execution_error and retry_count > 0:
             additional_context["previous_error"] = execution_error
             additional_context["retry_attempt"] = retry_count
-            logger.info(f"Including previous error in context for retry: {execution_error}")
+            logger.info(
+                f"Including previous error in context for retry: {execution_error}"
+            )
         return additional_context
 
     def _not_relevant_response(self, parsed_question: dict, retry_count: int) -> dict:
         """Return the generate_sql response for a question that is not relevant to the schema."""
         llm_reason = parsed_question.get("relevance_reason") or _MSG_NOT_RELEVANT
-        logger.info("Question not relevant, returning NOT_RELEVANT with user explanation")
+        logger.info(
+            "Question not relevant, returning NOT_RELEVANT with user explanation"
+        )
         logger.info(f"Using LLM reasoning for NOT_RELEVANT: {llm_reason}")
         logger.debug(f"Full parsed_question content: {parsed_question}")
         logger.info(f"Generated user explanation: {llm_reason[:100]}...")
@@ -1643,15 +1737,28 @@ class SQLAgentWorkflow:
 
         try:
             return self._generate_sql_core(
-                step, question, parsed_question, unique_nouns,
-                messages, has_conversation_context, execution_error, retry_count,
+                step,
+                question,
+                parsed_question,
+                unique_nouns,
+                messages,
+                has_conversation_context,
+                execution_error,
+                retry_count,
             )
         except Exception as e:
             return self._handle_generate_sql_error(step, e, retry_count)
 
     def _generate_sql_core(
-        self, step, question, parsed_question, unique_nouns,
-        messages, has_conversation_context, execution_error, retry_count,
+        self,
+        step,
+        question,
+        parsed_question,
+        unique_nouns,
+        messages,
+        has_conversation_context,
+        execution_error,
+        retry_count,
     ) -> dict:
         """Inner body of generate_sql — calls LLM and returns the result dict."""
         logger.info("Generating SQL query based on parsed question and context")
@@ -1704,9 +1811,15 @@ class SQLAgentWorkflow:
                 "generation_method": "structured_output",
             },
         )
-        return {"sql_query": sql_query, "sql_reason": sql_reason, "retry_count": retry_count}
+        return {
+            "sql_query": sql_query,
+            "sql_reason": sql_reason,
+            "retry_count": retry_count,
+        }
 
-    def _handle_generate_sql_error(self, step, exc: Exception, retry_count: int) -> dict:
+    def _handle_generate_sql_error(
+        self, step, exc: Exception, retry_count: int
+    ) -> dict:
         """Handle an exception from _generate_sql_core and return an error result dict."""
         logger.error(f"Error generating SQL: {exc}")
 
@@ -1734,7 +1847,9 @@ class SQLAgentWorkflow:
                 DetailKeys.RETRY_COUNT: retry_count,
                 DetailKeys.VALIDATION_FAILED: "validate_sql_safety" in str(exc),
                 "needs_clarification": needs_clarification,
-                "clarification_prompt": clarification_prompt if needs_clarification else None,
+                "clarification_prompt": (
+                    clarification_prompt if needs_clarification else None
+                ),
             },
             error=str(exc),
             step_data={
@@ -1775,7 +1890,9 @@ class SQLAgentWorkflow:
         )
         return {"sql_query": sql_query, "sql_valid": True, "sql_issues": ""}
 
-    def _validate_sql_fixed_result(self, step, sql_query: str, corrected_query: str, issues) -> dict:
+    def _validate_sql_fixed_result(
+        self, step, sql_query: str, corrected_query: str, issues
+    ) -> dict:
         """Complete the validate step for a query that needed correction."""
         logger.info(f"SQL query fixed: {issues}")
         final_query = corrected_query if corrected_query != "None" else sql_query
@@ -1783,6 +1900,7 @@ class SQLAgentWorkflow:
         sql_correction = None
         if final_query != sql_query:
             from ...models.chain_of_thoughts import SqlCorrection
+
             sql_correction = SqlCorrection(
                 original_sql=sql_query,
                 corrected_sql=final_query,
@@ -1883,7 +2001,9 @@ class SQLAgentWorkflow:
 
             if is_valid and (issues is None or issues == ""):
                 return self._validate_sql_valid_result(step, sql_query)
-            return self._validate_sql_fixed_result(step, sql_query, corrected_query, issues)
+            return self._validate_sql_fixed_result(
+                step, sql_query, corrected_query, issues
+            )
 
         except Exception as e:
             return self._validate_sql_error_result(step, sql_query, e)
@@ -1892,7 +2012,10 @@ class SQLAgentWorkflow:
     def _classify_sql_execution_error(error_msg: str) -> tuple:
         """Return (needs_clarification, prompt, questions) for a SQL execution error message."""
         error_lower = error_msg.lower()
-        if any(pattern in error_lower for pattern in ["column", "field", "not found", "does not exist"]):
+        if any(
+            pattern in error_lower
+            for pattern in ["column", "field", "not found", "does not exist"]
+        ):
             return (
                 True,
                 (
@@ -1913,7 +2036,11 @@ class SQLAgentWorkflow:
                     "What specific data are you trying to analyze?",
                 ],
             )
-        if "permission" in error_lower or "access" in error_lower or "denied" in error_lower:
+        if (
+            "permission" in error_lower
+            or "access" in error_lower
+            or "denied" in error_lower
+        ):
             return (
                 True,
                 (
@@ -1944,7 +2071,9 @@ class SQLAgentWorkflow:
                 "results_count": result_count,
                 "sql_query": _trunc(sql_query, DisplayLimits.SQL_PREVIEW_SHORT),
                 "execution_successful": True,
-                "data_preview": (results[:3] if isinstance(results, list) and results else []),
+                "data_preview": (
+                    results[:3] if isinstance(results, list) and results else []
+                ),
                 "has_data": bool(results) if isinstance(results, list) else False,
             },
         )
@@ -1964,7 +2093,9 @@ class SQLAgentWorkflow:
                 "error_source": "exception",
                 "error_type": type(e).__name__,
                 "needs_clarification": needs_clarification,
-                "clarification_prompt": clarification_prompt if needs_clarification else None,
+                "clarification_prompt": (
+                    clarification_prompt if needs_clarification else None
+                ),
             },
             error=error_msg,
             step_data={
@@ -1977,11 +2108,13 @@ class SQLAgentWorkflow:
         )
         response: dict = {"results": [], "execution_error": error_msg}
         if needs_clarification:
-            response.update({
-                "needs_clarification": needs_clarification,
-                "clarification_prompt": clarification_prompt,
-                "clarification_questions": clarification_questions,
-            })
+            response.update(
+                {
+                    "needs_clarification": needs_clarification,
+                    "clarification_prompt": clarification_prompt,
+                    "clarification_questions": clarification_questions,
+                }
+            )
         return response
 
     def execute_sql(self, state: WorkflowState) -> dict:
@@ -1992,21 +2125,30 @@ class SQLAgentWorkflow:
         step = self._track_step(
             WorkflowSteps.EXECUTE_SQL,
             {
-                "sql_query": sql_query[: DisplayLimits.PROGRESS_SQL_QUERY] if sql_query else "None",
+                "sql_query": (
+                    sql_query[: DisplayLimits.PROGRESS_SQL_QUERY]
+                    if sql_query
+                    else "None"
+                ),
                 "sql_length": len(sql_query) if sql_query else 0,
             },
         )
 
         if not self.config.is_step_enabled(WorkflowSteps.EXECUTE_SQL):
             logger.info("execute_sql step is disabled, skipping")
-            self._complete_step(step, {DetailKeys.STEP_STATUS: DetailKeys.STATUS_DISABLED})
+            self._complete_step(
+                step, {DetailKeys.STEP_STATUS: DetailKeys.STATUS_DISABLED}
+            )
             return {"results": [], "execution_error": None}
 
         if sql_query in ["NOT_RELEVANT", "ERROR", ""]:
             logger.info("Skipping execution for non-query response")
             self._complete_step(
                 step,
-                {DetailKeys.STEP_STATUS: DetailKeys.STATUS_SKIPPED, DetailKeys.REASON: "non_query_response"},
+                {
+                    DetailKeys.STEP_STATUS: DetailKeys.STATUS_SKIPPED,
+                    DetailKeys.REASON: "non_query_response",
+                },
             )
             return {"results": [], "execution_error": None}
 
@@ -2019,7 +2161,11 @@ class SQLAgentWorkflow:
                 logger.error(f"SQL execution failed: {results}")
                 self._complete_step(
                     step,
-                    {"results_count": 0, "execution_method": "run_no_throw", "error_source": "database"},
+                    {
+                        "results_count": 0,
+                        "execution_method": "run_no_throw",
+                        "error_source": "database",
+                    },
                     error=results,
                 )
                 return {"results": [], "execution_error": results}
@@ -2049,9 +2195,7 @@ class SQLAgentWorkflow:
             # Handle NOT_RELEVANT case with helpful feedback
             if sql_query == "NOT_RELEVANT":
                 # sql_reason already contains LLM reasoning from generate_sql step
-                llm_reasoning = (
-                    state.sql_reason or _MSG_NOT_RELEVANT
-                )
+                llm_reasoning = state.sql_reason or _MSG_NOT_RELEVANT
 
                 # If no LLM reasoning was provided, give helpful fallback
                 if llm_reasoning == _MSG_NOT_RELEVANT:
@@ -2067,7 +2211,9 @@ class SQLAgentWorkflow:
                     {"step_status": "not_relevant"},
                     step_data={
                         "question": _trunc(question, DisplayLimits.QUESTION_PREVIEW),
-                        "reasoning": _trunc(llm_reasoning, DisplayLimits.REASONING_PREVIEW),
+                        "reasoning": _trunc(
+                            llm_reasoning, DisplayLimits.REASONING_PREVIEW
+                        ),
                         "feedback_provided": True,
                     },
                 )
@@ -2102,7 +2248,9 @@ class SQLAgentWorkflow:
                 },
                 step_data={
                     "results_count": len(query_results),
-                    "answer_preview": _trunc(formatting_response.answer, DisplayLimits.ANSWER_PREVIEW),
+                    "answer_preview": _trunc(
+                        formatting_response.answer, DisplayLimits.ANSWER_PREVIEW
+                    ),
                     "answer_length": len(formatting_response.answer),
                     "formatting_successful": True,
                     "question": _trunc(question, DisplayLimits.QUESTION_PREVIEW),
@@ -2143,11 +2291,18 @@ class SQLAgentWorkflow:
                     table_info.append(line.strip()[: DisplayLimits.SCHEMA_LINE_LENGTH])
             if table_info:
                 limited = table_info[:50]
-                logger.info(f"Added schema context for follow-up generation ({len(limited)} lines)")
-                return "Available database schema (tables and key columns):\n" + "\n".join(limited)
+                logger.info(
+                    f"Added schema context for follow-up generation ({len(limited)} lines)"
+                )
+                return (
+                    "Available database schema (tables and key columns):\n"
+                    + "\n".join(limited)
+                )
             return "Database schema is available with multiple tables and columns for analysis."
         except Exception as schema_error:
-            logger.warning(f"Could not retrieve schema for follow-up questions: {schema_error}")
+            logger.warning(
+                f"Could not retrieve schema for follow-up questions: {schema_error}"
+            )
             return "Schema information not available."
 
     def _build_results_summary(self, query_results: list) -> str:
@@ -2165,6 +2320,7 @@ class SQLAgentWorkflow:
     def _clean_followup_questions(self, raw_questions: list) -> list:
         """Strip any numbering/bullet prefixes added by the LLM."""
         import re
+
         cleaned = []
         for q in raw_questions:
             q = re.sub(r"^\s*\d+\.\s*", "", q).strip()
@@ -2174,8 +2330,13 @@ class SQLAgentWorkflow:
         return cleaned
 
     def _invoke_followup_llm(
-        self, step: str, question: str, answer: str, sql_query: str,
-        query_results: list, messages: list,
+        self,
+        step: str,
+        question: str,
+        answer: str,
+        sql_query: str,
+        query_results: list,
+        messages: list,
     ) -> dict:
         """Call the LLM to generate follow-up questions, returning the workflow result dict."""
         schema_context = self._build_schema_context_for_followup()
@@ -2198,8 +2359,12 @@ class SQLAgentWorkflow:
                 schema_context=schema_context,
                 row_count=row_count,
             )
-            cleaned_questions = self._clean_followup_questions(followup_response.followup_questions)
-            logger.info(f"Generated {len(cleaned_questions)} follow-up questions using LLM")
+            cleaned_questions = self._clean_followup_questions(
+                followup_response.followup_questions
+            )
+            logger.info(
+                f"Generated {len(cleaned_questions)} follow-up questions using LLM"
+            )
             self._complete_step(
                 step,
                 {"questions_generated": len(cleaned_questions), "method": "llm"},
@@ -2237,7 +2402,10 @@ class SQLAgentWorkflow:
             self._complete_step(
                 step,
                 {DetailKeys.STEP_STATUS: DetailKeys.STATUS_DISABLED},
-                step_data={"followup_questions_generated": 0, "step_status": "disabled"},
+                step_data={
+                    "followup_questions_generated": 0,
+                    "step_status": "disabled",
+                },
             )
             return {"followup_questions": []}
 
@@ -2271,7 +2439,9 @@ class SQLAgentWorkflow:
                 )
                 return {"followup_questions": []}
 
-            return self._invoke_followup_llm(step, question, answer, sql_query, query_results, messages)
+            return self._invoke_followup_llm(
+                step, question, answer, sql_query, query_results, messages
+            )
 
         except Exception as e:
             logger.error(f"Error in follow-up question generation: {e}")
@@ -2341,7 +2511,10 @@ class SQLAgentWorkflow:
                 {"visualization_chosen": viz_response.visualization},
                 step_data={
                     "visualization_chosen": viz_response.visualization,
-                    "visualization_reason": _trunc(viz_response.visualization_reason, DisplayLimits.VISUALIZATION_REASON),
+                    "visualization_reason": _trunc(
+                        viz_response.visualization_reason,
+                        DisplayLimits.VISUALIZATION_REASON,
+                    ),
                     "results_count": len(query_results),
                     "question": _trunc(question, DisplayLimits.QUESTION_PREVIEW),
                 },
@@ -2480,7 +2653,10 @@ class SQLAgentWorkflow:
                 },
                 step_data={
                     "visualization_type": combined_response.visualization,
-                    "visualization_reason": _trunc(combined_response.visualization_reason, DisplayLimits.VISUALIZATION_REASON),
+                    "visualization_reason": _trunc(
+                        combined_response.visualization_reason,
+                        DisplayLimits.VISUALIZATION_REASON,
+                    ),
                     "data_formatted": True,
                     "chart_data_generated": bool(combined_response.universal_format),
                     "optimization_used": True,
@@ -2612,8 +2788,11 @@ class SQLAgentWorkflow:
             next_step = enabled_step_order[i + 1]
 
             if current_step in steps_that_check_clarification:
+
                 def make_checker(step_name):
-                    return lambda state: self._should_continue_workflow(state, step_name)
+                    return lambda state: self._should_continue_workflow(
+                        state, step_name
+                    )
 
                 workflow.add_conditional_edges(
                     current_step,
@@ -2627,9 +2806,7 @@ class SQLAgentWorkflow:
                 workflow.add_edge(current_step, next_step)
                 logger.debug(f"Added direct edge: {current_step} → {next_step}")
 
-    def _setup_execute_sql_routing(
-        self, workflow: StateGraph, workflow_config
-    ) -> None:
+    def _setup_execute_sql_routing(self, workflow: StateGraph, workflow_config) -> None:
         """Configure post-execute_sql routing to the parallel dispatcher and beyond."""
         if not workflow_config.steps.get("execute_sql", True):
             return
@@ -2651,12 +2828,16 @@ class SQLAgentWorkflow:
         if workflow_config.steps.get("format_results", True):
             parallel_steps.append("format_results")
 
-        use_combined = workflow_config.steps.get("choose_and_format_visualization", True)
+        use_combined = workflow_config.steps.get(
+            "choose_and_format_visualization", True
+        )
         use_separate_choose = workflow_config.steps.get("choose_visualization", False)
 
         if use_combined:
             parallel_steps.append("choose_and_format_visualization")
-            logger.info("🚀 OPTIMIZATION: Using combined choose_and_format_visualization step")
+            logger.info(
+                "🚀 OPTIMIZATION: Using combined choose_and_format_visualization step"
+            )
         elif use_separate_choose:
             parallel_steps.append("choose_visualization")
             logger.info("Using separate visualization steps (legacy mode)")
@@ -2664,25 +2845,29 @@ class SQLAgentWorkflow:
         for step in parallel_steps:
             workflow.add_edge("parallel_dispatcher", step)
 
-        if workflow_config.steps.get("generate_followup_questions", True) and workflow_config.steps.get(
-            "format_results", True
-        ):
+        if workflow_config.steps.get(
+            "generate_followup_questions", True
+        ) and workflow_config.steps.get("format_results", True):
             workflow.add_edge("format_results", "generate_followup_questions")
 
     def _get_workflow_end_nodes(self, workflow_config) -> list:
         """Determine which nodes are terminal (connect to END) based on config."""
         end_nodes = []
 
-        if workflow_config.steps.get("generate_followup_questions", True) and workflow_config.steps.get(
-            "format_results", True
-        ):
+        if workflow_config.steps.get(
+            "generate_followup_questions", True
+        ) and workflow_config.steps.get("format_results", True):
             end_nodes.append("generate_followup_questions")
         elif workflow_config.steps.get("format_results", True):
             end_nodes.append("format_results")
 
-        use_combined = workflow_config.steps.get("choose_and_format_visualization", True)
+        use_combined = workflow_config.steps.get(
+            "choose_and_format_visualization", True
+        )
         use_separate_choose = workflow_config.steps.get("choose_visualization", False)
-        use_separate_format = workflow_config.steps.get("format_data_for_visualization", False)
+        use_separate_format = workflow_config.steps.get(
+            "format_data_for_visualization", False
+        )
 
         if use_combined:
             end_nodes.append("choose_and_format_visualization")
@@ -2730,7 +2915,9 @@ class SQLAgentWorkflow:
 
         # Add enabled nodes (dispatcher always added; others only if enabled)
         for step_name, method in step_methods.items():
-            if step_name == "parallel_dispatcher" or workflow_config.steps.get(step_name, True):
+            if step_name == "parallel_dispatcher" or workflow_config.steps.get(
+                step_name, True
+            ):
                 workflow.add_node(step_name, method)
 
         # Define standard step order before execute_sql
@@ -2754,14 +2941,18 @@ class SQLAgentWorkflow:
             "get_unique_nouns",
             "generate_sql",
         }
-        self._add_pre_execute_edges(workflow, enabled_step_order, steps_that_check_clarification)
+        self._add_pre_execute_edges(
+            workflow, enabled_step_order, steps_that_check_clarification
+        )
 
         # Handle execute_sql routing with conditional retry logic and parallel dispatch
         self._setup_execute_sql_routing(workflow, workflow_config)
 
         # Handle separate visualization steps if using legacy mode
         use_separate_choose = workflow_config.steps.get("choose_visualization", False)
-        use_separate_format = workflow_config.steps.get("format_data_for_visualization", False)
+        use_separate_format = workflow_config.steps.get(
+            "format_data_for_visualization", False
+        )
         if use_separate_choose and use_separate_format:
             workflow.add_edge("choose_visualization", "format_data_for_visualization")
             logger.info("Added edge between separate visualization steps (legacy mode)")
@@ -2822,9 +3013,12 @@ class SQLAgentWorkflow:
     ]
 
     @staticmethod
-    def _check_patterns(normalized: str, patterns: list, log_prefix: str, error_msg: str) -> None:
+    def _check_patterns(
+        normalized: str, patterns: list, log_prefix: str, error_msg: str
+    ) -> None:
         """Raise ValidationError if any regex pattern matches the normalised text."""
         import re
+
         for pattern in patterns:
             if re.search(pattern, normalized):
                 logger.warning(f"{log_prefix}: pattern='{pattern}'")
@@ -2879,7 +3073,7 @@ class SQLAgentWorkflow:
             start = sql.find("/*")
             end = sql.find("*/", start)
             if end != -1:
-                sql = sql[:start] + " " + sql[end + 2:]
+                sql = sql[:start] + " " + sql[end + 2 :]
             else:
                 sql = sql[:start]
                 break
@@ -2904,33 +3098,70 @@ class SQLAgentWorkflow:
         if not words:
             raise ValidationError("SQL query appears to be empty")
 
-        safety_settings = getattr(self.config, "get_sql_safety_settings", lambda: {})() or {}
+        safety_settings = (
+            getattr(self.config, "get_sql_safety_settings", lambda: {})() or {}
+        )
 
-        allowed_types = set(safety_settings.get("allowed_query_types", ["SELECT", "WITH"]))
+        allowed_types = set(
+            safety_settings.get("allowed_query_types", ["SELECT", "WITH"])
+        )
         if words[0] not in allowed_types:
             raise ValidationError(
                 f"SQL query type '{words[0]}' not allowed. Only {', '.join(sorted(allowed_types))} queries are permitted."
             )
 
-        forbidden_patterns = safety_settings.get("forbidden_patterns", [
-            "DROP", "DELETE", "TRUNCATE", "ALTER", "CREATE", "INSERT", "UPDATE",
-            "GRANT", "REVOKE", "EXEC", "EXECUTE", "MERGE", "REPLACE", "LOAD",
-            "IMPORT", "EXPORT", "BACKUP", "RESTORE", "SHUTDOWN",
-        ])
+        forbidden_patterns = safety_settings.get(
+            "forbidden_patterns",
+            [
+                "DROP",
+                "DELETE",
+                "TRUNCATE",
+                "ALTER",
+                "CREATE",
+                "INSERT",
+                "UPDATE",
+                "GRANT",
+                "REVOKE",
+                "EXEC",
+                "EXECUTE",
+                "MERGE",
+                "REPLACE",
+                "LOAD",
+                "IMPORT",
+                "EXPORT",
+                "BACKUP",
+                "RESTORE",
+                "SHUTDOWN",
+            ],
+        )
         for pattern in forbidden_patterns:
             if pattern in sql_normalized:
                 raise ValidationError(f"SQL contains forbidden operation: {pattern}")
 
-        suspicious_functions = safety_settings.get("suspicious_functions", [
-            "OPENROWSET", "OPENDATASOURCE", "XP_", "SP_", "DBMS_",
-            "UTL_FILE", "UTL_HTTP", "BULK", "OUTFILE", "DUMPFILE",
-        ])
+        suspicious_functions = safety_settings.get(
+            "suspicious_functions",
+            [
+                "OPENROWSET",
+                "OPENDATASOURCE",
+                "XP_",
+                "SP_",
+                "DBMS_",
+                "UTL_FILE",
+                "UTL_HTTP",
+                "BULK",
+                "OUTFILE",
+                "DUMPFILE",
+            ],
+        )
         for func in suspicious_functions:
             if func in sql_normalized:
-                raise ValidationError(f"SQL contains potentially dangerous function: {func}")
+                raise ValidationError(
+                    f"SQL contains potentially dangerous function: {func}"
+                )
 
         if not safety_settings.get("allow_select_star", False):
             import re
+
             if re.search(r"SELECT\s+\*|\.\*", sql_normalized):
                 raise ValidationError(
                     "SELECT * is not allowed. Please specify the columns you need. "
@@ -2941,7 +3172,9 @@ class SQLAgentWorkflow:
 
         max_sql_length = int(safety_settings.get("max_sql_length", 50000))
         if len(sql_query) > max_sql_length:
-            raise ValidationError(f"SQL query is too long (max {max_sql_length} characters)")
+            raise ValidationError(
+                f"SQL query is too long (max {max_sql_length} characters)"
+            )
 
         logger.debug("SQL safety validation passed")
 
@@ -2994,7 +3227,11 @@ class SQLAgentWorkflow:
             if previous_question:
                 context_parts.append(f"Previous question was: {previous_question}")
 
-        return ("Conversation context: " + ". ".join(context_parts) + ".") if context_parts else ""
+        return (
+            ("Conversation context: " + ". ".join(context_parts) + ".")
+            if context_parts
+            else ""
+        )
 
     # =============================================================================
     # BACKWARD COMPATIBILITY METHODS

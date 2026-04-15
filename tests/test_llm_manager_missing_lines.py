@@ -21,17 +21,18 @@
 """Targeted tests for LLMManager.py missing coverage lines."""
 
 import os
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from langchain_core.prompts import ChatPromptTemplate
 
+from askrita.exceptions import ConfigurationError, LLMError
 from askrita.utils.LLMManager import LLMManager
-from askrita.exceptions import LLMError, ConfigurationError
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def openai_api_key():
@@ -86,6 +87,7 @@ def _make_manager(config=None, mock_llm=None):
 # ---------------------------------------------------------------------------
 # test_connection success/failure paths (lines 70-82)
 # ---------------------------------------------------------------------------
+
 
 class TestTestConnection:
     def test_connection_returns_true_on_success(self):
@@ -184,8 +186,13 @@ class TestTestConnection:
         mock_llm = MagicMock()
         config = _make_config(provider="azure_openai")
         # Use patch to mock the azure initialization and force provider to azure_openai
-        with patch("askrita.utils.LLMManager.LLMManager._initialize_llm", return_value=mock_llm):
-            with patch("askrita.utils.LLMManager.LLMManager._detect_optimal_structured_output_method", return_value="function_calling"):
+        with patch(
+            "askrita.utils.LLMManager.LLMManager._initialize_llm", return_value=mock_llm
+        ):
+            with patch(
+                "askrita.utils.LLMManager.LLMManager._detect_optimal_structured_output_method",
+                return_value="function_calling",
+            ):
                 manager = LLMManager.__new__(LLMManager)
                 manager.config = config
                 manager.http_client = None
@@ -223,41 +230,60 @@ class TestTestConnection:
 # _initialize_llm error path branches (lines 136-155)
 # ---------------------------------------------------------------------------
 
+
 class TestInitializeLLMErrors:
     def test_unsupported_provider_raises_config_error(self):
         config = _make_config()
         config.llm.provider = "unknown_provider"
         with pytest.raises((ConfigurationError, LLMError)):
-            with patch("askrita.utils.LLMManager.ChatOpenAI", side_effect=ConfigurationError("unsupported llm provider unknown")):
+            with patch(
+                "askrita.utils.LLMManager.ChatOpenAI",
+                side_effect=ConfigurationError("unsupported llm provider unknown"),
+            ):
                 LLMManager(config, test_connection=False)
 
     def test_api_key_error_raises_llm_error(self):
         config = _make_config()
-        with patch("askrita.utils.LLMManager.ChatOpenAI", side_effect=Exception("api key invalid authentication")):
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI",
+            side_effect=Exception("api key invalid authentication"),
+        ):
             with pytest.raises(LLMError):
                 LLMManager(config, test_connection=False)
 
     def test_import_error_for_openai(self):
         config = _make_config()
-        with patch("askrita.utils.LLMManager.ChatOpenAI", side_effect=Exception("no module named langchain openai")):
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI",
+            side_effect=Exception("no module named langchain openai"),
+        ):
             with pytest.raises((ConfigurationError, LLMError)):
                 LLMManager(config, test_connection=False)
 
     def test_import_error_for_bedrock(self):
         config = _make_config(provider="bedrock")
-        with patch("askrita.utils.LLMManager.ChatBedrock", side_effect=Exception("no module named langchain aws")):
+        with patch(
+            "askrita.utils.LLMManager.ChatBedrock",
+            side_effect=Exception("no module named langchain aws"),
+        ):
             with pytest.raises((ConfigurationError, LLMError)):
                 LLMManager(config, test_connection=False)
 
     def test_import_error_for_vertex_ai(self):
         config = _make_config(provider="vertex_ai")
-        with patch("askrita.utils.LLMManager.ChatVertexAI", side_effect=Exception("no module named langchain google-vertexai")):
+        with patch(
+            "askrita.utils.LLMManager.ChatVertexAI",
+            side_effect=Exception("no module named langchain google-vertexai"),
+        ):
             with pytest.raises((ConfigurationError, LLMError)):
                 LLMManager(config, test_connection=False)
 
     def test_generic_error_raises_llm_error(self):
         config = _make_config()
-        with patch("askrita.utils.LLMManager.ChatOpenAI", side_effect=RuntimeError("generic failure")):
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI",
+            side_effect=RuntimeError("generic failure"),
+        ):
             with pytest.raises(LLMError):
                 LLMManager(config, test_connection=False)
 
@@ -265,6 +291,7 @@ class TestInitializeLLMErrors:
 # ---------------------------------------------------------------------------
 # invoke_with_structured_output (lines 440-491)
 # ---------------------------------------------------------------------------
+
 
 class TestInvokeWithStructuredOutput:
     def test_missing_prompt_raises_llm_error(self):
@@ -274,6 +301,7 @@ class TestInvokeWithStructuredOutput:
         config.get_prompt.return_value = ""  # no system prompt
 
         from pydantic import BaseModel
+
         class Resp(BaseModel):
             answer: str
 
@@ -284,6 +312,7 @@ class TestInvokeWithStructuredOutput:
         manager, mock_llm = _make_manager()
 
         from pydantic import BaseModel
+
         class Resp(BaseModel):
             answer: str
 
@@ -295,7 +324,9 @@ class TestInvokeWithStructuredOutput:
         config = _make_config()
         manager.config = config
         config.get_prompt.side_effect = lambda name, part="system": (
-            "You are a helpful assistant." if part == "system" else "Question: {question}"
+            "You are a helpful assistant."
+            if part == "system"
+            else "Question: {question}"
         )
 
         result = manager.invoke_with_structured_output(
@@ -307,6 +338,7 @@ class TestInvokeWithStructuredOutput:
         manager, mock_llm = _make_manager()
 
         from pydantic import BaseModel
+
         class Resp(BaseModel):
             answer: str
 
@@ -326,11 +358,13 @@ class TestInvokeWithStructuredOutput:
 # invoke_with_structured_output_direct (lines 515-542)
 # ---------------------------------------------------------------------------
 
+
 class TestInvokeWithStructuredOutputDirect:
     def test_successful_direct_structured_output(self):
         manager, mock_llm = _make_manager()
 
         from pydantic import BaseModel
+
         class Resp(BaseModel):
             answer: str
 
@@ -348,6 +382,7 @@ class TestInvokeWithStructuredOutputDirect:
         manager, mock_llm = _make_manager()
 
         from pydantic import BaseModel
+
         class Resp(BaseModel):
             result: str
 
@@ -365,6 +400,7 @@ class TestInvokeWithStructuredOutputDirect:
         manager, mock_llm = _make_manager()
 
         from pydantic import BaseModel
+
         class Resp(BaseModel):
             answer: str
 
@@ -377,6 +413,7 @@ class TestInvokeWithStructuredOutputDirect:
 # ---------------------------------------------------------------------------
 # create_prompt_from_config (lines 579-633)
 # ---------------------------------------------------------------------------
+
 
 class TestCreatePromptFromConfig:
     def test_missing_prompt_raises_config_error(self):
@@ -423,7 +460,9 @@ class TestCreatePromptFromConfig:
         manager, _ = _make_manager()
         config = _make_config()
         manager.config = config
-        config.get_prompt.side_effect = lambda name, part="system": "Sys." if part == "system" else ""
+        config.get_prompt.side_effect = lambda name, part="system": (
+            "Sys." if part == "system" else ""
+        )
         prompt = manager.create_prompt_from_config("generate_sql")
         assert isinstance(prompt, ChatPromptTemplate)
 
@@ -431,7 +470,9 @@ class TestCreatePromptFromConfig:
         manager, _ = _make_manager()
         config = _make_config()
         manager.config = config
-        config.get_prompt.side_effect = lambda name, part="system": "Sys." if part == "system" else ""
+        config.get_prompt.side_effect = lambda name, part="system": (
+            "Sys." if part == "system" else ""
+        )
         prompt = manager.create_prompt_from_config("validate_sql")
         assert isinstance(prompt, ChatPromptTemplate)
 
@@ -439,7 +480,9 @@ class TestCreatePromptFromConfig:
         manager, _ = _make_manager()
         config = _make_config()
         manager.config = config
-        config.get_prompt.side_effect = lambda name, part="system": "Sys." if part == "system" else ""
+        config.get_prompt.side_effect = lambda name, part="system": (
+            "Sys." if part == "system" else ""
+        )
         prompt = manager.create_prompt_from_config("format_results")
         assert isinstance(prompt, ChatPromptTemplate)
 
@@ -447,7 +490,9 @@ class TestCreatePromptFromConfig:
         manager, _ = _make_manager()
         config = _make_config()
         manager.config = config
-        config.get_prompt.side_effect = lambda name, part="system": "Sys." if part == "system" else ""
+        config.get_prompt.side_effect = lambda name, part="system": (
+            "Sys." if part == "system" else ""
+        )
         prompt = manager.create_prompt_from_config("choose_visualization")
         assert isinstance(prompt, ChatPromptTemplate)
 
@@ -455,7 +500,9 @@ class TestCreatePromptFromConfig:
         manager, _ = _make_manager()
         config = _make_config()
         manager.config = config
-        config.get_prompt.side_effect = lambda name, part="system": "Sys." if part == "system" else ""
+        config.get_prompt.side_effect = lambda name, part="system": (
+            "Sys." if part == "system" else ""
+        )
         prompt = manager.create_prompt_from_config("choose_and_format_visualization")
         assert isinstance(prompt, ChatPromptTemplate)
 
@@ -463,7 +510,9 @@ class TestCreatePromptFromConfig:
         manager, _ = _make_manager()
         config = _make_config()
         manager.config = config
-        config.get_prompt.side_effect = lambda name, part="system": "Sys." if part == "system" else ""
+        config.get_prompt.side_effect = lambda name, part="system": (
+            "Sys." if part == "system" else ""
+        )
         prompt = manager.create_prompt_from_config("custom_unknown_prompt")
         assert isinstance(prompt, ChatPromptTemplate)
 
@@ -472,12 +521,15 @@ class TestCreatePromptFromConfig:
 # invoke_with_config_prompt (lines 648)
 # ---------------------------------------------------------------------------
 
+
 class TestInvokeWithConfigPrompt:
     def test_successful_invocation(self):
         manager, mock_llm = _make_manager()
         config = _make_config()
         manager.config = config
-        config.get_prompt.side_effect = lambda name, part="system": "System." if part == "system" else ""
+        config.get_prompt.side_effect = lambda name, part="system": (
+            "System." if part == "system" else ""
+        )
         mock_llm.invoke.return_value = MagicMock(content="result")
         result = manager.invoke_with_config_prompt("parse_question", question="Q?")
         assert isinstance(result, str)
@@ -494,6 +546,7 @@ class TestInvokeWithConfigPrompt:
 # ---------------------------------------------------------------------------
 # get_model_info (line 663-680)
 # ---------------------------------------------------------------------------
+
 
 class TestGetModelInfo:
     def test_returns_dict_with_expected_keys(self):
@@ -517,6 +570,7 @@ class TestGetModelInfo:
 # ---------------------------------------------------------------------------
 # cleanup / context manager / destructor (lines 773-798)
 # ---------------------------------------------------------------------------
+
 
 class TestCleanup:
     def test_cleanup_closes_http_client(self):
@@ -564,13 +618,16 @@ class TestCleanup:
 # _initialize_openai with base_url, organization, ca_bundle_path
 # ---------------------------------------------------------------------------
 
+
 class TestInitializeOpenAIOptions:
     def test_with_base_url_and_org(self):
         config = _make_config()
         config.llm.base_url = "https://custom.api.com"
         config.llm.organization = "org-123"
         mock_llm = MagicMock()
-        with patch("askrita.utils.LLMManager.ChatOpenAI", return_value=mock_llm) as mock_cls:
+        with patch(
+            "askrita.utils.LLMManager.ChatOpenAI", return_value=mock_llm
+        ) as mock_cls:
             _ = LLMManager(config, test_connection=False)
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs.get("base_url") == "https://custom.api.com"
@@ -594,6 +651,7 @@ class TestInitializeOpenAIOptions:
 # _initialize_vertex_ai with credentials_path
 # ---------------------------------------------------------------------------
 
+
 class TestInitializeVertexAI:
     def test_vertex_ai_with_credentials_path(self):
         config = _make_config(provider="vertex_ai")
@@ -602,12 +660,16 @@ class TestInitializeVertexAI:
         with patch("askrita.utils.LLMManager.ChatVertexAI", return_value=mock_llm):
             with patch.dict(os.environ, {}):
                 _ = LLMManager(config, test_connection=False)
-                assert os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") == "/path/to/credentials.json"
+                assert (
+                    os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+                    == "/path/to/credentials.json"
+                )
 
 
 # ---------------------------------------------------------------------------
 # _initialize_bedrock with AWS credential env vars
 # ---------------------------------------------------------------------------
+
 
 class TestInitializeBedrock:
     def test_bedrock_with_aws_credentials(self):
@@ -616,9 +678,15 @@ class TestInitializeBedrock:
         config.llm.aws_secret_access_key_env_var = "MY_AWS_SECRET"
         config.llm.aws_session_token_env_var = "MY_AWS_TOKEN"
         mock_llm = MagicMock()
-        env = {"MY_AWS_KEY": "access-key", "MY_AWS_SECRET": "secret", "MY_AWS_TOKEN": "token"}
+        env = {
+            "MY_AWS_KEY": "access-key",
+            "MY_AWS_SECRET": "secret",
+            "MY_AWS_TOKEN": "token",
+        }
         with patch.dict(os.environ, env):
-            with patch("askrita.utils.LLMManager.ChatBedrock", return_value=mock_llm) as mock_cls:
+            with patch(
+                "askrita.utils.LLMManager.ChatBedrock", return_value=mock_llm
+            ) as mock_cls:
                 _ = LLMManager(config, test_connection=False)
                 call_kwargs = mock_cls.call_args[1]
                 assert call_kwargs.get("aws_access_key_id") == "access-key"

@@ -15,16 +15,17 @@
 """Additional DatabaseManager tests targeting previously uncovered code paths."""
 
 import os
+from unittest.mock import MagicMock, call, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, call
 
-from askrita.sqlagent.database.DatabaseManager import DatabaseManager
 from askrita.exceptions import DatabaseError
-
+from askrita.sqlagent.database.DatabaseManager import DatabaseManager
 
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def openai_env():
@@ -46,13 +47,19 @@ def _make_manager(conn_string="sqlite:///./test.db"):
     mock_llm = MagicMock()
     mock_db = MagicMock()
 
-    with patch("askrita.sqlagent.database.DatabaseManager.LLMManager", return_value=mock_llm):
-        with patch("askrita.sqlagent.database.DatabaseManager.DatabaseStrategyFactory") as mock_factory:
+    with patch(
+        "askrita.sqlagent.database.DatabaseManager.LLMManager", return_value=mock_llm
+    ):
+        with patch(
+            "askrita.sqlagent.database.DatabaseManager.DatabaseStrategyFactory"
+        ) as mock_factory:
             mock_strategy = MagicMock()
             mock_strategy.get_safe_connection_info.return_value = "SQLite: test.db"
             mock_strategy.test_connection.return_value = True
             mock_factory.create_strategy.return_value = mock_strategy
-            with patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase") as mock_sql_db:
+            with patch(
+                "askrita.sqlagent.database.DatabaseManager.SQLDatabase"
+            ) as mock_sql_db:
                 mock_sql_db.from_uri.return_value = mock_db
                 manager = DatabaseManager(
                     config_manager=mock_config,
@@ -69,8 +76,11 @@ def _make_manager(conn_string="sqlite:///./test.db"):
 # test_db_connection=True branch (lines 78-91)
 # ---------------------------------------------------------------------------
 
+
 class TestInitWithConnectionTest:
-    def _create_with_connection_test(self, test_connection_return_value, conn_string="sqlite:///test.db"):
+    def _create_with_connection_test(
+        self, test_connection_return_value, conn_string="sqlite:///test.db"
+    ):
         mock_config = MagicMock()
         mock_config.database.connection_string = conn_string
         mock_config.database.cache_schema = False
@@ -81,13 +91,22 @@ class TestInitWithConnectionTest:
         mock_llm = MagicMock()
         mock_db = MagicMock()
 
-        with patch("askrita.sqlagent.database.DatabaseManager.LLMManager", return_value=mock_llm):
-            with patch("askrita.sqlagent.database.DatabaseManager.DatabaseStrategyFactory") as mock_factory:
+        with patch(
+            "askrita.sqlagent.database.DatabaseManager.LLMManager",
+            return_value=mock_llm,
+        ):
+            with patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseStrategyFactory"
+            ) as mock_factory:
                 mock_strategy = MagicMock()
                 mock_strategy.get_safe_connection_info.return_value = "SQLite: test.db"
-                mock_strategy.test_connection.return_value = test_connection_return_value
+                mock_strategy.test_connection.return_value = (
+                    test_connection_return_value
+                )
                 mock_factory.create_strategy.return_value = mock_strategy
-                with patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase") as mock_sql_db:
+                with patch(
+                    "askrita.sqlagent.database.DatabaseManager.SQLDatabase"
+                ) as mock_sql_db:
                     mock_sql_db.from_uri.return_value = mock_db
                     return DatabaseManager(
                         config_manager=mock_config,
@@ -110,6 +129,7 @@ class TestInitWithConnectionTest:
 # _extract_db_host (line 103)
 # ---------------------------------------------------------------------------
 
+
 class TestExtractDbHost:
     def test_with_at_sign_returns_host_part(self):
         """Line 103: when '@' is in string, return the host portion."""
@@ -126,6 +146,7 @@ class TestExtractDbHost:
 # test_connection exception paths (lines 512-524)
 # ---------------------------------------------------------------------------
 
+
 class TestConnectionExceptionPaths:
     def test_test_connection_returns_false_on_exception(self):
         """Lines 512-524: exception in db_strategy.test_connection returns False."""
@@ -137,7 +158,9 @@ class TestConnectionExceptionPaths:
     def test_test_connection_auth_error_hint(self):
         """Lines 517-518: authentication error in test_connection returns False."""
         manager, config, mock_db, mock_strategy = _make_manager()
-        mock_strategy.test_connection.side_effect = RuntimeError("authentication failed: access denied")
+        mock_strategy.test_connection.side_effect = RuntimeError(
+            "authentication failed: access denied"
+        )
         result = manager.test_connection()
         assert result is False
 
@@ -160,6 +183,7 @@ class TestConnectionExceptionPaths:
 # BigQuery static/instance helper methods (lines 529-602)
 # ---------------------------------------------------------------------------
 
+
 class TestBigQueryHelpers:
     def test_bq_check_dataset_exists_returns_true_on_success(self):
         """Lines 529-536: returns True when client.get_dataset succeeds."""
@@ -168,7 +192,9 @@ class TestBigQueryHelpers:
         mock_client.get_dataset.return_value = mock_dataset
         mock_client.dataset.return_value = MagicMock()
 
-        result = DatabaseManager._bq_check_dataset_exists(mock_client, "my_dataset", "my_project")
+        result = DatabaseManager._bq_check_dataset_exists(
+            mock_client, "my_dataset", "my_project"
+        )
         assert result is True
 
     def test_bq_check_dataset_exists_returns_false_on_404(self):
@@ -177,7 +203,9 @@ class TestBigQueryHelpers:
         mock_client.dataset.return_value = MagicMock()
         mock_client.get_dataset.side_effect = Exception("404 not found")
 
-        result = DatabaseManager._bq_check_dataset_exists(mock_client, "missing_ds", "my_project")
+        result = DatabaseManager._bq_check_dataset_exists(
+            mock_client, "missing_ds", "my_project"
+        )
         assert result is False
 
     def test_bq_check_dataset_exists_returns_false_on_403(self):
@@ -226,7 +254,9 @@ class TestBigQueryHelpers:
     def test_bq_test_query_execution_returns_false_on_jobs_permission(self):
         """Lines 552-562: returns False on bigquery.jobs.create permission error."""
         manager, config, mock_db, mock_strategy = _make_manager()
-        mock_db.run_no_throw.return_value = "Error: bigquery.jobs.create permission denied"
+        mock_db.run_no_throw.return_value = (
+            "Error: bigquery.jobs.create permission denied"
+        )
 
         result = manager._bq_test_query_execution()
         assert result is False
@@ -261,6 +291,7 @@ class TestBigQueryHelpers:
     def test_bq_log_success_non_cross_project(self, caplog):
         """Lines 585-592: log success for standard (non-cross-project) connection."""
         import logging
+
         with caplog.at_level(logging.INFO):
             DatabaseManager._bq_log_success(False, "my-project", "my-dataset")
         assert "my-project" in caplog.text
@@ -268,6 +299,7 @@ class TestBigQueryHelpers:
     def test_bq_log_success_cross_project(self, caplog):
         """Lines 585-592: log success for cross-project connection."""
         import logging
+
         with caplog.at_level(logging.INFO):
             DatabaseManager._bq_log_success(True, "my-project", "CROSS_PROJECT_ACCESS")
         assert "cross-project" in caplog.text.lower()
@@ -275,6 +307,7 @@ class TestBigQueryHelpers:
     def test_bq_log_outer_error_authentication(self, caplog):
         """Lines 597-602: authentication error hint is logged."""
         import logging
+
         with caplog.at_level(logging.ERROR):
             DatabaseManager._bq_log_outer_error("authentication issue")
         assert "authentication" in caplog.text.lower()
@@ -282,6 +315,7 @@ class TestBigQueryHelpers:
     def test_bq_log_outer_error_project(self, caplog):
         """Lines 597-602: project error hint is logged."""
         import logging
+
         with caplog.at_level(logging.ERROR):
             DatabaseManager._bq_log_outer_error("project not found")
         assert "project" in caplog.text.lower()
@@ -289,14 +323,18 @@ class TestBigQueryHelpers:
     def test_bq_log_outer_error_jobs_create(self, caplog):
         """Lines 597-602: bigquery.jobs.create permission hint is logged."""
         import logging
+
         with caplog.at_level(logging.ERROR):
-            DatabaseManager._bq_log_outer_error("bigquery.jobs.create permission denied")
+            DatabaseManager._bq_log_outer_error(
+                "bigquery.jobs.create permission denied"
+            )
         assert "bigquery.jobs.create" in caplog.text
 
 
 # ---------------------------------------------------------------------------
 # get_table_names exception path (lines 680-682)
 # ---------------------------------------------------------------------------
+
 
 class TestGetTableNames:
     def test_returns_empty_list_on_toolkit_exception(self):
@@ -314,6 +352,7 @@ class TestGetTableNames:
 # ---------------------------------------------------------------------------
 # _get_safe_connection_info (line 693)
 # ---------------------------------------------------------------------------
+
 
 class TestGetSafeConnectionInfo:
     def test_bigquery_prefix_replaced(self):
@@ -339,6 +378,7 @@ class TestGetSafeConnectionInfo:
 # ---------------------------------------------------------------------------
 # get_connection_info with various connection string formats (lines 729, 731)
 # ---------------------------------------------------------------------------
+
 
 class TestGetConnectionInfo:
     def test_connection_string_with_at_and_port(self):
@@ -389,6 +429,7 @@ class TestGetConnectionInfo:
 # _build_sample_query – BigQuery and Snowflake branches (lines 446, 448)
 # ---------------------------------------------------------------------------
 
+
 class TestBuildSampleQuery:
     def test_bigquery_uses_backtick_syntax(self):
         """Line 446: BigQuery connection strings use backtick-quoted table names."""
@@ -416,6 +457,7 @@ class TestBuildSampleQuery:
 # _sample_single_table – exception branch (lines 463-466)
 # ---------------------------------------------------------------------------
 
+
 class TestSampleSingleTable:
     def test_exception_returns_empty_dict(self):
         """Lines 464-466: exception in execute_query returns empty dict."""
@@ -432,11 +474,14 @@ class TestSampleSingleTable:
 # get_sample_data – outer exception branch (lines 494-496)
 # ---------------------------------------------------------------------------
 
+
 class TestGetSampleDataOuterException:
     def test_outer_exception_returns_empty_dict(self):
         """Lines 494-496: outer exception in get_sample_data returns {}."""
         manager, config, _, _ = _make_manager()
         # Make _discover_table_names itself raise to trigger the outer except
-        with patch.object(manager, "_discover_table_names", side_effect=RuntimeError("meta boom")):
+        with patch.object(
+            manager, "_discover_table_names", side_effect=RuntimeError("meta boom")
+        ):
             result = manager.get_sample_data()
         assert result == {}

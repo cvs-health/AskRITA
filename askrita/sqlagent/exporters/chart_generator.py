@@ -84,7 +84,11 @@ def _extract_dataset_values_pydantic(dataset, chart_type_lower: str) -> List[Any
     """Extract numeric values from a Pydantic dataset for non-pie chart types."""
     if chart_type_lower == "horizontal_bar":
         return [
-            (point.x if point.x is not None else (point.value if point.value is not None else 0))
+            (
+                point.x
+                if point.x is not None
+                else (point.value if point.value is not None else 0)
+            )
             for point in dataset.data
         ]
     return [point.y or point.value or 0 for point in dataset.data]
@@ -169,15 +173,25 @@ def _normalize_chart_data_from_list(data: list) -> VisualizationData:
     if len(data) > 0 and isinstance(data[0], list) and len(data[0]) >= 2:
         logger.info(f"Converting raw results format data with {len(data)} items")
         labels = [str(item[0]) if item[0] is not None else "Unknown" for item in data]
-        values = [{"data": [float(item[1]) if item[1] is not None else 0 for item in data], "label": "Data Series"}]
+        values = [
+            {
+                "data": [float(item[1]) if item[1] is not None else 0 for item in data],
+                "label": "Data Series",
+            }
+        ]
     else:
         logger.info(f"Converting dictionary array format data with {len(data)} items")
         labels = [
-            str(item.get("label", f"Item {item.get('id', i)}")) if item.get("label") is not None
-            else "Unknown"
+            (
+                str(item.get("label", f"Item {item.get('id', i)}"))
+                if item.get("label") is not None
+                else "Unknown"
+            )
             for i, item in enumerate(data)
         ]
-        values = [{"data": [item.get("value", 0) for item in data], "label": "Data Series"}]
+        values = [
+            {"data": [item.get("value", 0) for item in data], "label": "Data Series"}
+        ]
     return VisualizationData(labels=labels, values=values)
 
 
@@ -217,7 +231,8 @@ def _detect_multi_axis(data: VisualizationData) -> Tuple[bool, List[int]]:
 
     logger.info("Multi-axis chart detected for matplotlib rendering")
     secondary_series_indices = [
-        i for i, dataset in enumerate(universal_data.datasets)
+        i
+        for i, dataset in enumerate(universal_data.datasets)
         if _is_secondary_axis(dataset, yaxes)
     ]
     return True, secondary_series_indices
@@ -230,9 +245,15 @@ def _set_dual_axis_labels(ax, ax2, data) -> None:
     universal_data = data._original_universal_data
     if not (hasattr(universal_data, "yAxes") and universal_data.yAxes):
         return
-    ax.set_ylabel(getattr(universal_data.yAxes[0], "label", ""), fontsize=12, fontweight="bold")
+    ax.set_ylabel(
+        getattr(universal_data.yAxes[0], "label", ""), fontsize=12, fontweight="bold"
+    )
     if len(universal_data.yAxes) > 1:
-        ax2.set_ylabel(getattr(universal_data.yAxes[1], "label", ""), fontsize=12, fontweight="bold")
+        ax2.set_ylabel(
+            getattr(universal_data.yAxes[1], "label", ""),
+            fontsize=12,
+            fontweight="bold",
+        )
 
 
 def _render_dual_axis_bar(ax, data, colors, secondary_series_indices):
@@ -246,9 +267,24 @@ def _render_dual_axis_bar(ax, data, colors, secondary_series_indices):
     for i, series in enumerate(data.values):
         color = colors[i % len(colors)]
         if i in secondary_series_indices:
-            ax2.plot(x_pos, series["data"], marker="o", label=series["label"], linewidth=2.5, markersize=8, color=color)
+            ax2.plot(
+                x_pos,
+                series["data"],
+                marker="o",
+                label=series["label"],
+                linewidth=2.5,
+                markersize=8,
+                color=color,
+            )
         else:
-            ax.bar(x_pos, series["data"], width, label=series["label"], alpha=0.8, color=color)
+            ax.bar(
+                x_pos,
+                series["data"],
+                width,
+                label=series["label"],
+                alpha=0.8,
+                color=color,
+            )
     ax.set_xticks(x_pos)
     ax.set_xticklabels(data.labels, rotation=45, ha="right")
     _set_dual_axis_labels(ax, ax2, data)
@@ -265,13 +301,22 @@ def _render_grouped_bar(ax, data, colors):
     for i, series in enumerate(data.values):
         offset = (i - len(data.values) / 2 + 0.5) * width
         color = colors[i % len(colors)]
-        ax.bar([x + offset for x in x_pos], series["data"], width, label=series["label"], alpha=0.8, color=color)
+        ax.bar(
+            [x + offset for x in x_pos],
+            series["data"],
+            width,
+            label=series["label"],
+            alpha=0.8,
+            color=color,
+        )
     ax.set_xticks(x_pos)
     ax.set_xticklabels(data.labels, rotation=45, ha="right")
     ax.legend()
 
 
-def _render_bar_chart(ax, data, colors, has_multi_axis, secondary_series_indices, plt_module):
+def _render_bar_chart(
+    ax, data, colors, has_multi_axis, secondary_series_indices, plt_module
+):
     """Render bar or column chart onto ax."""
     if len(data.values) > 1:
         if has_multi_axis and secondary_series_indices:
@@ -292,9 +337,23 @@ def _render_dual_axis_line(ax, data, colors, secondary_series_indices, plt_modul
     for i, series in enumerate(data.values):
         color = colors[i % len(colors)]
         if i in secondary_series_indices:
-            ax2.plot(data.labels, series["data"], marker="o", label=series["label"], linewidth=2.5, color=color)
+            ax2.plot(
+                data.labels,
+                series["data"],
+                marker="o",
+                label=series["label"],
+                linewidth=2.5,
+                color=color,
+            )
         else:
-            ax.plot(data.labels, series["data"], marker="o", label=series["label"], linewidth=2.5, color=color)
+            ax.plot(
+                data.labels,
+                series["data"],
+                marker="o",
+                label=series["label"],
+                linewidth=2.5,
+                color=color,
+            )
     _set_dual_axis_labels(ax, ax2, data)
     lines1, labels1 = ax.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
@@ -303,14 +362,23 @@ def _render_dual_axis_line(ax, data, colors, secondary_series_indices, plt_modul
     plt_module.xticks(rotation=45, ha="right")
 
 
-def _render_line_chart(ax, data, colors, has_multi_axis, secondary_series_indices, plt_module):
+def _render_line_chart(
+    ax, data, colors, has_multi_axis, secondary_series_indices, plt_module
+):
     """Render line chart onto ax."""
     if has_multi_axis and secondary_series_indices:
         _render_dual_axis_line(ax, data, colors, secondary_series_indices, plt_module)
     else:
         for i, series in enumerate(data.values):
             color = colors[i % len(colors)]
-            ax.plot(data.labels, series["data"], marker="o", label=series["label"], linewidth=2.5, color=color)
+            ax.plot(
+                data.labels,
+                series["data"],
+                marker="o",
+                label=series["label"],
+                linewidth=2.5,
+                color=color,
+            )
         if len(data.values) > 1:
             ax.legend()
         plt_module.xticks(rotation=45, ha="right")
@@ -325,6 +393,7 @@ def _render_pie_donut_chart(ax, fig, data, chart_type_lower, colors):
     ax.pie(pie_data, labels=pie_labels, autopct="%1.1f%%", startangle=90, colors=colors)
     if chart_type_lower == "donut":
         import matplotlib.pyplot as _plt
+
         inner_circle = _plt.Circle((0, 0), 0.70, fc="white")
         fig.gca().add_artist(inner_circle)
 
@@ -348,18 +417,33 @@ def _normalize_series_lengths(data: VisualizationData) -> None:
         data.labels = data.labels[:max_data_length]
 
 
-def _dispatch_chart_render(ax, fig, data, chart_type_lower, colors, has_multi_axis, secondary_series_indices, plt_module) -> None:
+def _dispatch_chart_render(
+    ax,
+    fig,
+    data,
+    chart_type_lower,
+    colors,
+    has_multi_axis,
+    secondary_series_indices,
+    plt_module,
+) -> None:
     """Dispatch rendering to the appropriate chart-type helper."""
     if chart_type_lower in ["bar", "column"]:
-        _render_bar_chart(ax, data, colors, has_multi_axis, secondary_series_indices, plt_module)
+        _render_bar_chart(
+            ax, data, colors, has_multi_axis, secondary_series_indices, plt_module
+        )
     elif chart_type_lower == "line":
-        _render_line_chart(ax, data, colors, has_multi_axis, secondary_series_indices, plt_module)
+        _render_line_chart(
+            ax, data, colors, has_multi_axis, secondary_series_indices, plt_module
+        )
     elif chart_type_lower == "area":
         _render_area_chart(ax, data, colors)
     elif chart_type_lower in ["pie", "donut"]:
         _render_pie_donut_chart(ax, fig, data, chart_type_lower, colors)
     else:
-        logger.warning(f"Unknown chart type '{chart_type_lower}', defaulting to bar chart")
+        logger.warning(
+            f"Unknown chart type '{chart_type_lower}', defaulting to bar chart"
+        )
         ax.bar(data.labels, data.values[0]["data"], alpha=0.8, color=colors[0])
         plt_module.xticks(rotation=45, ha="right")
 
@@ -368,7 +452,13 @@ def _render_area_chart(ax, data, colors) -> None:
     """Render area chart onto ax."""
     for i, series in enumerate(data.values):
         color = colors[i % len(colors)]
-        ax.fill_between(range(len(data.labels)), series["data"], alpha=0.7, label=series["label"], color=color)
+        ax.fill_between(
+            range(len(data.labels)),
+            series["data"],
+            alpha=0.7,
+            label=series["label"],
+            color=color,
+        )
     ax.set_xticks(range(len(data.labels)))
     ax.set_xticklabels(data.labels, rotation=45, ha="right")
     if len(data.values) > 1:
@@ -378,7 +468,14 @@ def _render_area_chart(ax, data, colors) -> None:
 def _save_chart_to_bytes(plt_module) -> Optional[bytes]:
     """Save current matplotlib figure to PNG bytes and close the figure."""
     img_buffer = io.BytesIO()
-    plt_module.savefig(img_buffer, format="png", dpi=300, bbox_inches="tight", facecolor="white", edgecolor="none")
+    plt_module.savefig(
+        img_buffer,
+        format="png",
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+        edgecolor="none",
+    )
     plt_module.close()
     img_buffer.seek(0)
     return img_buffer.getvalue() or None
@@ -427,12 +524,29 @@ def generate_chart_bytes(
         fig, ax = plt.subplots(figsize=(12, 8))
         chart_type_lower = chart_type.lower()
         colors = [
-            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+            "#1f77b4",
+            "#ff7f0e",
+            "#2ca02c",
+            "#d62728",
+            "#9467bd",
+            "#8c564b",
+            "#e377c2",
+            "#7f7f7f",
+            "#bcbd22",
+            "#17becf",
         ]
 
         has_multi_axis, secondary_series_indices = _detect_multi_axis(data)
-        _dispatch_chart_render(ax, fig, data, chart_type_lower, colors, has_multi_axis, secondary_series_indices, plt)
+        _dispatch_chart_render(
+            ax,
+            fig,
+            data,
+            chart_type_lower,
+            colors,
+            has_multi_axis,
+            secondary_series_indices,
+            plt,
+        )
 
         if title:
             ax.set_title(title, fontsize=16, fontweight="bold", pad=20)
@@ -452,6 +566,7 @@ def generate_chart_bytes(
     except Exception as e:
         logger.error(f"Chart generation failed: {e}")
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
         return None
 
@@ -492,7 +607,9 @@ def _pptx_default_values_pydantic(data, chart_type_lower: str) -> list:
     return [point.y or point.value or 0 for point in data.datasets[0].data]
 
 
-def _pptx_labels_values_from_pydantic(data, chart_type_lower: str) -> Tuple[list, list, str]:
+def _pptx_labels_values_from_pydantic(
+    data, chart_type_lower: str
+) -> Tuple[list, list, str]:
     """Extract (labels, values, resolved_chart_type) from a Pydantic UniversalChartData object."""
     if chart_type_lower == "calendar" and getattr(data, "calendar_data", None):
         logger.info("Converting calendar chart to bar chart for PowerPoint export")
@@ -520,12 +637,16 @@ def _pptx_pie_labels_values_dict(datasets: list) -> Tuple[list, list]:
     values: list = []
     if datasets and datasets[0].get("data"):
         for point in datasets[0]["data"]:
-            labels.append(point.get("label") or point.get("category") or f"Item {len(labels)}")
+            labels.append(
+                point.get("label") or point.get("category") or f"Item {len(labels)}"
+            )
             values.append(point.get("value") or point.get("y") or 0)
     return labels, values
 
 
-def _pptx_labels_values_from_dict(data: dict, chart_type_lower: str) -> Tuple[list, list, str]:
+def _pptx_labels_values_from_dict(
+    data: dict, chart_type_lower: str
+) -> Tuple[list, list, str]:
     """Extract (labels, values, resolved_chart_type) from a UniversalChartData dict."""
     if chart_type_lower == "calendar" and data.get("calendar_data"):
         logger.info("Converting calendar chart to bar chart for PowerPoint export")
@@ -551,18 +672,25 @@ def _pptx_labels_values_from_dict(data: dict, chart_type_lower: str) -> Tuple[li
     return labels, values, chart_type_lower
 
 
-def _pptx_labels_values_from_list(data: list, chart_type_lower: str) -> Tuple[list, list, str]:
+def _pptx_labels_values_from_list(
+    data: list, chart_type_lower: str
+) -> Tuple[list, list, str]:
     """Extract (labels, values, chart_type_lower) from a list data format."""
     if data and isinstance(data[0], list) and len(data[0]) >= 2:
         labels = [str(item[0]) if item[0] is not None else "Unknown" for item in data]
         values = [float(item[1]) if item[1] is not None else 0 for item in data]
     else:
-        labels = [item.get("label", f"Item {item.get('id', i)}") for i, item in enumerate(data)]
+        labels = [
+            item.get("label", f"Item {item.get('id', i)}")
+            for i, item in enumerate(data)
+        ]
         values = [item.get("value", 0) for item in data]
     return labels, values, chart_type_lower
 
 
-def _pptx_labels_values_from_viz_dict(data: dict, chart_type_lower: str) -> Tuple[list, list, str]:
+def _pptx_labels_values_from_viz_dict(
+    data: dict, chart_type_lower: str
+) -> Tuple[list, list, str]:
     """Extract (labels, values, chart_type_lower) from a VisualizationData-style dict."""
     labels = data["labels"]
     if data["values"] and "data" in data["values"][0]:
@@ -572,7 +700,9 @@ def _pptx_labels_values_from_viz_dict(data: dict, chart_type_lower: str) -> Tupl
     return labels, values, chart_type_lower
 
 
-def _pptx_extract_labels_values(data, chart_type: str) -> Tuple[Optional[list], Optional[list], str]:
+def _pptx_extract_labels_values(
+    data, chart_type: str
+) -> Tuple[Optional[list], Optional[list], str]:
     """
     Extract (labels, values, resolved_chart_type) from any supported data format.
     Returns (None, None, chart_type) when the format is unsupported.
@@ -608,7 +738,9 @@ def _pptx_resolve_xl_chart_type(chart_type_lower: str, xl_chart_type_enum):
     }
     xl_type = mapping.get(chart_type_lower)
     if xl_type is None:
-        logger.warning(f"Chart type '{chart_type_lower}' not natively supported, using column chart")
+        logger.warning(
+            f"Chart type '{chart_type_lower}' not natively supported, using column chart"
+        )
         xl_type = xl_chart_type_enum.COLUMN_CLUSTERED
     return xl_type
 
@@ -629,7 +761,9 @@ def _pptx_resolve_series_secondary(dataset: dict, yaxes: list) -> Tuple[bool, bo
     return False, False
 
 
-def _pptx_extract_series_values(raw_data: list, chart_type_lower: str, n_labels: int) -> list:
+def _pptx_extract_series_values(
+    raw_data: list, chart_type_lower: str, n_labels: int
+) -> list:
     """Extract numeric values from a raw dataset point list."""
     if not raw_data:
         return [0] * n_labels
@@ -638,13 +772,21 @@ def _pptx_extract_series_values(raw_data: list, chart_type_lower: str, n_labels:
     return [p.get("y") or p.get("value") or 0 for p in raw_data]
 
 
-def _pptx_build_series_info(data, chart_type_lower: str, labels: list) -> Tuple[list, bool]:
+def _pptx_build_series_info(
+    data, chart_type_lower: str, labels: list
+) -> Tuple[list, bool]:
     """
     Build series_info list: [(series_name, series_values, use_secondary)].
     Also returns has_multiple_axes flag.
     """
-    if not (isinstance(data, dict) and "datasets" in data and len(data.get("datasets", [])) > 1):
-        return [("Data", labels, False)], False  # placeholder; caller replaces with real values
+    if not (
+        isinstance(data, dict)
+        and "datasets" in data
+        and len(data.get("datasets", [])) > 1
+    ):
+        return [
+            ("Data", labels, False)
+        ], False  # placeholder; caller replaces with real values
 
     logger.info(f"Multi-dataset chart detected: {len(data['datasets'])} datasets")
     series_info = []
@@ -653,12 +795,16 @@ def _pptx_build_series_info(data, chart_type_lower: str, labels: list) -> Tuple[
 
     for idx, dataset in enumerate(data["datasets"]):
         series_name = dataset.get("label", f"Series {idx + 1}")
-        series_values = _pptx_extract_series_values(dataset.get("data", []), chart_type_lower, len(labels))
+        series_values = _pptx_extract_series_values(
+            dataset.get("data", []), chart_type_lower, len(labels)
+        )
         use_secondary, is_multi = _pptx_resolve_series_secondary(dataset, yaxes)
         if is_multi:
             has_multiple_axes = True
         series_info.append((series_name, series_values, use_secondary))
-        logger.info(f"  Series '{series_name}': secondary_axis={use_secondary}, yAxisId={dataset.get('yAxisId', '')}")
+        logger.info(
+            f"  Series '{series_name}': secondary_axis={use_secondary}, yAxisId={dataset.get('yAxisId', '')}"
+        )
 
     return series_info, has_multiple_axes
 
@@ -681,7 +827,9 @@ def add_native_pptx_chart(slide, data, chart_type: str, x, y, cx, cy) -> bool:
         from pptx.chart.data import CategoryChartData
         from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
     except ImportError:
-        logger.error("python-pptx is required. Install with: pip install askrita[exports]")
+        logger.error(
+            "python-pptx is required. Install with: pip install askrita[exports]"
+        )
         return False
 
     try:
@@ -693,7 +841,9 @@ def add_native_pptx_chart(slide, data, chart_type: str, x, y, cx, cy) -> bool:
         labels = [str(label) if label is not None else "Unknown" for label in labels]
 
         if not labels:
-            logger.warning("No categories found for chart - PowerPoint requires at least one category")
+            logger.warning(
+                "No categories found for chart - PowerPoint requires at least one category"
+            )
             return False
 
         # Align values length with labels
@@ -709,7 +859,9 @@ def add_native_pptx_chart(slide, data, chart_type: str, x, y, cx, cy) -> bool:
         chart_data.categories = labels
 
         # Build multi-series info if applicable
-        series_info, has_multiple_axes = _pptx_build_series_info(data, chart_type_lower, labels)
+        series_info, has_multiple_axes = _pptx_build_series_info(
+            data, chart_type_lower, labels
+        )
         # For single-series case, _pptx_build_series_info returns a placeholder; use real values
         if len(series_info) == 1 and series_info[0][0] == "Data":
             series_info = [("Data", values, False)]
@@ -721,8 +873,12 @@ def add_native_pptx_chart(slide, data, chart_type: str, x, y, cx, cy) -> bool:
         chart = graphic_frame.chart
 
         if has_multiple_axes:
-            logger.warning(f"Chart has {len(series_info)} series but python-pptx doesn't support secondary axis")
-            logger.warning("To add secondary axis: Open PowerPoint → Right-click series → Format Data Series → Secondary Axis")
+            logger.warning(
+                f"Chart has {len(series_info)} series but python-pptx doesn't support secondary axis"
+            )
+            logger.warning(
+                "To add secondary axis: Open PowerPoint → Right-click series → Format Data Series → Secondary Axis"
+            )
 
         chart.has_legend = True
         chart.legend.position = XL_LEGEND_POSITION.BOTTOM
@@ -733,11 +889,14 @@ def add_native_pptx_chart(slide, data, chart_type: str, x, y, cx, cy) -> bool:
             plot.has_data_labels = True
             plot.data_labels.number_format = '0.0"%"'
 
-        logger.info(f"Native {chart_type} chart created with {len(labels)} categories, {len(series_info)} series")
+        logger.info(
+            f"Native {chart_type} chart created with {len(labels)} categories, {len(series_info)} series"
+        )
         return True
 
     except Exception as e:
         logger.error(f"Failed to create native PPTX chart: {e}")
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
         return False

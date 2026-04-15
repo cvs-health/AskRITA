@@ -21,13 +21,14 @@ Covers:
 """
 
 import os
-import pytest
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 
 # ============================================================================
 # NoSQLDatabaseManager.py
 # ============================================================================
+
 
 def _make_nosql_manager():
     """Create a NoSQLDatabaseManager with all connections mocked."""
@@ -42,7 +43,9 @@ def _make_nosql_manager():
     mock_db = MagicMock()
     mock_client = MagicMock()
 
-    with patch("askrita.sqlagent.database.NoSQLDatabaseManager.MongoDBStrategy") as mock_strategy_cls:
+    with patch(
+        "askrita.sqlagent.database.NoSQLDatabaseManager.MongoDBStrategy"
+    ) as mock_strategy_cls:
         mock_strategy = MagicMock()
         mock_strategy.get_connection_type.return_value = "mongodb"
         mock_strategy.get_safe_connection_info.return_value = "MongoDB: localhost"
@@ -52,7 +55,9 @@ def _make_nosql_manager():
         with patch(
             "askrita.sqlagent.database.NoSQLDatabaseManager.NoSQLDatabaseManager._initialize_database"
         ):
-            manager = NoSQLDatabaseManager(config_manager=mock_config, test_db_connection=False)
+            manager = NoSQLDatabaseManager(
+                config_manager=mock_config, test_db_connection=False
+            )
             manager.db = mock_db
             manager._client = mock_client
             manager.db_strategy = mock_strategy
@@ -65,20 +70,24 @@ class TestNoSQLDatabaseManagerConnectionTest:
     def test_connection_test_raises_returns_false(self):
         """Lines 181-183: exception in test_connection → False."""
         manager, _, _ = _make_nosql_manager()
-        manager.db_strategy.test_connection.side_effect = RuntimeError("connection failed")
+        manager.db_strategy.test_connection.side_effect = RuntimeError(
+            "connection failed"
+        )
         result = manager.test_connection()
         assert result is False
 
     def test_test_db_connection_true_raises_when_fails(self):
         """Lines 82-94: test_db_connection=True raises DatabaseError when fails."""
-        from askrita.sqlagent.database.NoSQLDatabaseManager import NoSQLDatabaseManager
         from askrita.exceptions import DatabaseError
+        from askrita.sqlagent.database.NoSQLDatabaseManager import NoSQLDatabaseManager
 
         mock_config = MagicMock()
         mock_config.database.connection_string = "mongodb://localhost:27017/testdb"
         mock_config.database.cache_schema = False
 
-        with patch("askrita.sqlagent.database.NoSQLDatabaseManager.MongoDBStrategy") as mock_strategy_cls:
+        with patch(
+            "askrita.sqlagent.database.NoSQLDatabaseManager.MongoDBStrategy"
+        ) as mock_strategy_cls:
             mock_strategy = MagicMock()
             mock_strategy.get_connection_type.return_value = "mongodb"
             mock_strategy.get_safe_connection_info.return_value = "MongoDB: localhost"
@@ -89,7 +98,9 @@ class TestNoSQLDatabaseManagerConnectionTest:
                 "askrita.sqlagent.database.NoSQLDatabaseManager.NoSQLDatabaseManager._initialize_database"
             ):
                 with pytest.raises(DatabaseError, match="connection test failed"):
-                    NoSQLDatabaseManager(config_manager=mock_config, test_db_connection=True)
+                    NoSQLDatabaseManager(
+                        config_manager=mock_config, test_db_connection=True
+                    )
 
 
 class TestNoSQLDatabaseManagerNormalizeResult:
@@ -131,6 +142,7 @@ class TestNoSQLDatabaseManagerNormalizeResult:
 
         class FakeObjectId:
             __name__ = "ObjectId"
+
             def __str__(self):
                 return "abc123"
 
@@ -155,6 +167,7 @@ class TestNoSQLDatabaseManagerNormalizeResult:
     def test_serialize_value_datetime(self):
         """Line 469: datetime type → isoformat()."""
         from datetime import datetime
+
         manager, _, _ = _make_nosql_manager()
         dt = datetime(2024, 1, 15, 10, 30, 0)
         result = manager._serialize_value(dt)
@@ -181,7 +194,9 @@ class TestNoSQLDatabaseManagerGetSampleData:
         """Lines 520-522: outer exception → {}."""
         manager, _, _ = _make_nosql_manager()
         # get_collection_names raises to trigger outer except
-        with patch.object(manager, "get_collection_names", side_effect=RuntimeError("meta error")):
+        with patch.object(
+            manager, "get_collection_names", side_effect=RuntimeError("meta error")
+        ):
             result = manager.get_sample_data()
         assert result == {}
 
@@ -190,9 +205,11 @@ class TestNoSQLDatabaseManagerGetSampleData:
 # pii_detector.py – uncovered branches
 # ============================================================================
 
+
 def _make_pii_config(**kwargs):
     """Return a minimal PIIDetectionConfig."""
     from askrita.config_manager import PIIDetectionConfig
+
     defaults = {
         "enabled": True,
         "entities": ["PERSON", "EMAIL_ADDRESS"],
@@ -212,15 +229,18 @@ def _make_pii_config(**kwargs):
 def _make_pii_detector(extra_config=None):
     """Create PIIDetector with mocked Presidio engine."""
     config = _make_pii_config(**(extra_config or {}))
-    with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True), \
-         patch("askrita.utils.pii_detector.NlpEngineProvider") as mock_provider_cls, \
-         patch("askrita.utils.pii_detector.AnalyzerEngine") as mock_analyzer_cls:
+    with (
+        patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True),
+        patch("askrita.utils.pii_detector.NlpEngineProvider") as mock_provider_cls,
+        patch("askrita.utils.pii_detector.AnalyzerEngine") as mock_analyzer_cls,
+    ):
         mock_provider = MagicMock()
         mock_provider.create_engine.return_value = MagicMock()
         mock_provider_cls.return_value = mock_provider
         mock_analyzer = MagicMock()
         mock_analyzer_cls.return_value = mock_analyzer
         from askrita.utils.pii_detector import PIIDetector
+
         detector = PIIDetector(config)
     return detector
 
@@ -229,53 +249,79 @@ class TestPIIDetectorMissingPaths:
     def test_validate_config_sample_data_rows_too_small(self):
         """Line 142: sample_data_rows < 1 → ConfigurationError."""
         from askrita.exceptions import ConfigurationError
+
         config = _make_pii_config(sample_data_rows=0)
-        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True), \
-             patch("askrita.utils.pii_detector.NlpEngineProvider"), \
-             patch("askrita.utils.pii_detector.AnalyzerEngine"):
+        with (
+            patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True),
+            patch("askrita.utils.pii_detector.NlpEngineProvider"),
+            patch("askrita.utils.pii_detector.AnalyzerEngine"),
+        ):
             from askrita.utils.pii_detector import PIIDetector
-            with pytest.raises(ConfigurationError, match="Sample data rows must be at least 1"):
+
+            with pytest.raises(
+                ConfigurationError, match="Sample data rows must be at least 1"
+            ):
                 PIIDetector(config)
 
     def test_validate_config_timeout_too_small(self):
         """Lines 141-142: sample_data_timeout < 1 → ConfigurationError."""
         from askrita.exceptions import ConfigurationError
+
         config = _make_pii_config(sample_data_timeout=0)
-        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True), \
-             patch("askrita.utils.pii_detector.NlpEngineProvider"), \
-             patch("askrita.utils.pii_detector.AnalyzerEngine"):
+        with (
+            patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True),
+            patch("askrita.utils.pii_detector.NlpEngineProvider"),
+            patch("askrita.utils.pii_detector.AnalyzerEngine"),
+        ):
             from askrita.utils.pii_detector import PIIDetector
-            with pytest.raises(ConfigurationError, match="Sample data timeout must be at least 1 second"):
+
+            with pytest.raises(
+                ConfigurationError,
+                match="Sample data timeout must be at least 1 second",
+            ):
                 PIIDetector(config)
 
     def test_init_exception_raises_configuration_error(self):
         """Lines 124-126: AnalyzerEngine init failure → ConfigurationError."""
         from askrita.exceptions import ConfigurationError
+
         config = _make_pii_config()
-        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True), \
-             patch("askrita.utils.pii_detector.NlpEngineProvider") as mock_p, \
-             patch("askrita.utils.pii_detector.AnalyzerEngine", side_effect=RuntimeError("engine fail")):
+        with (
+            patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True),
+            patch("askrita.utils.pii_detector.NlpEngineProvider") as mock_p,
+            patch(
+                "askrita.utils.pii_detector.AnalyzerEngine",
+                side_effect=RuntimeError("engine fail"),
+            ),
+        ):
             mock_p.return_value.create_engine.return_value = MagicMock()
             from askrita.utils.pii_detector import PIIDetector
-            with pytest.raises(ConfigurationError, match="PII detector initialization failed"):
+
+            with pytest.raises(
+                ConfigurationError, match="PII detector initialization failed"
+            ):
                 PIIDetector(config)
 
     def test_setup_audit_logging_with_path(self, tmp_path):
         """Lines 147-164: audit_log_path set → creates audit logger."""
         log_file = str(tmp_path / "audit.log")
         config = _make_pii_config(audit_log_path=log_file, log_pii_attempts=True)
-        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True), \
-             patch("askrita.utils.pii_detector.NlpEngineProvider") as mock_p, \
-             patch("askrita.utils.pii_detector.AnalyzerEngine") as mock_a:
+        with (
+            patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True),
+            patch("askrita.utils.pii_detector.NlpEngineProvider") as mock_p,
+            patch("askrita.utils.pii_detector.AnalyzerEngine") as mock_a,
+        ):
             mock_p.return_value.create_engine.return_value = MagicMock()
             mock_a.return_value = MagicMock()
             from askrita.utils.pii_detector import PIIDetector
+
             detector = PIIDetector(config)
         assert detector.audit_logger is not None
 
     def test_detect_pii_exception_raises_validation_error(self):
         """Lines 247-249: exception in analyzer.analyze → ValidationError."""
         from askrita.exceptions import ValidationError
+
         detector = _make_pii_detector()
         detector.analyzer.analyze.side_effect = RuntimeError("analyzer failed")
         with pytest.raises(ValidationError, match="PII analysis failed"):
@@ -320,6 +366,7 @@ class TestPIIDetectorMissingPaths:
     def test_scan_table_rows_stops_at_sample_rows_limit(self):
         """Line 307: rows_checked >= sample_rows → break."""
         import time as time_module
+
         detector = _make_pii_detector()
         detector.config.log_pii_attempts = False
 
@@ -340,8 +387,11 @@ class TestPIIDetectorMissingPaths:
         }
         # Use a very large start_time so no timeout fires
         timed_out = detector._scan_table_rows_for_pii(
-            "my_table", table_data, sample_rows=3,
-            start_time=time_module.time(), validation_results=validation_results
+            "my_table",
+            table_data,
+            sample_rows=3,
+            start_time=time_module.time(),
+            validation_results=validation_results,
         )
         assert timed_out is False
         assert detector.detect_pii_in_text.call_count == 3  # stopped at limit
@@ -367,6 +417,7 @@ class TestPIIDetectorMissingPaths:
 # schema_decorators.py – DescriptionMerger uncovered paths
 # ============================================================================
 
+
 class TestDescriptionMerger:
     def _make_manual_config(self, columns=None, fallback=True):
         """Create a SchemaDescriptionsConfig mock."""
@@ -378,6 +429,7 @@ class TestDescriptionMerger:
     def test_extract_string_value_column_description_config(self):
         """Lines 617-623: ColumnDescriptionConfig duck-type → .description used."""
         from askrita.sqlagent.database.schema_decorators import DescriptionMerger
+
         manual_config = self._make_manual_config()
         merger = DescriptionMerger(manual_config)
 
@@ -392,6 +444,7 @@ class TestDescriptionMerger:
     def test_extract_string_value_fallback_str(self):
         """Lines 624-627: non-standard type → str(value)."""
         from askrita.sqlagent.database.schema_decorators import DescriptionMerger
+
         manual_config = self._make_manual_config()
         merger = DescriptionMerger(manual_config)
         result = merger._extract_string_value(42)
@@ -400,6 +453,7 @@ class TestDescriptionMerger:
     def test_combine_text_and_context_with_context(self):
         """Lines 632-634: context provided → joined with ' | '."""
         from askrita.sqlagent.database.schema_decorators import DescriptionMerger
+
         manual_config = self._make_manual_config()
         merger = DescriptionMerger(manual_config)
         result = DescriptionMerger._combine_text_and_context("desc", "context")
@@ -408,6 +462,7 @@ class TestDescriptionMerger:
     def test_auto_or_column_fallback_uses_column_name(self):
         """Lines 642-644: no auto_desc + fallback_to_column_name=True → formatted name."""
         from askrita.sqlagent.database.schema_decorators import DescriptionMerger
+
         manual_config = self._make_manual_config(fallback=True)
         merger = DescriptionMerger(manual_config)
         result = merger._auto_or_column_fallback(None, "customer_id")
@@ -416,9 +471,12 @@ class TestDescriptionMerger:
     def test_merge_supplement_all_parts(self):
         """Lines 650-661: supplement mode with all parts."""
         from askrita.sqlagent.database.schema_decorators import DescriptionMerger
+
         manual_config = self._make_manual_config()
         merger = DescriptionMerger(manual_config)
-        result = merger._merge_supplement("auto desc", "manual text", "biz context", "col_name")
+        result = merger._merge_supplement(
+            "auto desc", "manual text", "biz context", "col_name"
+        )
         assert "auto desc" in result
         assert "manual text" in result
         assert "biz context" in result
@@ -426,6 +484,7 @@ class TestDescriptionMerger:
     def test_merge_supplement_fallback_when_all_empty(self):
         """Lines 659-660: supplement with no parts + fallback → column name."""
         from askrita.sqlagent.database.schema_decorators import DescriptionMerger
+
         manual_config = self._make_manual_config(fallback=True)
         merger = DescriptionMerger(manual_config)
         result = merger._merge_supplement(None, "", "", "some_column")
@@ -504,7 +563,10 @@ class TestHybridDescriptionDecorator:
 
     def test_extract_automatic_descriptions_postgresql(self):
         """Lines 823-826: PostgreSQL path → empty dict (not implemented)."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
         config = self._make_config(db_type="PostgreSQL")
         result = decorator._extract_automatic_descriptions(config)
@@ -512,7 +574,10 @@ class TestHybridDescriptionDecorator:
 
     def test_extract_automatic_descriptions_mysql(self):
         """Lines 827-830: MySQL path → empty dict (not implemented)."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
         config = self._make_config(db_type="MySQL")
         config.database.connection_string = "mysql://host/db"
@@ -521,26 +586,41 @@ class TestHybridDescriptionDecorator:
 
     def test_extract_table_name(self):
         """Lines 836-838: _extract_table_name parses CREATE TABLE."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
         result = HybridDescriptionDecorator._extract_table_name("CREATE TABLE orders (")
         assert result == "orders"
 
     def test_extract_table_name_backtick(self):
         """_extract_table_name strips backticks."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
-        result = HybridDescriptionDecorator._extract_table_name("CREATE TABLE `my.dataset.orders` (")
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
+        result = HybridDescriptionDecorator._extract_table_name(
+            "CREATE TABLE `my.dataset.orders` ("
+        )
         assert result == "my.dataset.orders"
 
     def test_annotate_column_line_no_comma(self):
         """Lines 844-846: line without trailing comma gets comment appended."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
         result = decorator._annotate_column_line("  `col` INTEGER", "A description")
         assert "-- A description" in result
 
     def test_process_column_line_with_description(self):
         """Lines 857-865: _process_column_line adds description when available."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator, DescriptionMerger
+        from askrita.sqlagent.database.schema_decorators import (
+            DescriptionMerger,
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
         manual_config = MagicMock()
         manual_config.columns = {}
@@ -555,7 +635,11 @@ class TestHybridDescriptionDecorator:
 
     def test_add_descriptions_to_schema(self):
         """Lines 868-910: _add_descriptions_to_schema processes a CREATE TABLE."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator, DescriptionMerger
+        from askrita.sqlagent.database.schema_decorators import (
+            DescriptionMerger,
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
 
         manual_config = MagicMock()
@@ -565,13 +649,18 @@ class TestHybridDescriptionDecorator:
 
         schema = "CREATE TABLE orders (\n  id INTEGER,\n  amount FLOAT\n);"
         auto_descriptions = {"orders": {"amount": "Order total"}}
-        result = decorator._add_descriptions_to_schema(schema, auto_descriptions, merger)
+        result = decorator._add_descriptions_to_schema(
+            schema, auto_descriptions, merger
+        )
         assert isinstance(result, str)
         assert "Order total" in result
 
     def test_create_business_glossary_non_string_definition(self):
         """Lines 920-929: non-string definition → converted to string."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
         terms = {"KPI": "Key Performance Indicator", "MRR": 12345}  # int value
         result = decorator._create_business_glossary(terms)
@@ -580,7 +669,10 @@ class TestHybridDescriptionDecorator:
 
     def test_create_business_glossary_none_definition(self):
         """Lines 920-929: None definition → 'No definition provided'."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
         terms = {"TERM": None}
         result = decorator._create_business_glossary(terms)
@@ -588,7 +680,10 @@ class TestHybridDescriptionDecorator:
 
     def test_enhance_schema_with_project_context(self):
         """Lines 760-764: project_context adds -- PROJECT header."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
         config = self._make_config()
         desc_config = config.get_schema_descriptions()
@@ -602,7 +697,10 @@ class TestHybridDescriptionDecorator:
 
     def test_enhance_schema_with_business_terms(self):
         """Lines 772-774: business_terms adds glossary."""
-        from askrita.sqlagent.database.schema_decorators import HybridDescriptionDecorator
+        from askrita.sqlagent.database.schema_decorators import (
+            HybridDescriptionDecorator,
+        )
+
         decorator = HybridDescriptionDecorator(MagicMock())
         config = self._make_config()
         desc_config = config.get_schema_descriptions()

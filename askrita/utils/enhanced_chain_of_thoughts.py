@@ -373,7 +373,9 @@ class EnhancedChainOfThoughtsTracker:
             return step, step_name
 
         if not self._active_steps:
-            logger.warning("Attempted to complete step but no steps are currently active")
+            logger.warning(
+                "Attempted to complete step but no steps are currently active"
+            )
             return None, None
 
         step = list(self._active_steps.values())[-1]
@@ -704,7 +706,9 @@ def track_step(
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             cot_tracker = _resolve_cot_tracker(args, kwargs)
-            with StepTracker(cot_tracker, step_name, step_type, reasoning, input_summary):
+            with StepTracker(
+                cot_tracker, step_name, step_type, reasoning, input_summary
+            ):
                 return func(*args, **kwargs)
 
         return wrapper

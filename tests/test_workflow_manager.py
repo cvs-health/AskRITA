@@ -19,46 +19,60 @@
 
 """Tests for SQLAgentWorkflow functionality."""
 
-import pytest
 import os
 from unittest.mock import Mock, patch
 
-from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
+import pytest
+
 from askrita.exceptions import ValidationError
 from askrita.sqlagent.State import WorkflowState
+from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 
 
 @pytest.fixture(autouse=True)
 def mock_openai_api_key():
     """Automatically mock OPENAI_API_KEY for all workflow tests."""
-    with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-api-key'}):
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "test-api-key"}):
         yield
 
 
 class TestSQLAgentWorkflow:
     """Test cases for SQLAgentWorkflow class."""
 
-    def test_initialization(self, mock_config, mock_database_manager, mock_llm_manager, mock_data_formatter):
+    def test_initialization(
+        self, mock_config, mock_database_manager, mock_llm_manager, mock_data_formatter
+    ):
         """Test SQLAgentWorkflow initialization."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow') as mock_create_workflow, \
-             patch.object(SQLAgentWorkflow, 'preload_schema'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow") as mock_create_workflow,
+            patch.object(SQLAgentWorkflow, "preload_schema"),
+        ):
 
             mock_db_class.return_value = mock_database_manager
             mock_llm_class.return_value = mock_llm_manager
             mock_formatter_class.return_value = mock_data_formatter
             mock_create_workflow.return_value = Mock(compile=Mock(return_value=Mock()))
 
-            workflow_manager = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow_manager = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
 
             # Verify basic initialization without exact object comparison
             assert workflow_manager.config == mock_config
-            assert hasattr(workflow_manager, 'db_manager')
-            assert hasattr(workflow_manager, 'llm_manager')
-            assert hasattr(workflow_manager, 'data_formatter')
-            assert hasattr(workflow_manager, '_compiled_graph')
+            assert hasattr(workflow_manager, "db_manager")
+            assert hasattr(workflow_manager, "llm_manager")
+            assert hasattr(workflow_manager, "data_formatter")
+            assert hasattr(workflow_manager, "_compiled_graph")
 
 
 class TestWorkflowCreation:
@@ -75,7 +89,7 @@ class TestWorkflowCreation:
             "execute_sql": True,
             "format_results": True,
             "choose_visualization": True,
-            "format_data_for_visualization": True
+            "format_data_for_visualization": True,
         }
 
         workflow = mock_workflow_manager.create_workflow()
@@ -94,7 +108,7 @@ class TestWorkflowCreation:
             "execute_sql": True,
             "format_results": True,
             "choose_visualization": True,
-            "format_data_for_visualization": True
+            "format_data_for_visualization": True,
         }
 
         workflow = mock_workflow_manager.create_workflow()
@@ -113,7 +127,7 @@ class TestWorkflowCreation:
             "execute_sql": False,
             "format_results": False,
             "choose_visualization": False,
-            "format_data_for_visualization": False
+            "format_data_for_visualization": False,
         }
 
         workflow = mock_workflow_manager.create_workflow()
@@ -156,7 +170,9 @@ class TestQuery:
     def test_query_input_validation_string_type(self, mock_workflow_manager):
         """Test input validation for non-string question."""
         # Configure mock to raise ValidationError for this specific test
-        mock_workflow_manager.query.side_effect = ValidationError("Question must be a string")
+        mock_workflow_manager.query.side_effect = ValidationError(
+            "Question must be a string"
+        )
 
         with pytest.raises(ValidationError, match="Question must be a string"):
             mock_workflow_manager.query(123)  # Not a string
@@ -164,7 +180,9 @@ class TestQuery:
     def test_query_input_validation_empty_string(self, mock_workflow_manager):
         """Test input validation for empty question."""
         # Configure mock to raise ValidationError for empty strings
-        mock_workflow_manager.query.side_effect = ValidationError("Question cannot be empty")
+        mock_workflow_manager.query.side_effect = ValidationError(
+            "Question cannot be empty"
+        )
 
         with pytest.raises(ValidationError, match="Question cannot be empty"):
             mock_workflow_manager.query("")
@@ -188,11 +206,13 @@ class TestQuery:
             "Show me data <script>alert('xss')</script>",
             "Get customer info javascript:void(0)",
             "Find orders data:text/html,<script>alert(1)</script>",
-            "Show sales @@version"
+            "Show sales @@version",
         ]
 
         # Configure mock to raise ValidationError for suspicious content
-        mock_workflow_manager.query.side_effect = ValidationError("potentially unsafe content")
+        mock_workflow_manager.query.side_effect = ValidationError(
+            "potentially unsafe content"
+        )
 
         for question in suspicious_questions:
             with pytest.raises(ValidationError, match="potentially unsafe content"):
@@ -203,7 +223,9 @@ class TestQuery:
         question = "What are the sales?"
 
         # Configure mock to raise database exception
-        mock_workflow_manager.query.side_effect = Exception("database connection failed")
+        mock_workflow_manager.query.side_effect = Exception(
+            "database connection failed"
+        )
 
         with pytest.raises(Exception, match="database connection failed"):
             mock_workflow_manager.query(question)
@@ -213,7 +235,9 @@ class TestQuery:
         question = "What are the sales?"
 
         # Configure mock to raise LLM exception
-        mock_workflow_manager.query.side_effect = Exception("openai api rate limit exceeded")
+        mock_workflow_manager.query.side_effect = Exception(
+            "openai api rate limit exceeded"
+        )
 
         with pytest.raises(Exception, match="openai api rate limit exceeded"):
             mock_workflow_manager.query(question)
@@ -266,13 +290,25 @@ class TestWorkflowIntegration:
         # Set up mock config with proper validation settings
         mock_config.get_input_validation_settings.return_value = {
             "max_question_length": 10000,
-            "blocked_substrings": ['<script', 'javascript:', 'data:', 'vbscript:', '@@']
+            "blocked_substrings": [
+                "<script",
+                "javascript:",
+                "data:",
+                "vbscript:",
+                "@@",
+            ],
         }
 
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow') as mock_create_workflow:
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow") as mock_create_workflow,
+        ):
 
             # Setup mocks for the constructor
             mock_db_class.return_value = Mock()
@@ -280,7 +316,9 @@ class TestWorkflowIntegration:
             mock_formatter_class.return_value = Mock()
             mock_create_workflow.return_value = Mock(compile=Mock(return_value=Mock()))
 
-            workflow_manager = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False)
+            workflow_manager = SQLAgentWorkflow(
+                mock_config, test_llm_connection=False, test_db_connection=False
+            )
 
             # Create expected end-to-end result
             expected_result = {
@@ -298,8 +336,16 @@ class TestWorkflowIntegration:
                 "chart_data": {
                     "type": "bar",
                     "title": "Top Customers by Revenue",
-                    "datasets": [{"label": "Revenue", "data": [{"label": "Customer A", "value": 1000}, {"label": "Customer B", "value": 1500}]}]
-                }
+                    "datasets": [
+                        {
+                            "label": "Revenue",
+                            "data": [
+                                {"label": "Customer A", "value": 1000},
+                                {"label": "Customer B", "value": 1500},
+                            ],
+                        }
+                    ],
+                },
             }
 
             # Mock the _compiled_graph.invoke method to return our expected result
@@ -309,9 +355,13 @@ class TestWorkflowIntegration:
             result = workflow_manager.query("What are the top customers by revenue?")
 
             # Verify all expected fields are present - result is now WorkflowState object
-            assert result.answer == "Top customers: Customer B ($1500), Customer A ($1000)"
+            assert (
+                result.answer == "Top customers: Customer B ($1500), Customer A ($1000)"
+            )
             assert result.visualization == "bar"
-            assert result.visualization_reason == "Bar chart is best for comparing values"
+            assert (
+                result.visualization_reason == "Bar chart is best for comparing values"
+            )
             assert result.chart_data is not None  # Only UniversalChartData now
 
     def test_workflow_with_step_failures(self, mock_config):
@@ -319,13 +369,25 @@ class TestWorkflowIntegration:
         # Set up mock config with proper validation settings
         mock_config.get_input_validation_settings.return_value = {
             "max_question_length": 10000,
-            "blocked_substrings": ['<script', 'javascript:', 'data:', 'vbscript:', '@@']
+            "blocked_substrings": [
+                "<script",
+                "javascript:",
+                "data:",
+                "vbscript:",
+                "@@",
+            ],
         }
 
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow') as mock_create_workflow:
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow") as mock_create_workflow,
+        ):
 
             # Setup mocks for the constructor
             mock_db_class.return_value = Mock()
@@ -333,7 +395,9 @@ class TestWorkflowIntegration:
             mock_formatter_class.return_value = Mock()
             mock_create_workflow.return_value = Mock(compile=Mock(return_value=Mock()))
 
-            workflow_manager = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False)
+            workflow_manager = SQLAgentWorkflow(
+                mock_config, test_llm_connection=False, test_db_connection=False
+            )
 
             # The workflow should handle individual step failures gracefully
             # and not crash the entire process
@@ -345,7 +409,7 @@ class TestWorkflowIntegration:
                 "answer": "Error processing question",
                 "visualization": "none",
                 "visualization_reason": "No data to visualize",
-                "chart_data": None
+                "chart_data": None,
             }
 
             # Should not raise an exception despite step failures
@@ -365,25 +429,40 @@ class TestSQLAgentWorkflowEdgeCases:
         sample_config_data["workflow"]["steps"]["validate_and_fix_sql"] = False
         sample_config_data["workflow"]["max_retries"] = 5
 
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True), \
-             patch('askrita.utils.LLMManager', create=True), \
-             patch('askrita.sqlagent.formatters.DataFormatter', create=True), \
-             patch.object(SQLAgentWorkflow, '_create_workflow') as mock_create_workflow:
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ),
+            patch("askrita.utils.LLMManager", create=True),
+            patch("askrita.sqlagent.formatters.DataFormatter", create=True),
+            patch.object(SQLAgentWorkflow, "_create_workflow") as mock_create_workflow,
+        ):
+
+            import os
+
+            # Create a real config with custom settings
+            import tempfile
+
+            import yaml
 
             from askrita.config_manager import ConfigManager
 
-            # Create a real config with custom settings
-            import tempfile, yaml, os
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".yaml", delete=False
+            ) as f:
                 yaml.dump(sample_config_data, f)
                 temp_path = f.name
 
             try:
                 # Setup mock workflow creation
-                mock_create_workflow.return_value = Mock(compile=Mock(return_value=Mock()))
+                mock_create_workflow.return_value = Mock(
+                    compile=Mock(return_value=Mock())
+                )
 
                 config = ConfigManager(temp_path)
-                SQLAgentWorkflow(config, test_llm_connection=False, test_db_connection=False)
+                SQLAgentWorkflow(
+                    config, test_llm_connection=False, test_db_connection=False
+                )
 
                 # Verify configuration is properly set
                 assert config.workflow.max_retries == 5
@@ -397,7 +476,7 @@ class TestSQLAgentWorkflowEdgeCases:
         questions_with_whitespace = [
             "  What are the sales?  ",
             "\t\nWhat are the sales?\n\t",
-            "What are the sales?   \r\n"
+            "What are the sales?   \r\n",
         ]
 
         for question in questions_with_whitespace:
@@ -405,7 +484,7 @@ class TestSQLAgentWorkflowEdgeCases:
                 "answer": "Sales data",
                 "visualization": "bar",
                 "visualization_reason": "Good for sales",
-                "chart_data": {}
+                "chart_data": {},
             }
 
             # Configure mock to return expected result
@@ -424,7 +503,9 @@ class TestSQLAgentWorkflowEdgeCases:
         question = "What are the sales?"
 
         # Configure mock to raise ValidationError
-        mock_workflow_manager.query.side_effect = ValidationError("Input validation failed")
+        mock_workflow_manager.query.side_effect = ValidationError(
+            "Input validation failed"
+        )
 
         # ValidationError should be re-raised as-is
         with pytest.raises(ValidationError, match="Input validation failed"):
@@ -434,8 +515,10 @@ class TestSQLAgentWorkflowEdgeCases:
         """Test SQLAgentWorkflow initialization with None config."""
         # This test verifies that get_config() is called when None is passed
         # We'll patch the constructor to avoid complex initialization
-        with patch.object(SQLAgentWorkflow, '__init__', return_value=None), \
-             patch('askrita.config_manager.get_config') as mock_get_config:
+        with (
+            patch.object(SQLAgentWorkflow, "__init__", return_value=None),
+            patch("askrita.config_manager.get_config") as mock_get_config,
+        ):
 
             mock_config = Mock()
             mock_get_config.return_value = mock_config

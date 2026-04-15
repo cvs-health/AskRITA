@@ -624,17 +624,31 @@ Generate the universal_format field for this {visualization} chart. Analyze the 
 
         Returns (system_prompt, human_prompt, chart_example, uses_dynamic_examples).
         """
-        system_prompt = self.config.get_prompt("format_data_universal", "system") if self.config else ""
-        human_prompt = self.config.get_prompt("format_data_universal", "human") if self.config else ""
+        system_prompt = (
+            self.config.get_prompt("format_data_universal", "system")
+            if self.config
+            else ""
+        )
+        human_prompt = (
+            self.config.get_prompt("format_data_universal", "human")
+            if self.config
+            else ""
+        )
         chart_example = self._get_chart_example_for_visualization(visualization)
-        uses_dynamic_examples = "{chart_example}" in system_prompt if system_prompt else False
+        uses_dynamic_examples = (
+            "{chart_example}" in system_prompt if system_prompt else False
+        )
 
         if not system_prompt:
-            logger.warning("Using hardcoded system prompt for format_data_universal - consider adding to config")
+            logger.warning(
+                "Using hardcoded system prompt for format_data_universal - consider adding to config"
+            )
             system_prompt = self._HARDCODED_SYSTEM_PROMPT
 
         if not human_prompt:
-            logger.warning("Using hardcoded human prompt for format_data_universal - consider adding to config")
+            logger.warning(
+                "Using hardcoded human prompt for format_data_universal - consider adding to config"
+            )
             human_prompt = self._HARDCODED_HUMAN_PROMPT
 
         return system_prompt, human_prompt, chart_example, uses_dynamic_examples
@@ -666,11 +680,27 @@ Generate the universal_format field for this {visualization} chart. Analyze the 
         if uses_dynamic_examples:
             logger.info(f"Using dynamic chart example injection for '{visualization}'")
             return [
-                {"role": "system", "content": system_prompt.format(visualization=visualization, chart_example=chart_example)},
-                {"role": "user", "content": human_prompt.format(**base_user_params, chart_example=chart_example)},
+                {
+                    "role": "system",
+                    "content": system_prompt.format(
+                        visualization=visualization, chart_example=chart_example
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": human_prompt.format(
+                        **base_user_params, chart_example=chart_example
+                    ),
+                },
             ]
-        logger.info(f"Using legacy config with all chart examples for '{visualization}'")
-        system_content = system_prompt.format(visualization=visualization) if "{visualization}" in system_prompt else system_prompt
+        logger.info(
+            f"Using legacy config with all chart examples for '{visualization}'"
+        )
+        system_content = (
+            system_prompt.format(visualization=visualization)
+            if "{visualization}" in system_prompt
+            else system_prompt
+        )
         return [
             {"role": "system", "content": system_content},
             {"role": "user", "content": human_prompt.format(**base_user_params)},
@@ -691,12 +721,20 @@ Generate the universal_format field for this {visualization} chart. Analyze the 
         """Generate universal chart format in a single efficient LLM call - no more legacy format."""
         try:
             sample_data = results[:5] if len(results) > 5 else results
-            system_prompt, human_prompt, chart_example, uses_dynamic_examples = self._load_prompts(visualization)
+            system_prompt, human_prompt, chart_example, uses_dynamic_examples = (
+                self._load_prompts(visualization)
+            )
 
             num_rows = len(results)
             num_cols = len(results[0]) if results else 0
-            results_limit = getattr(self.config.framework, "results_limit_for_llm", 100) if self.config else 100
-            full_data = results[:results_limit] if len(results) > results_limit else results
+            results_limit = (
+                getattr(self.config.framework, "results_limit_for_llm", 100)
+                if self.config
+                else 100
+            )
+            full_data = (
+                results[:results_limit] if len(results) > results_limit else results
+            )
 
             structured_llm = self.llm_manager.llm.with_structured_output(
                 DualVisualizationResponse,
@@ -704,14 +742,25 @@ Generate the universal_format field for this {visualization} chart. Analyze the 
             )
 
             messages = self._build_llm_messages(
-                system_prompt, human_prompt, chart_example, uses_dynamic_examples,
-                visualization, question, sql_query, num_rows, num_cols, sample_data, full_data,
+                system_prompt,
+                human_prompt,
+                chart_example,
+                uses_dynamic_examples,
+                visualization,
+                question,
+                sql_query,
+                num_rows,
+                num_cols,
+                sample_data,
+                full_data,
             )
 
             response = structured_llm.invoke(messages)
             chart_data = self._extract_chart_data_from_response(response)
 
-            logger.info(f"Single LLM call generated universal format for {visualization} chart")
+            logger.info(
+                f"Single LLM call generated universal format for {visualization} chart"
+            )
             return {"chart_data": chart_data}
 
         except Exception as e:

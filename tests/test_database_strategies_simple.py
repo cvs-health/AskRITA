@@ -14,12 +14,14 @@
 
 """Simple tests for database_strategies - just boost coverage."""
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
+
 from askrita.sqlagent.database.database_strategies import (
     BigQueryStrategy,
     PostgreSQLStrategy,
-    SnowflakeStrategy
+    SnowflakeStrategy,
 )
 
 
@@ -105,19 +107,31 @@ class TestSnowflakeStrategy:
 
 def test_safe_connection_info_defaults():
     """Test safe connection info helpers for strategies."""
-    assert BigQueryStrategy().get_safe_connection_info('bigquery://test-project/test-dataset').startswith('BigQuery:')
-    assert SnowflakeStrategy().get_safe_connection_info('snowflake://test-account/test-db').startswith('Snowflake:')
-    assert 'configured database' not in PostgreSQLStrategy().get_safe_connection_info('postgresql://test-user:test-pass@localhost:5432/test-db')
+    assert (
+        BigQueryStrategy()
+        .get_safe_connection_info("bigquery://test-project/test-dataset")
+        .startswith("BigQuery:")
+    )
+    assert (
+        SnowflakeStrategy()
+        .get_safe_connection_info("snowflake://test-account/test-db")
+        .startswith("Snowflake:")
+    )
+    assert "configured database" not in PostgreSQLStrategy().get_safe_connection_info(
+        "postgresql://test-user:test-pass@localhost:5432/test-db"
+    )
 
 
 def test_pg_snow_basic_paths():
     """Test basic auth/test/enhance for Postgres and Snowflake."""
     pg = PostgreSQLStrategy()
     sf = SnowflakeStrategy()
-    cfg = Mock(); db = Mock()
+    cfg = Mock()
+    db = Mock()
 
     # setup_auth logs don't throw
-    pg.setup_auth(cfg); sf.setup_auth(cfg)
+    pg.setup_auth(cfg)
+    sf.setup_auth(cfg)
 
     # test_connection success and failure through run_no_throw
     db.run_no_throw.return_value = "OK"
@@ -129,8 +143,8 @@ def test_pg_snow_basic_paths():
     assert sf.test_connection(db, cfg) is False
 
     # enhance_schema no-op
-    assert pg.enhance_schema('schema', cfg) == 'schema'
-    assert sf.enhance_schema('schema', cfg) == 'schema'
+    assert pg.enhance_schema("schema", cfg) == "schema"
+    assert sf.enhance_schema("schema", cfg) == "schema"
 
 
 def test_database_factory_is_nosql():
@@ -138,7 +152,12 @@ def test_database_factory_is_nosql():
     from askrita.sqlagent.database.database_factory import DatabaseStrategyFactory
 
     assert DatabaseStrategyFactory.is_nosql("mongodb://host:27017/db") is True
-    assert DatabaseStrategyFactory.is_nosql("mongodb+srv://user:pass@cluster.mongodb.net/db") is True
+    assert (
+        DatabaseStrategyFactory.is_nosql(
+            "mongodb+srv://user:pass@cluster.mongodb.net/db"
+        )
+        is True
+    )
     assert DatabaseStrategyFactory.is_nosql("MONGODB://HOST:27017/DB") is True
     assert DatabaseStrategyFactory.is_nosql("postgresql://host:5432/db") is False
     assert DatabaseStrategyFactory.is_nosql("bigquery://project/dataset") is False
@@ -150,40 +169,47 @@ def test_database_factory_is_nosql():
 # DatabaseStrategyFactory – additional coverage (lines 71, 75, 82-85, 103, 132-138)
 # ---------------------------------------------------------------------------
 
+
 class TestDatabaseStrategyFactory:
     """Tests for DatabaseStrategyFactory missing coverage lines."""
 
     def setup_method(self):
         from askrita.sqlagent.database.database_factory import DatabaseStrategyFactory
+
         self.factory = DatabaseStrategyFactory
 
     def test_create_strategy_raises_for_empty_string(self):
         """Line 71: empty string raises DatabaseError."""
         from askrita.exceptions import DatabaseError
+
         with pytest.raises(DatabaseError, match="non-empty string"):
             self.factory.create_strategy("")
 
     def test_create_strategy_raises_for_none(self):
         """Line 71: None raises DatabaseError."""
         from askrita.exceptions import DatabaseError
+
         with pytest.raises(DatabaseError, match="non-empty string"):
             self.factory.create_strategy(None)
 
     def test_create_strategy_raises_for_non_string(self):
         """Line 71: non-string raises DatabaseError."""
         from askrita.exceptions import DatabaseError
+
         with pytest.raises(DatabaseError, match="non-empty string"):
             self.factory.create_strategy(12345)
 
     def test_create_strategy_raises_for_missing_scheme_separator(self):
         """Line 75: connection string without '://' raises DatabaseError."""
         from askrita.exceptions import DatabaseError
+
         with pytest.raises(DatabaseError, match="Invalid connection string format"):
             self.factory.create_strategy("no-scheme-separator")
 
     def test_create_strategy_fallback_for_unknown_db_type(self):
         """Lines 82-85: unsupported db type falls back to PostgreSQL strategy."""
         from askrita.sqlagent.database.database_strategies import PostgreSQLStrategy
+
         strategy = self.factory.create_strategy("mysql+asyncpg://host/db")
         assert isinstance(strategy, PostgreSQLStrategy)
 
@@ -223,10 +249,11 @@ class TestDatabaseStrategyFactory:
         """Smoke-test that known database types return the correct strategy."""
         from askrita.sqlagent.database.database_strategies import (
             BigQueryStrategy,
-            SnowflakeStrategy,
-            PostgreSQLStrategy,
             DB2Strategy,
+            PostgreSQLStrategy,
+            SnowflakeStrategy,
         )
+
         cases = [
             ("bigquery://project/dataset", BigQueryStrategy),
             ("snowflake://account/db", SnowflakeStrategy),

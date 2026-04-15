@@ -121,9 +121,8 @@ class LLMManager:
     @staticmethod
     def _is_missing_langchain_dep(error_msg: str) -> bool:
         """Return True if the error indicates a missing langchain dependency."""
-        return (
-            ("import" in error_msg and "langchain" in error_msg)
-            or ("no module named" in error_msg and "langchain" in error_msg)
+        return ("import" in error_msg and "langchain" in error_msg) or (
+            "no module named" in error_msg and "langchain" in error_msg
         )
 
     def _raise_init_error(self, exc: Exception) -> None:
@@ -166,9 +165,7 @@ class LLMManager:
                 return self._initialize_vertex_ai()
             if provider == "bedrock":
                 return self._initialize_bedrock()
-            raise ConfigurationError(
-                f"Unsupported LLM provider: {llm_config.provider}"
-            )
+            raise ConfigurationError(f"Unsupported LLM provider: {llm_config.provider}")
 
         except Exception as e:
             logger.error(f"Failed to initialize LLM: {e}")
@@ -176,8 +173,11 @@ class LLMManager:
 
     @staticmethod
     def _build_azure_credential_with_ca_bundle(
-        tenant_id: str, client_id: str, certificate_path: str,
-        certificate_password: Optional[str], ca_bundle_path: str,
+        tenant_id: str,
+        client_id: str,
+        certificate_path: str,
+        certificate_password: Optional[str],
+        ca_bundle_path: str,
     ):
         """Build a CertificateCredential configured with a custom CA bundle transport."""
         import requests
@@ -195,18 +195,24 @@ class LLMManager:
             password=certificate_password,
             transport=transport,
         )
-        logger.info("✅ Configured Azure CertificateCredential with custom transport and CA bundle")
+        logger.info(
+            "✅ Configured Azure CertificateCredential with custom transport and CA bundle"
+        )
         return credential
 
     @staticmethod
     def _build_azure_credential_default(
-        tenant_id: str, client_id: str, certificate_path: str,
+        tenant_id: str,
+        client_id: str,
+        certificate_path: str,
         certificate_password: Optional[str],
     ):
         """Build a CertificateCredential using default SSL verification."""
         from azure.identity import CertificateCredential
 
-        logger.warning("⚠️ No CA bundle found for Azure Identity - SSL verification may fail")
+        logger.warning(
+            "⚠️ No CA bundle found for Azure Identity - SSL verification may fail"
+        )
         return CertificateCredential(
             tenant_id=tenant_id,
             client_id=client_id,
@@ -232,7 +238,11 @@ class LLMManager:
             ca_bundle_path = os.environ.get("SSL_CERT_FILE")
             if ca_bundle_path and os.path.exists(ca_bundle_path):
                 credential = self._build_azure_credential_with_ca_bundle(
-                    tenant_id, client_id, certificate_path, certificate_password, ca_bundle_path
+                    tenant_id,
+                    client_id,
+                    certificate_path,
+                    certificate_password,
+                    ca_bundle_path,
                 )
             else:
                 credential = self._build_azure_credential_default(
@@ -289,7 +299,7 @@ class LLMManager:
             except Exception as e:
                 raise LLMError(f"Failed to configure custom CA bundle: {e}")
 
-        return ChatOpenAI(**params)
+        return ChatOpenAI(**params)  # type: ignore[arg-type]
 
     def _initialize_azure_openai(self) -> BaseChatModel:
         """Initialize Azure OpenAI LLM with certificate-based authentication."""
@@ -343,7 +353,7 @@ class LLMManager:
             "verbose": True,
         }
 
-        return AzureChatOpenAI(**params)
+        return AzureChatOpenAI(**params)  # type: ignore[arg-type]
 
     def _initialize_vertex_ai(self) -> BaseChatModel:
         """Initialize GCP Vertex AI LLM."""
@@ -367,7 +377,7 @@ class LLMManager:
         if llm_config.credentials_path:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = llm_config.credentials_path
 
-        return ChatVertexAI(**params)
+        return ChatVertexAI(**params)  # type: ignore[arg-type]
 
     def _initialize_bedrock(self) -> BaseChatModel:
         """Initialize AWS Bedrock LLM."""
@@ -403,7 +413,7 @@ class LLMManager:
             **aws_credentials,
         }
 
-        return ChatBedrock(**params)
+        return ChatBedrock(**params)  # type: ignore[arg-type]
 
     def invoke(self, prompt: ChatPromptTemplate, **kwargs) -> str:
         """
@@ -666,7 +676,9 @@ class LLMManager:
             if human_template:
                 messages.append(("human", human_template))
             else:
-                default_human = self._DEFAULT_HUMAN_TEMPLATES.get(prompt_name, "{question}")
+                default_human = self._DEFAULT_HUMAN_TEMPLATES.get(
+                    prompt_name, "{question}"
+                )
                 messages.append(("human", default_human))
 
             return ChatPromptTemplate.from_messages(messages)
@@ -727,8 +739,14 @@ class LLMManager:
 
         Returns True if a hint was logged, False otherwise.
         """
-        if "api key" in error_msg or "authentication" in error_msg or "unauthorized" in error_msg:
-            logger.error(f"Authentication issue - check your {provider} API key or credentials")
+        if (
+            "api key" in error_msg
+            or "authentication" in error_msg
+            or "unauthorized" in error_msg
+        ):
+            logger.error(
+                f"Authentication issue - check your {provider} API key or credentials"
+            )
             return True
         if "quota" in error_msg or "rate limit" in error_msg:
             logger.error(f"{provider} rate limit or quota exceeded")
@@ -744,18 +762,24 @@ class LLMManager:
             )
             return True
         if "forbidden" in error_msg or "403" in error_msg:
-            logger.error(f"Access forbidden - check your {provider} permissions and subscription")
+            logger.error(
+                f"Access forbidden - check your {provider} permissions and subscription"
+            )
             return True
         return False
 
     @staticmethod
     def _log_provider_connection_hint(error_msg: str, provider: str) -> None:
         """Log a provider-specific diagnostic hint for a connection failure."""
-        if provider == "azure_openai" and ("certificate" in error_msg or "tenant" in error_msg):
+        if provider == "azure_openai" and (
+            "certificate" in error_msg or "tenant" in error_msg
+        ):
             logger.error(
                 "Azure certificate authentication issue - verify certificate path and tenant/client IDs"
             )
-        elif provider == "vertex_ai" and ("project" in error_msg or "location" in error_msg):
+        elif provider == "vertex_ai" and (
+            "project" in error_msg or "location" in error_msg
+        ):
             logger.error(
                 "Google Cloud project/location issue - verify project ID and region settings"
             )
@@ -808,7 +832,9 @@ class LLMManager:
 
         except Exception as e:
             logger.error(f"LLM connection test failed: {e}")
-            self._log_connection_error_hint(str(e).lower(), self.config.llm.provider.lower())
+            self._log_connection_error_hint(
+                str(e).lower(), self.config.llm.provider.lower()
+            )
             return False
 
     def cleanup(self):

@@ -20,11 +20,18 @@
 Tests for PII/PHI detection functionality using Microsoft Presidio.
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
+
 from askrita.config_manager import PIIDetectionConfig
-from askrita.utils.pii_detector import PIIDetector, PIIDetectionResult, create_pii_detector, PRESIDIO_AVAILABLE
 from askrita.exceptions import ConfigurationError
+from askrita.utils.pii_detector import (
+    PRESIDIO_AVAILABLE,
+    PIIDetectionResult,
+    PIIDetector,
+    create_pii_detector,
+)
 
 
 class TestPIIDetectionConfig:
@@ -53,7 +60,7 @@ class TestPIIDetectionConfig:
             block_on_detection=False,
             confidence_threshold=0.8,
             entities=["PERSON", "EMAIL_ADDRESS"],
-            sample_data_rows=50
+            sample_data_rows=50,
         )
 
         assert config.enabled is True
@@ -75,12 +82,14 @@ class TestPIIDetector:
             block_on_detection=True,
             confidence_threshold=0.5,
             entities=["PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER"],
-            validate_sample_data=False  # Skip sample data validation in tests
+            validate_sample_data=False,  # Skip sample data validation in tests
         )
 
-    @patch('askrita.utils.pii_detector.AnalyzerEngine')
-    @patch('askrita.utils.pii_detector.NlpEngineProvider')
-    def test_pii_detector_initialization(self, mock_nlp_provider, mock_analyzer, pii_config):
+    @patch("askrita.utils.pii_detector.AnalyzerEngine")
+    @patch("askrita.utils.pii_detector.NlpEngineProvider")
+    def test_pii_detector_initialization(
+        self, mock_nlp_provider, mock_analyzer, pii_config
+    ):
         """Test PII detector initialization."""
         # Mock the NLP engine provider and analyzer
         mock_provider_instance = Mock()
@@ -109,17 +118,23 @@ class TestPIIDetector:
 
         # Invalid confidence threshold
         config = PIIDetectionConfig(enabled=True, confidence_threshold=1.5)
-        with pytest.raises(ConfigurationError, match="confidence threshold must be between"):
+        with pytest.raises(
+            ConfigurationError, match="confidence threshold must be between"
+        ):
             PIIDetector(config)
 
         # Invalid sample data rows
         config = PIIDetectionConfig(enabled=True, sample_data_rows=0)
-        with pytest.raises(ConfigurationError, match="Sample data rows must be at least 1"):
+        with pytest.raises(
+            ConfigurationError, match="Sample data rows must be at least 1"
+        ):
             PIIDetector(config)
 
-    @patch('askrita.utils.pii_detector.AnalyzerEngine')
-    @patch('askrita.utils.pii_detector.NlpEngineProvider')
-    def test_detect_pii_no_pii_found(self, mock_nlp_provider, mock_analyzer, pii_config):
+    @patch("askrita.utils.pii_detector.AnalyzerEngine")
+    @patch("askrita.utils.pii_detector.NlpEngineProvider")
+    def test_detect_pii_no_pii_found(
+        self, mock_nlp_provider, mock_analyzer, pii_config
+    ):
         """Test PII detection when no PII is found."""
         # Setup mocks
         mock_provider_instance = Mock()
@@ -143,9 +158,11 @@ class TestPIIDetector:
         assert len(result.confidence_scores) == 0
         assert result.analysis_time_ms > 0
 
-    @patch('askrita.utils.pii_detector.AnalyzerEngine')
-    @patch('askrita.utils.pii_detector.NlpEngineProvider')
-    def test_detect_pii_with_pii_found(self, mock_nlp_provider, mock_analyzer, pii_config):
+    @patch("askrita.utils.pii_detector.AnalyzerEngine")
+    @patch("askrita.utils.pii_detector.NlpEngineProvider")
+    def test_detect_pii_with_pii_found(
+        self, mock_nlp_provider, mock_analyzer, pii_config
+    ):
         """Test PII detection when PII is found."""
         # Setup mocks
         mock_provider_instance = Mock()
@@ -177,9 +194,11 @@ class TestPIIDetector:
         assert result.max_confidence == 0.9
         assert "PERSON" in result.entity_types
 
-    @patch('askrita.utils.pii_detector.AnalyzerEngine')
-    @patch('askrita.utils.pii_detector.NlpEngineProvider')
-    def test_detect_pii_low_confidence(self, mock_nlp_provider, mock_analyzer, pii_config):
+    @patch("askrita.utils.pii_detector.AnalyzerEngine")
+    @patch("askrita.utils.pii_detector.NlpEngineProvider")
+    def test_detect_pii_low_confidence(
+        self, mock_nlp_provider, mock_analyzer, pii_config
+    ):
         """Test PII detection with low confidence scores."""
         # Setup mocks
         mock_provider_instance = Mock()
@@ -215,7 +234,7 @@ class TestPIIDetectorWithoutPresidio:
         """Test creating PII detector when Presidio is not available."""
         config = PIIDetectionConfig(enabled=True)
 
-        with patch('askrita.utils.pii_detector.PRESIDIO_AVAILABLE', False):
+        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", False):
             detector = create_pii_detector(config)
             assert detector is None
 
@@ -223,8 +242,10 @@ class TestPIIDetectorWithoutPresidio:
         """Test PII detector initialization when Presidio is not available."""
         config = PIIDetectionConfig(enabled=True)
 
-        with patch('askrita.utils.pii_detector.PRESIDIO_AVAILABLE', False):
-            with pytest.raises(ConfigurationError, match="Presidio analyzer is not available"):
+        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", False):
+            with pytest.raises(
+                ConfigurationError, match="Presidio analyzer is not available"
+            ):
                 PIIDetector(config)
 
 
@@ -237,25 +258,25 @@ class TestPIIDetectorFactory:
         detector = create_pii_detector(config)
         assert detector is None
 
-    @patch('askrita.utils.pii_detector.PIIDetector')
+    @patch("askrita.utils.pii_detector.PIIDetector")
     def test_create_pii_detector_enabled(self, mock_detector_class):
         """Test creating PII detector when enabled."""
         config = PIIDetectionConfig(enabled=True)
         mock_detector_instance = Mock()
         mock_detector_class.return_value = mock_detector_instance
 
-        with patch('askrita.utils.pii_detector.PRESIDIO_AVAILABLE', True):
+        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True):
             detector = create_pii_detector(config)
             assert detector == mock_detector_instance
             mock_detector_class.assert_called_once_with(config)
 
-    @patch('askrita.utils.pii_detector.PIIDetector')
+    @patch("askrita.utils.pii_detector.PIIDetector")
     def test_create_pii_detector_initialization_error(self, mock_detector_class):
         """Test creating PII detector when initialization fails."""
         config = PIIDetectionConfig(enabled=True)
         mock_detector_class.side_effect = Exception("Initialization failed")
 
-        with patch('askrita.utils.pii_detector.PRESIDIO_AVAILABLE', True):
+        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True):
             detector = create_pii_detector(config)
             assert detector is None
 
@@ -270,7 +291,7 @@ class TestPIIDetectionResult:
             detected_entities=[],
             confidence_scores=[],
             blocked=False,
-            analysis_time_ms=10.5
+            analysis_time_ms=10.5,
         )
 
         assert result.has_pii is False
@@ -284,7 +305,7 @@ class TestPIIDetectionResult:
         """Test PII detection result with PII detected."""
         entities = [
             {"entity_type": "PERSON", "score": 0.9},
-            {"entity_type": "EMAIL_ADDRESS", "score": 0.8}
+            {"entity_type": "EMAIL_ADDRESS", "score": 0.8},
         ]
         scores = [0.9, 0.8]
 
@@ -293,7 +314,7 @@ class TestPIIDetectionResult:
             detected_entities=entities,
             confidence_scores=scores,
             blocked=True,
-            analysis_time_ms=25.3
+            analysis_time_ms=25.3,
         )
 
         assert result.has_pii is True
@@ -314,19 +335,21 @@ class TestPIISampleDataValidation:
         db_manager.get_sample_data.return_value = {
             "customers": [
                 {"id": 1, "name": "John Doe", "email": "john@example.com"},
-                {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
+                {"id": 2, "name": "Jane Smith", "email": "jane@example.com"},
             ],
             "orders": [
                 {"order_id": 100, "customer_id": 1, "amount": 250.00},
-                {"order_id": 101, "customer_id": 2, "amount": 150.00}
-            ]
+                {"order_id": 101, "customer_id": 2, "amount": 150.00},
+            ],
         }
         return db_manager
 
-    @patch('askrita.utils.pii_detector.PRESIDIO_AVAILABLE', True)
-    @patch('askrita.utils.pii_detector.AnalyzerEngine', create=True)
-    @patch('askrita.utils.pii_detector.NlpEngineProvider', create=True)
-    def test_validate_sample_data_with_pii(self, mock_nlp_provider, mock_analyzer, mock_database_manager):
+    @patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True)
+    @patch("askrita.utils.pii_detector.AnalyzerEngine", create=True)
+    @patch("askrita.utils.pii_detector.NlpEngineProvider", create=True)
+    def test_validate_sample_data_with_pii(
+        self, mock_nlp_provider, mock_analyzer, mock_database_manager
+    ):
         """Test sample data validation when PII is found."""
         # Setup mocks
         mock_provider_instance = Mock()
@@ -359,12 +382,16 @@ class TestPIISampleDataValidation:
         assert results["total_tables_checked"] == 2
         assert results["has_pii_violations"] is True
         assert len(results["pii_detections"]) > 0
-        assert "customers" in [detection["table"] for detection in results["pii_detections"]]
+        assert "customers" in [
+            detection["table"] for detection in results["pii_detections"]
+        ]
 
-    @patch('askrita.utils.pii_detector.PRESIDIO_AVAILABLE', True)
-    @patch('askrita.utils.pii_detector.AnalyzerEngine', create=True)
-    @patch('askrita.utils.pii_detector.NlpEngineProvider', create=True)
-    def test_validate_sample_data_no_pii(self, mock_nlp_provider, mock_analyzer, mock_database_manager):
+    @patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True)
+    @patch("askrita.utils.pii_detector.AnalyzerEngine", create=True)
+    @patch("askrita.utils.pii_detector.NlpEngineProvider", create=True)
+    def test_validate_sample_data_no_pii(
+        self, mock_nlp_provider, mock_analyzer, mock_database_manager
+    ):
         """Test sample data validation when no PII is found."""
         # Setup mocks
         mock_provider_instance = Mock()
@@ -391,9 +418,9 @@ class TestPIISampleDataValidation:
         """Test sample data validation when disabled."""
         config = PIIDetectionConfig(enabled=True, validate_sample_data=False)
 
-        with patch('askrita.utils.pii_detector.PRESIDIO_AVAILABLE', True):
-            with patch('askrita.utils.pii_detector.AnalyzerEngine', create=True):
-                with patch('askrita.utils.pii_detector.NlpEngineProvider', create=True):
+        with patch("askrita.utils.pii_detector.PRESIDIO_AVAILABLE", True):
+            with patch("askrita.utils.pii_detector.AnalyzerEngine", create=True):
+                with patch("askrita.utils.pii_detector.NlpEngineProvider", create=True):
                     detector = PIIDetector(config)
 
                     mock_db_manager = Mock()
@@ -418,13 +445,13 @@ class TestPIIDetectionIntegration:
             "pii_detection": {
                 "enabled": True,
                 "block_on_detection": True,
-                "entities": ["PERSON", "EMAIL_ADDRESS"]
-            }
+                "entities": ["PERSON", "EMAIL_ADDRESS"],
+            },
         }
 
         # Test configuration loading with validation mocked
-        with patch.object(ConfigManager, 'load_config'):
-            with patch.object(ConfigManager, 'validate_config', return_value=True):
+        with patch.object(ConfigManager, "load_config"):
+            with patch.object(ConfigManager, "validate_config", return_value=True):
                 config_manager = ConfigManager()
                 config_manager._config_data = config_data
 

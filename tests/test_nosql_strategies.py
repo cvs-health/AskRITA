@@ -18,14 +18,15 @@
 
 """Tests for NoSQL database connection strategies."""
 
-import pytest
 from unittest.mock import Mock
 
-from askrita.sqlagent.database.nosql_strategies import (
-    NoSQLConnectionStrategy,
-    MongoDBStrategy,
-)
+import pytest
+
 from askrita.exceptions import DatabaseError
+from askrita.sqlagent.database.nosql_strategies import (
+    MongoDBStrategy,
+    NoSQLConnectionStrategy,
+)
 
 
 class TestNoSQLConnectionStrategy:
@@ -194,7 +195,9 @@ class TestMongoDBStrategy:
         """Test database name extraction from Atlas SRV URI."""
         strategy = MongoDBStrategy()
         mock_config = Mock()
-        mock_config.database.connection_string = "mongodb+srv://user:pass@cluster.mongodb.net/analytics"
+        mock_config.database.connection_string = (
+            "mongodb+srv://user:pass@cluster.mongodb.net/analytics"
+        )
 
         result = strategy._extract_database_name(mock_config)
         assert result == "analytics"
@@ -203,7 +206,9 @@ class TestMongoDBStrategy:
         """Test database name extraction with query parameters."""
         strategy = MongoDBStrategy()
         mock_config = Mock()
-        mock_config.database.connection_string = "mongodb://host:27017/testdb?authSource=admin&retryWrites=true"
+        mock_config.database.connection_string = (
+            "mongodb://host:27017/testdb?authSource=admin&retryWrites=true"
+        )
 
         result = strategy._extract_database_name(mock_config)
         assert result == "testdb"
@@ -229,7 +234,9 @@ class TestMongoDBStrategy:
     def test_get_safe_connection_info_with_credentials(self):
         """Test safe connection info masks credentials."""
         strategy = MongoDBStrategy()
-        result = strategy.get_safe_connection_info("mongodb://admin:secret@cluster.mongodb.net/mydb")
+        result = strategy.get_safe_connection_info(
+            "mongodb://admin:secret@cluster.mongodb.net/mydb"
+        )
         assert "admin" not in result
         assert "secret" not in result
         assert "MongoDB:" in result
@@ -238,7 +245,9 @@ class TestMongoDBStrategy:
     def test_get_safe_connection_info_atlas(self):
         """Test safe connection info for Atlas SRV."""
         strategy = MongoDBStrategy()
-        result = strategy.get_safe_connection_info("mongodb+srv://user:pass@cluster.mongodb.net/db")
+        result = strategy.get_safe_connection_info(
+            "mongodb+srv://user:pass@cluster.mongodb.net/db"
+        )
         assert "user" not in result
         assert "pass" not in result
         assert "MongoDB:" in result

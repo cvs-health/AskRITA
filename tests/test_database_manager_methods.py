@@ -19,16 +19,17 @@
 """Tests for DatabaseManager methods that don't require live DB connections."""
 
 import os
-import pytest
 from unittest.mock import MagicMock, patch
 
-from askrita.sqlagent.database.DatabaseManager import DatabaseManager
-from askrita.exceptions import DatabaseError
+import pytest
 
+from askrita.exceptions import DatabaseError
+from askrita.sqlagent.database.DatabaseManager import DatabaseManager
 
 # ---------------------------------------------------------------------------
 # Fixtures and Helpers
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def openai_env():
@@ -50,12 +51,18 @@ def _make_manager():
     mock_llm = MagicMock()
     mock_db = MagicMock()
 
-    with patch("askrita.sqlagent.database.DatabaseManager.LLMManager", return_value=mock_llm):
-        with patch("askrita.sqlagent.database.DatabaseManager.DatabaseStrategyFactory") as mock_factory:
+    with patch(
+        "askrita.sqlagent.database.DatabaseManager.LLMManager", return_value=mock_llm
+    ):
+        with patch(
+            "askrita.sqlagent.database.DatabaseManager.DatabaseStrategyFactory"
+        ) as mock_factory:
             mock_strategy = MagicMock()
             mock_strategy.get_safe_connection_info.return_value = "SQLite: test.db"
             mock_factory.create_strategy.return_value = mock_strategy
-            with patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase") as mock_sql_db:
+            with patch(
+                "askrita.sqlagent.database.DatabaseManager.SQLDatabase"
+            ) as mock_sql_db:
                 mock_sql_db.from_uri.return_value = mock_db
                 manager = DatabaseManager(
                     config_manager=mock_config,
@@ -70,6 +77,7 @@ def _make_manager():
 # ---------------------------------------------------------------------------
 # _normalize_result
 # ---------------------------------------------------------------------------
+
 
 class TestNormalizeResult:
     def test_empty_result_returns_empty_list(self):
@@ -136,6 +144,7 @@ class TestNormalizeResult:
 # execute_query
 # ---------------------------------------------------------------------------
 
+
 class TestExecuteQuery:
     def test_successful_query(self):
         manager, config, mock_db = _make_manager()
@@ -176,6 +185,7 @@ class TestExecuteQuery:
 # ---------------------------------------------------------------------------
 # get_sample_data
 # ---------------------------------------------------------------------------
+
 
 class TestGetSampleData:
     def test_no_tables_returns_empty(self):
@@ -228,11 +238,13 @@ class TestGetSampleData:
         config.database.max_results = 100
 
         call_count = [0]
+
         def side_effect(q):
             call_count[0] += 1
             if call_count[0] == 1:
                 raise RuntimeError("t1 error")
             return [{"id": 1}]
+
         mock_db.run.side_effect = side_effect
 
         result = manager.get_sample_data(limit=5)
@@ -253,6 +265,7 @@ class TestGetSampleData:
 # _initialize_database error branches
 # ---------------------------------------------------------------------------
 
+
 class TestInitializeDatabaseErrors:
     def _init_manager_with_error(self, error, conn_string="sqlite:///test.db"):
         mock_config = MagicMock()
@@ -263,12 +276,19 @@ class TestInitializeDatabaseErrors:
         mock_config.framework.debug = False
 
         mock_llm = MagicMock()
-        with patch("askrita.sqlagent.database.DatabaseManager.LLMManager", return_value=mock_llm):
-            with patch("askrita.sqlagent.database.DatabaseManager.DatabaseStrategyFactory") as mock_factory:
+        with patch(
+            "askrita.sqlagent.database.DatabaseManager.LLMManager",
+            return_value=mock_llm,
+        ):
+            with patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseStrategyFactory"
+            ) as mock_factory:
                 mock_strategy = MagicMock()
                 mock_strategy.get_safe_connection_info.return_value = "test"
                 mock_factory.create_strategy.return_value = mock_strategy
-                with patch("askrita.sqlagent.database.DatabaseManager.SQLDatabase") as mock_sql_db:
+                with patch(
+                    "askrita.sqlagent.database.DatabaseManager.SQLDatabase"
+                ) as mock_sql_db:
                     mock_sql_db.from_uri.side_effect = error
                     with pytest.raises(DatabaseError):
                         DatabaseManager(
@@ -291,20 +311,17 @@ class TestInitializeDatabaseErrors:
 
     def test_bigquery_error(self):
         self._init_manager_with_error(
-            Exception("failed"),
-            conn_string="bigquery://project/dataset"
+            Exception("failed"), conn_string="bigquery://project/dataset"
         )
 
     def test_snowflake_error(self):
         self._init_manager_with_error(
-            Exception("failed"),
-            conn_string="snowflake://account/db"
+            Exception("failed"), conn_string="snowflake://account/db"
         )
 
     def test_db2_error(self):
         self._init_manager_with_error(
-            Exception("failed"),
-            conn_string="ibm_db_sa://user:pass@host:50000/DB"
+            Exception("failed"), conn_string="ibm_db_sa://user:pass@host:50000/DB"
         )
 
     def test_generic_error(self):
@@ -314,6 +331,7 @@ class TestInitializeDatabaseErrors:
 # ---------------------------------------------------------------------------
 # test_connection
 # ---------------------------------------------------------------------------
+
 
 class TestDatabaseManagerTestConnection:
     def test_connection_uses_strategy(self):

@@ -18,15 +18,15 @@ from unittest.mock import MagicMock
 
 from askrita.research.SchemaAnalyzer import (
     ColumnAnalysis,
-    TableAnalysis,
     SchemaAnalysisReport,
     SchemaAnalyzer,
+    TableAnalysis,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_agent(tables=None, db_type="BigQuery"):
     """Create a minimal mock SQL agent."""
@@ -50,7 +50,7 @@ def _basic_tables():
                 "amount": {"type": "FLOAT", "nullable": True},
                 "created_date": {"type": "TIMESTAMP", "nullable": True},
                 "status": {"type": "VARCHAR", "nullable": True},
-            }
+            },
         },
         "customers": {
             "description": "Customer dimension",
@@ -58,14 +58,15 @@ def _basic_tables():
                 "customer_id": {"type": "INTEGER", "nullable": False},
                 "customer_type": {"type": "VARCHAR", "nullable": True},
                 "region": {"type": "VARCHAR", "nullable": True},
-            }
-        }
+            },
+        },
     }
 
 
 # ---------------------------------------------------------------------------
 # ColumnAnalysis
 # ---------------------------------------------------------------------------
+
 
 class TestColumnAnalysis:
     def test_str_representation(self):
@@ -79,6 +80,7 @@ class TestColumnAnalysis:
 # TableAnalysis
 # ---------------------------------------------------------------------------
 
+
 class TestTableAnalysis:
     def test_str_representation(self):
         table = TableAnalysis(name="orders", full_name="orders")
@@ -89,6 +91,7 @@ class TestTableAnalysis:
 # ---------------------------------------------------------------------------
 # SchemaAnalysisReport
 # ---------------------------------------------------------------------------
+
 
 class TestSchemaAnalysisReport:
     def test_str_representation(self):
@@ -106,13 +109,16 @@ class TestSchemaAnalysisReport:
 # SchemaAnalyzer._analyze_column
 # ---------------------------------------------------------------------------
 
+
 class TestAnalyzeColumn:
     def _analyzer(self):
         return SchemaAnalyzer(_make_agent())
 
     def test_integer_id_column(self):
         analyzer = self._analyzer()
-        col = analyzer._analyze_column("customer_id", {"type": "INTEGER", "nullable": False})
+        col = analyzer._analyze_column(
+            "customer_id", {"type": "INTEGER", "nullable": False}
+        )
         assert col.statistical_type == "identifier"
         assert col.is_primary_key or col.is_foreign_key or True  # just check no crash
 
@@ -124,7 +130,9 @@ class TestAnalyzeColumn:
 
     def test_timestamp_column(self):
         analyzer = self._analyzer()
-        col = analyzer._analyze_column("created_date", {"type": "TIMESTAMP", "nullable": True})
+        col = analyzer._analyze_column(
+            "created_date", {"type": "TIMESTAMP", "nullable": True}
+        )
         assert col.statistical_type == "temporal"
 
     def test_varchar_status_column(self):
@@ -134,18 +142,23 @@ class TestAnalyzeColumn:
 
     def test_boolean_column(self):
         analyzer = self._analyzer()
-        col = analyzer._analyze_column("is_active", {"type": "BOOLEAN", "nullable": True})
+        col = analyzer._analyze_column(
+            "is_active", {"type": "BOOLEAN", "nullable": True}
+        )
         assert col.statistical_type == "categorical"
 
     def test_description_column_low_potential(self):
         analyzer = self._analyzer()
-        col = analyzer._analyze_column("product_description", {"type": "TEXT", "nullable": True})
+        col = analyzer._analyze_column(
+            "product_description", {"type": "TEXT", "nullable": True}
+        )
         assert col.research_potential == "low"
 
 
 # ---------------------------------------------------------------------------
 # SchemaAnalyzer._determine_statistical_type
 # ---------------------------------------------------------------------------
+
 
 class TestDetermineStatisticalType:
     def _analyzer(self):
@@ -188,42 +201,58 @@ class TestDetermineStatisticalType:
 # SchemaAnalyzer._assess_column_research_potential
 # ---------------------------------------------------------------------------
 
+
 class TestAssessColumnResearchPotential:
     def _analyzer(self):
         return SchemaAnalyzer(_make_agent())
 
     def test_revenue_high(self):
-        result = self._analyzer()._assess_column_research_potential("revenue", "FLOAT", "numerical")
+        result = self._analyzer()._assess_column_research_potential(
+            "revenue", "FLOAT", "numerical"
+        )
         assert result == "high"
 
     def test_score_high(self):
-        result = self._analyzer()._assess_column_research_potential("satisfaction_score", "FLOAT", "numerical")
+        result = self._analyzer()._assess_column_research_potential(
+            "satisfaction_score", "FLOAT", "numerical"
+        )
         assert result == "high"
 
     def test_status_medium(self):
-        result = self._analyzer()._assess_column_research_potential("order_status", "VARCHAR", "categorical")
+        result = self._analyzer()._assess_column_research_potential(
+            "order_status", "VARCHAR", "categorical"
+        )
         assert result == "medium"
 
     def test_numerical_medium(self):
-        result = self._analyzer()._assess_column_research_potential("index_val", "INTEGER", "numerical")
+        result = self._analyzer()._assess_column_research_potential(
+            "index_val", "INTEGER", "numerical"
+        )
         assert result == "medium"
 
     def test_identifier_low(self):
-        result = self._analyzer()._assess_column_research_potential("customer_id", "INTEGER", "identifier")
+        result = self._analyzer()._assess_column_research_potential(
+            "customer_id", "INTEGER", "identifier"
+        )
         assert result == "low"
 
     def test_description_low(self):
-        result = self._analyzer()._assess_column_research_potential("item_description", "TEXT", "categorical")
+        result = self._analyzer()._assess_column_research_potential(
+            "item_description", "TEXT", "categorical"
+        )
         assert result == "low"
 
     def test_generic_medium_default(self):
-        result = self._analyzer()._assess_column_research_potential("some_col", "VARCHAR", "categorical")
+        result = self._analyzer()._assess_column_research_potential(
+            "some_col", "VARCHAR", "categorical"
+        )
         assert result == "medium"
 
 
 # ---------------------------------------------------------------------------
 # SchemaAnalyzer._classify_table_type
 # ---------------------------------------------------------------------------
+
 
 class TestClassifyTableType:
     def _analyzer(self):
@@ -268,6 +297,7 @@ class TestClassifyTableType:
 # SchemaAnalyzer._assess_table_research_value
 # ---------------------------------------------------------------------------
 
+
 class TestAssessTableResearchValue:
     def _analyzer(self):
         return SchemaAnalyzer(_make_agent())
@@ -275,13 +305,28 @@ class TestAssessTableResearchValue:
     def _make_table(self, high=0, medium=0, low=0, entity_type="fact"):
         table = TableAnalysis(name="t", full_name="t", entity_type=entity_type)
         for i in range(high):
-            c = ColumnAnalysis(name=f"h{i}", data_type="FLOAT", is_nullable=True, research_potential="high")
+            c = ColumnAnalysis(
+                name=f"h{i}",
+                data_type="FLOAT",
+                is_nullable=True,
+                research_potential="high",
+            )
             table.columns[f"h{i}"] = c
         for i in range(medium):
-            c = ColumnAnalysis(name=f"m{i}", data_type="VARCHAR", is_nullable=True, research_potential="medium")
+            c = ColumnAnalysis(
+                name=f"m{i}",
+                data_type="VARCHAR",
+                is_nullable=True,
+                research_potential="medium",
+            )
             table.columns[f"m{i}"] = c
         for i in range(low):
-            c = ColumnAnalysis(name=f"l{i}", data_type="INTEGER", is_nullable=True, research_potential="low")
+            c = ColumnAnalysis(
+                name=f"l{i}",
+                data_type="INTEGER",
+                is_nullable=True,
+                research_potential="low",
+            )
             table.columns[f"l{i}"] = c
         return table
 
@@ -315,27 +360,36 @@ class TestAssessTableResearchValue:
 # SchemaAnalyzer._generate_column_sample_queries
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateColumnSampleQueries:
     def _analyzer(self):
         return SchemaAnalyzer(_make_agent())
 
     def test_numerical_queries(self):
-        queries = self._analyzer()._generate_column_sample_queries("amount", "numerical")
+        queries = self._analyzer()._generate_column_sample_queries(
+            "amount", "numerical"
+        )
         assert len(queries) <= 3
         assert any("amount" in q for q in queries)
 
     def test_categorical_queries(self):
-        queries = self._analyzer()._generate_column_sample_queries("status", "categorical")
+        queries = self._analyzer()._generate_column_sample_queries(
+            "status", "categorical"
+        )
         assert len(queries) <= 3
         assert any("status" in q for q in queries)
 
     def test_temporal_queries(self):
-        queries = self._analyzer()._generate_column_sample_queries("created_date", "temporal")
+        queries = self._analyzer()._generate_column_sample_queries(
+            "created_date", "temporal"
+        )
         assert len(queries) <= 3
         assert any("created_date" in q for q in queries)
 
     def test_identifier_no_queries(self):
-        queries = self._analyzer()._generate_column_sample_queries("user_id", "identifier")
+        queries = self._analyzer()._generate_column_sample_queries(
+            "user_id", "identifier"
+        )
         assert queries == []
 
 
@@ -343,43 +397,81 @@ class TestGenerateColumnSampleQueries:
 # SchemaAnalyzer._generate_table_analysis_suggestions
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateTableAnalysisSuggestions:
     def _analyzer(self):
         return SchemaAnalyzer(_make_agent())
 
     def test_fact_table_gets_suggestions(self):
-        table = TableAnalysis(name="sales", full_name="sales", entity_type="fact", research_value="high")
+        table = TableAnalysis(
+            name="sales", full_name="sales", entity_type="fact", research_value="high"
+        )
         suggestions = self._analyzer()._generate_table_analysis_suggestions(table)
         assert len(suggestions) > 0
 
     def test_dimension_table_gets_suggestions(self):
-        table = TableAnalysis(name="dim_prod", full_name="dim_prod", entity_type="dimension", research_value="low")
+        table = TableAnalysis(
+            name="dim_prod",
+            full_name="dim_prod",
+            entity_type="dimension",
+            research_value="low",
+        )
         suggestions = self._analyzer()._generate_table_analysis_suggestions(table)
         assert len(suggestions) > 0
 
     def test_temporal_columns_add_suggestions(self):
-        table = TableAnalysis(name="events", full_name="events", entity_type="fact", research_value="high")
-        col = ColumnAnalysis(name="event_time", data_type="TIMESTAMP", is_nullable=True, statistical_type="temporal")
+        table = TableAnalysis(
+            name="events", full_name="events", entity_type="fact", research_value="high"
+        )
+        col = ColumnAnalysis(
+            name="event_time",
+            data_type="TIMESTAMP",
+            is_nullable=True,
+            statistical_type="temporal",
+        )
         table.columns["event_time"] = col
         suggestions = self._analyzer()._generate_table_analysis_suggestions(table)
-        assert any("time" in s.lower() or "season" in s.lower() or "series" in s.lower() for s in suggestions)
+        assert any(
+            "time" in s.lower() or "season" in s.lower() or "series" in s.lower()
+            for s in suggestions
+        )
 
     def test_multiple_numerical_high_cols_add_correlation_suggestion(self):
         table = TableAnalysis(name="metrics", full_name="metrics", entity_type="fact")
         for name in ["revenue", "cost"]:
-            col = ColumnAnalysis(name=name, data_type="FLOAT", is_nullable=True,
-                                  statistical_type="numerical", research_potential="high")
+            col = ColumnAnalysis(
+                name=name,
+                data_type="FLOAT",
+                is_nullable=True,
+                statistical_type="numerical",
+                research_potential="high",
+            )
             table.columns[name] = col
         suggestions = self._analyzer()._generate_table_analysis_suggestions(table)
         assert any("correlation" in s.lower() for s in suggestions)
 
     def test_max_5_suggestions(self):
-        table = TableAnalysis(name="complex", full_name="complex", entity_type="fact", research_value="high")
+        table = TableAnalysis(
+            name="complex",
+            full_name="complex",
+            entity_type="fact",
+            research_value="high",
+        )
         for name in ["revenue", "cost"]:
-            col = ColumnAnalysis(name=name, data_type="FLOAT", is_nullable=True,
-                                  statistical_type="numerical", research_potential="high")
+            col = ColumnAnalysis(
+                name=name,
+                data_type="FLOAT",
+                is_nullable=True,
+                statistical_type="numerical",
+                research_potential="high",
+            )
             table.columns[name] = col
-        col = ColumnAnalysis(name="created_at", data_type="TIMESTAMP", is_nullable=True, statistical_type="temporal")
+        col = ColumnAnalysis(
+            name="created_at",
+            data_type="TIMESTAMP",
+            is_nullable=True,
+            statistical_type="temporal",
+        )
         table.columns["created_at"] = col
         suggestions = self._analyzer()._generate_table_analysis_suggestions(table)
         assert len(suggestions) <= 5
@@ -388,6 +480,7 @@ class TestGenerateTableAnalysisSuggestions:
 # ---------------------------------------------------------------------------
 # SchemaAnalyzer._analyze_schema_patterns
 # ---------------------------------------------------------------------------
+
 
 class TestAnalyzeSchemaPatterns:
     def _analyzer(self):
@@ -414,7 +507,10 @@ class TestAnalyzeSchemaPatterns:
         agent = _make_agent(_basic_tables())
         analyzer = SchemaAnalyzer(agent)
         report = SchemaAnalysisReport(
-            database_type="BigQuery", total_tables=2, total_columns=7, analysis_timestamp="2026"
+            database_type="BigQuery",
+            total_tables=2,
+            total_columns=7,
+            analysis_timestamp="2026",
         )
         report.tables = {}
         analyzer._analyze_schema_patterns(report)
@@ -424,7 +520,10 @@ class TestAnalyzeSchemaPatterns:
         agent = _make_agent()
         analyzer = SchemaAnalyzer(agent)
         report = SchemaAnalysisReport(
-            database_type="BigQuery", total_tables=25, total_columns=500, analysis_timestamp="2026"
+            database_type="BigQuery",
+            total_tables=25,
+            total_columns=500,
+            analysis_timestamp="2026",
         )
         report.tables = {}
         analyzer._analyze_schema_patterns(report)
@@ -434,7 +533,10 @@ class TestAnalyzeSchemaPatterns:
         agent = _make_agent()
         analyzer = SchemaAnalyzer(agent)
         report = SchemaAnalysisReport(
-            database_type="BigQuery", total_tables=15, total_columns=100, analysis_timestamp="2026"
+            database_type="BigQuery",
+            total_tables=15,
+            total_columns=100,
+            analysis_timestamp="2026",
         )
         report.tables = {}
         analyzer._analyze_schema_patterns(report)
@@ -445,12 +547,16 @@ class TestAnalyzeSchemaPatterns:
 # SchemaAnalyzer._classify_tables
 # ---------------------------------------------------------------------------
 
+
 class TestClassifyTables:
     def test_classify_populates_lists(self):
         agent = _make_agent(_basic_tables())
         analyzer = SchemaAnalyzer(agent)
         report = SchemaAnalysisReport(
-            database_type="BigQuery", total_tables=2, total_columns=7, analysis_timestamp="2026"
+            database_type="BigQuery",
+            total_tables=2,
+            total_columns=7,
+            analysis_timestamp="2026",
         )
         for tname, tinfo in _basic_tables().items():
             table = analyzer._analyze_table(tname, tinfo, agent.schema)
@@ -465,6 +571,7 @@ class TestClassifyTables:
 # ---------------------------------------------------------------------------
 # SchemaAnalyzer._is_likely_primary_key / _is_likely_foreign_key
 # ---------------------------------------------------------------------------
+
 
 class TestKeyDetection:
     def _analyzer(self):
@@ -484,6 +591,7 @@ class TestKeyDetection:
 # ---------------------------------------------------------------------------
 # Full analyze_schema integration test (mocked)
 # ---------------------------------------------------------------------------
+
 
 class TestAnalyzeSchemaIntegration:
     def test_analyze_schema_basic(self):
@@ -516,7 +624,7 @@ class TestAnalyzeSchemaIntegration:
                 "columns": {
                     "customer_id": {"type": "INTEGER", "nullable": False},
                 }
-            }
+            },
         }
         agent = _make_agent(tables)
         analyzer = SchemaAnalyzer(agent)

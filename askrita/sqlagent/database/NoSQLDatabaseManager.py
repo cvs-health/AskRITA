@@ -311,9 +311,11 @@ class NoSQLDatabaseManager:
 
         segments = NoSQLDatabaseManager._tokenize_quoted_segments(rest)
         result_parts = [
-            NoSQLDatabaseManager._fix_unquoted_mongo_segment(seg_text)
-            if seg_type == "unquoted"
-            else seg_text
+            (
+                NoSQLDatabaseManager._fix_unquoted_mongo_segment(seg_text)
+                if seg_type == "unquoted"
+                else seg_text
+            )
             for seg_type, seg_text in segments
         ]
         return prefix + "".join(result_parts)
@@ -384,8 +386,7 @@ class NoSQLDatabaseManager:
         if isinstance(raw_result[0], dict):
             return [self._serialize_document(doc) for doc in raw_result]
         return [
-            {"col_" + str(i): val for i, val in enumerate(row)}
-            for row in raw_result
+            {"col_" + str(i): val for i, val in enumerate(row)} for row in raw_result
         ]
 
     def _normalize_string_result(self, raw_result: str) -> List[Dict[str, Any]]:

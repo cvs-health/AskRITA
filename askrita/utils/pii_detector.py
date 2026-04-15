@@ -311,13 +311,15 @@ class PIIDetector:
             )
             if pii_result.has_pii:
                 validation_results["tables_with_pii"].append(table_name)
-                validation_results["pii_detections"].append({
-                    "table": table_name,
-                    "row_index": rows_checked,
-                    "entity_types": pii_result.entity_types,
-                    "max_confidence": pii_result.max_confidence,
-                    "entity_count": pii_result.entity_count,
-                })
+                validation_results["pii_detections"].append(
+                    {
+                        "table": table_name,
+                        "row_index": rows_checked,
+                        "entity_types": pii_result.entity_types,
+                        "max_confidence": pii_result.max_confidence,
+                        "entity_count": pii_result.entity_count,
+                    }
+                )
                 validation_results["has_pii_violations"] = True
             rows_checked += 1
             validation_results["total_rows_checked"] += 1

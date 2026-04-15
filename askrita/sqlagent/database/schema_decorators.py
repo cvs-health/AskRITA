@@ -634,9 +634,7 @@ class DescriptionMerger:
             return f"{text} | {context}"
         return text
 
-    def _auto_or_column_fallback(
-        self, auto_desc, column_name: str
-    ) -> Optional[str]:
+    def _auto_or_column_fallback(self, auto_desc, column_name: str) -> Optional[str]:
         """Return auto description, column-name fallback, or None."""
         if auto_desc:
             return self._extract_string_value(auto_desc)
@@ -690,7 +688,9 @@ class DescriptionMerger:
             return self._auto_or_column_fallback(auto_desc, column_name)
 
         mode = getattr(manual_desc, "mode", "supplement")
-        manual_text = self._extract_string_value(getattr(manual_desc, "description", ""))
+        manual_text = self._extract_string_value(
+            getattr(manual_desc, "description", "")
+        )
         business_context = self._extract_string_value(
             getattr(manual_desc, "business_context", "")
         )
@@ -703,7 +703,9 @@ class DescriptionMerger:
         if mode == "override" and manual_text:
             return self._combine_text_and_context(manual_text, business_context)
         if mode == "supplement":
-            return self._merge_supplement(auto_desc, manual_text, business_context, column_name)
+            return self._merge_supplement(
+                auto_desc, manual_text, business_context, column_name
+            )
         if mode == "fallback" and not auto_desc and manual_text:
             return self._combine_text_and_context(manual_text, business_context)
         if mode == "auto_only":

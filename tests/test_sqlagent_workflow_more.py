@@ -29,14 +29,20 @@ def test_generate_followup_questions(mock_config):
     - State is properly updated with the questions list
     """
     from askrita.sqlagent.workflows.SQLAgentWorkflow import (
-        SQLAgentWorkflow,
         FollowupQuestionsResponse,
+        SQLAgentWorkflow,
     )
 
-    with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-         patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-         patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-         patch.object(SQLAgentWorkflow, '_create_workflow'):
+    with (
+        patch(
+            "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+        ) as mock_db_class,
+        patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+        patch(
+            "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+        ) as mock_formatter_class,
+        patch.object(SQLAgentWorkflow, "_create_workflow"),
+    ):
 
         # Configure mocks
         mock_config.is_step_enabled.return_value = True
@@ -46,8 +52,8 @@ def test_generate_followup_questions(mock_config):
         mock_db_class.return_value = mock_db
 
         mock_llm = Mock()
-        mock_llm.invoke_with_structured_output.return_value = (
-            FollowupQuestionsResponse(followup_questions=["Q1", "Q2"])
+        mock_llm.invoke_with_structured_output.return_value = FollowupQuestionsResponse(
+            followup_questions=["Q1", "Q2"]
         )
         mock_llm_class.return_value = mock_llm
 
@@ -90,10 +96,16 @@ def test_format_results_step_success(mock_config):
     """
     from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 
-    with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-         patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-         patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-         patch.object(SQLAgentWorkflow, '_create_workflow'):
+    with (
+        patch(
+            "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+        ) as mock_db_class,
+        patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+        patch(
+            "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+        ) as mock_formatter_class,
+        patch.object(SQLAgentWorkflow, "_create_workflow"),
+    ):
 
         # Configure mocks
         mock_config.is_step_enabled.return_value = True
@@ -106,16 +118,17 @@ def test_format_results_step_success(mock_config):
         mock_llm_class.return_value = mock_llm
 
         # Formatter returns proper Pydantic UniversalChartData
-        from askrita.sqlagent.formatters.DataFormatter import UniversalChartData, ChartDataset, DataPoint
+        from askrita.sqlagent.formatters.DataFormatter import (
+            ChartDataset,
+            DataPoint,
+            UniversalChartData,
+        )
 
         mock_chart_data = UniversalChartData(
             type="bar",
             title="Test Chart",
             labels=["A"],
-            datasets=[ChartDataset(
-                label="Test Series",
-                data=[DataPoint(y=1)]
-            )]
+            datasets=[ChartDataset(label="Test Series", data=[DataPoint(y=1)])],
         )
 
         mock_formatter = Mock()
@@ -137,7 +150,9 @@ def test_format_results_step_success(mock_config):
         wf.llm_manager = mock_llm
 
         # Test result formatting
-        state = WorkflowState(question="Show A", results=[{"A": 1}], visualization="bar")
+        state = WorkflowState(
+            question="Show A", results=[{"A": 1}], visualization="bar"
+        )
         out = wf.format_results(state)
 
         # Verify answer is returned
@@ -158,10 +173,16 @@ def test_generate_sql_error_path(mock_config):
         SQLAgentWorkflow,
     )
 
-    with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-         patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-         patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-         patch.object(SQLAgentWorkflow, '_create_workflow'):
+    with (
+        patch(
+            "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+        ) as mock_db_class,
+        patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+        patch(
+            "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+        ) as mock_formatter_class,
+        patch.object(SQLAgentWorkflow, "_create_workflow"),
+    ):
 
         # Configure mocks
         mock_config.is_step_enabled.return_value = True
@@ -217,10 +238,16 @@ def test_validate_and_fix_sql_success_and_failure(mock_config):
         SQLValidationResponse,
     )
 
-    with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-         patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-         patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-         patch.object(SQLAgentWorkflow, '_create_workflow'):
+    with (
+        patch(
+            "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+        ) as mock_db_class,
+        patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+        patch(
+            "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+        ) as mock_formatter_class,
+        patch.object(SQLAgentWorkflow, "_create_workflow"),
+    ):
 
         # Configure mocks
         mock_config.is_step_enabled.return_value = True
@@ -260,5 +287,3 @@ def test_validate_and_fix_sql_success_and_failure(mock_config):
         )
         out2 = wf.validate_and_fix_sql(WorkflowState(sql_query="DROP TABLE t"))
         assert out2["sql_valid"] is True
-
-

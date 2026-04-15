@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tests for ResearchAgent column name parsing from SQL."""
+
 from unittest.mock import Mock
 
 from askrita.research.ResearchAgent import ResearchAgent, ResearchWorkflowState
@@ -64,9 +65,7 @@ def test_extract_column_names_returns_none_for_mismatch():
     agent = ResearchAgent.__new__(ResearchAgent)
 
     # Expecting 3 but SQL has 2
-    names = agent._extract_column_names_from_sql(
-        "SELECT a, b FROM table", 3
-    )
+    names = agent._extract_column_names_from_sql("SELECT a, b FROM table", 3)
     assert names is None
 
 
@@ -74,9 +73,7 @@ def test_extract_column_names_returns_none_for_star():
     """Test returns None for SELECT * queries."""
     agent = ResearchAgent.__new__(ResearchAgent)
 
-    names = agent._extract_column_names_from_sql(
-        "SELECT * FROM table", 5
-    )
+    names = agent._extract_column_names_from_sql("SELECT * FROM table", 5)
     assert names is None
 
 
@@ -130,7 +127,9 @@ def test_data_preparation_falls_back_to_col_i():
     agent.sql_agent.db_manager = Mock()
     agent.sql_agent.db_manager.execute_query = Mock(return_value=[("A", "B", "C")])
 
-    state = ResearchWorkflowState(evidence_queries=["dummy question"], current_query_index=0)
+    state = ResearchWorkflowState(
+        evidence_queries=["dummy question"], current_query_index=0
+    )
     update = agent._data_preparation(state)
 
     stored = update["collected_data"]["query_1"]["data"]
@@ -151,7 +150,9 @@ def test_data_preparation_handles_dict_rows_directly():
         return_value=[{"ltr": 42, "role": "Medicare"}]
     )
 
-    state = ResearchWorkflowState(evidence_queries=["dummy question"], current_query_index=0)
+    state = ResearchWorkflowState(
+        evidence_queries=["dummy question"], current_query_index=0
+    )
     update = agent._data_preparation(state)
 
     stored = update["collected_data"]["query_1"]["data"]
@@ -181,7 +182,9 @@ def test_data_preparation_remaps_col_i_dicts():
         ]
     )
 
-    state = ResearchWorkflowState(evidence_queries=["dummy question"], current_query_index=0)
+    state = ResearchWorkflowState(
+        evidence_queries=["dummy question"], current_query_index=0
+    )
     update = agent._data_preparation(state)
 
     stored = update["collected_data"]["query_1"]["data"]

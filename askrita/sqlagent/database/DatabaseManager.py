@@ -233,7 +233,10 @@ class DatabaseManager:
             and hasattr(attr, "__name__")
             and attr.__name__ not in patched_classes
             and not hasattr(attr, "inherit_cache")
-            and any(kw in attr.__name__.lower() for kw in DatabaseManager._SQL_PATCH_KEYWORDS)
+            and any(
+                kw in attr.__name__.lower()
+                for kw in DatabaseManager._SQL_PATCH_KEYWORDS
+            )
         )
 
     @staticmethod
@@ -244,7 +247,9 @@ class DatabaseManager:
                 continue
             try:
                 attr = getattr(module, attr_name, None)
-                if DatabaseManager._is_patchable_sql_class(attr, attr_name, patched_classes):
+                if DatabaseManager._is_patchable_sql_class(
+                    attr, attr_name, patched_classes
+                ):
                     attr.inherit_cache = True
                     patched_classes.add(attr.__name__)
                     logger.debug(f"Patched inherit_cache for {attr.__name__}")
@@ -434,6 +439,7 @@ class DatabaseManager:
             return list(self.db._metadata.tables.keys())
         if self.schema:
             import re
+
             table_pattern = r'CREATE TABLE\s+([`"]?[\w.]+[`"]?)'
             matches = re.findall(table_pattern, self.schema, re.IGNORECASE)
             return [match.strip('`"') for match in matches]
@@ -458,7 +464,9 @@ class DatabaseManager:
             logger.debug(f"Sampling table {clean_table_name}")
             sample_rows = self.execute_query(query)
             if sample_rows:
-                logger.debug(f"Collected {len(sample_rows)} sample rows from {clean_table_name}")
+                logger.debug(
+                    f"Collected {len(sample_rows)} sample rows from {clean_table_name}"
+                )
                 return {clean_table_name: sample_rows}
             return {}
         except Exception as e:
@@ -538,11 +546,17 @@ class DatabaseManager:
             logger.error(f"Dataset existence check failed: {dataset_error}")
             error_msg = str(dataset_error).lower()
             if "404" in error_msg or "not found" in error_msg:
-                logger.error(f"Dataset '{dataset_id}' not found in project '{project_id}' - verify dataset name")
+                logger.error(
+                    f"Dataset '{dataset_id}' not found in project '{project_id}' - verify dataset name"
+                )
             elif "403" in error_msg or _ACCESS_DENIED_MSG in error_msg:
-                logger.error("Access denied to dataset - grant 'BigQuery Data Viewer' role to your service account")
+                logger.error(
+                    "Access denied to dataset - grant 'BigQuery Data Viewer' role to your service account"
+                )
             elif "authentication" in error_msg:
-                logger.error("Authentication failed - check your service account credentials")
+                logger.error(
+                    "Authentication failed - check your service account credentials"
+                )
             elif "permission" in error_msg:
                 logger.error("Insufficient BigQuery permissions - check IAM roles")
             return False
@@ -556,7 +570,9 @@ class DatabaseManager:
         ):
             logger.error(f"Query execution test failed: {test_result}")
             if "bigquery.jobs.create" in test_result:
-                logger.error("Missing bigquery.jobs.create permission - grant 'BigQuery Job User' role")
+                logger.error(
+                    "Missing bigquery.jobs.create permission - grant 'BigQuery Job User' role"
+                )
             return False
         logger.info("Query execution test passed")
         return True
@@ -574,32 +590,48 @@ class DatabaseManager:
             logger.error(f"Table listing test failed: {table_error}")
             error_msg = str(table_error).lower()
             if "403" in error_msg or _ACCESS_DENIED_MSG in error_msg:
-                logger.error("Access denied to list tables - grant 'BigQuery Data Viewer' role to your service account")
+                logger.error(
+                    "Access denied to list tables - grant 'BigQuery Data Viewer' role to your service account"
+                )
             elif "permission" in error_msg:
-                logger.error("Insufficient permissions to list tables - check IAM roles")
+                logger.error(
+                    "Insufficient permissions to list tables - check IAM roles"
+                )
             return False
 
     @staticmethod
-    def _bq_log_success(is_cross_project_enabled: bool, project_id: str, dataset_id: str) -> None:
+    def _bq_log_success(
+        is_cross_project_enabled: bool, project_id: str, dataset_id: str
+    ) -> None:
         """Log BigQuery connection success with appropriate context."""
         if is_cross_project_enabled:
             logger.info("BigQuery connection validated for cross-project access")
-            logger.info("You can query tables across projects using fully qualified names like:")
+            logger.info(
+                "You can query tables across projects using fully qualified names like:"
+            )
             logger.info("   `other-project.dataset_name.table_name`")
         else:
-            logger.info(f"BigQuery connection fully validated for project '{project_id}'")
+            logger.info(
+                f"BigQuery connection fully validated for project '{project_id}'"
+            )
             if dataset_id and dataset_id != "CROSS_PROJECT_ACCESS":
-                logger.info(f"Dataset '{dataset_id}' is accessible with full permissions")
+                logger.info(
+                    f"Dataset '{dataset_id}' is accessible with full permissions"
+                )
 
     @staticmethod
     def _bq_log_outer_error(error_msg: str) -> None:
         """Log a top-level BigQuery diagnostic hint."""
         if "authentication" in error_msg or _ACCESS_DENIED_MSG in error_msg:
-            logger.error("BigQuery authentication issue - check your service account credentials")
+            logger.error(
+                "BigQuery authentication issue - check your service account credentials"
+            )
         elif "project" in error_msg:
             logger.error("BigQuery project issue - verify project ID and permissions")
         elif "bigquery.jobs.create" in error_msg:
-            logger.error("Missing bigquery.jobs.create permission - grant 'BigQuery Job User' role")
+            logger.error(
+                "Missing bigquery.jobs.create permission - grant 'BigQuery Job User' role"
+            )
 
     def _test_bigquery_connection(self) -> bool:
         """
@@ -614,7 +646,9 @@ class DatabaseManager:
             parts = connection_string.replace(_BIGQUERY_SCHEME, "").split("/")
 
             if len(parts) < 1:
-                logger.error(f"Invalid BigQuery connection string format. Expected at least: {_BIGQUERY_SCHEME}project_id")
+                logger.error(
+                    f"Invalid BigQuery connection string format. Expected at least: {_BIGQUERY_SCHEME}project_id"
+                )
                 return False
 
             project_id = parts[0]
@@ -623,10 +657,18 @@ class DatabaseManager:
             logger.info(f"Testing BigQuery connection to project '{project_id}'...")
             client = bigquery.Client(project=project_id)
 
-            cross_project_config = getattr(self.config.database, "cross_project_access", None)
-            is_cross_project_enabled = cross_project_config and getattr(cross_project_config, "enabled", False)
+            cross_project_config = getattr(
+                self.config.database, "cross_project_access", None
+            )
+            is_cross_project_enabled = cross_project_config and getattr(
+                cross_project_config, "enabled", False
+            )
 
-            needs_dataset_check = dataset_id and dataset_id != "CROSS_PROJECT_ACCESS" and not is_cross_project_enabled
+            needs_dataset_check = (
+                dataset_id
+                and dataset_id != "CROSS_PROJECT_ACCESS"
+                and not is_cross_project_enabled
+            )
 
             # Step 1: Test dataset existence
             if needs_dataset_check:
@@ -634,9 +676,13 @@ class DatabaseManager:
                 if not self._bq_check_dataset_exists(client, dataset_id, project_id):
                     return False
             elif is_cross_project_enabled:
-                logger.info("Cross-project access enabled - skipping specific dataset existence check")
+                logger.info(
+                    "Cross-project access enabled - skipping specific dataset existence check"
+                )
             else:
-                logger.info("No specific dataset in connection string - skipping dataset existence check")
+                logger.info(
+                    "No specific dataset in connection string - skipping dataset existence check"
+                )
 
             # Step 2: Test query execution
             if not self._bq_test_query_execution():
@@ -647,7 +693,9 @@ class DatabaseManager:
                 if not self._bq_test_table_listing(client, dataset_id):
                     return False
             else:
-                logger.info("Step 3: Skipped table listing test (cross-project access mode)")
+                logger.info(
+                    "Step 3: Skipped table listing test (cross-project access mode)"
+                )
 
             self._bq_log_success(is_cross_project_enabled, project_id, dataset_id)
             return True

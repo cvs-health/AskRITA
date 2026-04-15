@@ -19,12 +19,13 @@
 
 """Tests for ConfigManager functionality."""
 
-import pytest
 import os
 import tempfile
+
+import pytest
 import yaml
 
-_YAML_SUFFIX = '.yaml'
+_YAML_SUFFIX = ".yaml"
 from unittest.mock import patch
 
 from askrita.config_manager import ConfigManager, get_config, reset_config
@@ -34,7 +35,7 @@ from askrita.exceptions import ConfigurationError
 @pytest.fixture(autouse=True)
 def mock_openai_api_key():
     """Automatically mock OPENAI_API_KEY for all config tests."""
-    with patch.dict(os.environ, {'OPENAI_API_KEY': 'test-api-key'}):
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "test-api-key"}):
         yield
 
 
@@ -46,7 +47,10 @@ class TestConfigManager:
         config = ConfigManager(temp_config_file)
 
         assert config.config_path == temp_config_file
-        assert config.database.connection_string == sample_config_data["database"]["connection_string"]
+        assert (
+            config.database.connection_string
+            == sample_config_data["database"]["connection_string"]
+        )
         assert config.llm.provider == sample_config_data["llm"]["provider"]
         assert config.llm.model == sample_config_data["llm"]["model"]
         assert config.workflow.steps["parse_question"] is True
@@ -68,7 +72,9 @@ class TestConfigManager:
 
     def test_load_config_invalid_yaml(self):
         """Test error handling for invalid YAML syntax."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             f.write("invalid: yaml: content: [")
             temp_path = f.name
 
@@ -87,12 +93,16 @@ class TestConfigManager:
         # Remove connection string
         sample_config_data["database"]["connection_string"] = ""
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(sample_config_data, f)
             temp_path = f.name
 
         try:
-            with pytest.raises(ConfigurationError, match="Configuration validation failed"):
+            with pytest.raises(
+                ConfigurationError, match="Configuration validation failed"
+            ):
                 ConfigManager(temp_path)
         finally:
             os.unlink(temp_path)
@@ -131,9 +141,13 @@ class TestConfigManager:
 
     def test_get_database_type_postgresql(self, sample_config_data):
         """Test PostgreSQL database type detection."""
-        sample_config_data["database"]["connection_string"] = "postgresql://user:pass@host:5432/db"
+        sample_config_data["database"][
+            "connection_string"
+        ] = "postgresql://user:pass@host:5432/db"
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(sample_config_data, f)
             temp_path = f.name
 
@@ -145,9 +159,13 @@ class TestConfigManager:
 
     def test_get_database_type_mysql(self, sample_config_data):
         """Test MySQL database type detection."""
-        sample_config_data["database"]["connection_string"] = "mysql://user:pass@host:3306/db"
+        sample_config_data["database"][
+            "connection_string"
+        ] = "mysql://user:pass@host:3306/db"
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(sample_config_data, f)
             temp_path = f.name
 
@@ -159,10 +177,16 @@ class TestConfigManager:
 
     def test_get_database_type_bigquery(self, sample_config_data):
         """Test BigQuery database type detection."""
-        sample_config_data["database"]["connection_string"] = "bigquery://project/dataset"
-        sample_config_data["database"]["bigquery_gcloud_cli_auth"] = True  # Add required auth
+        sample_config_data["database"][
+            "connection_string"
+        ] = "bigquery://project/dataset"
+        sample_config_data["database"][
+            "bigquery_gcloud_cli_auth"
+        ] = True  # Add required auth
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(sample_config_data, f)
             temp_path = f.name
 
@@ -174,9 +198,13 @@ class TestConfigManager:
 
     def test_get_database_type_mongodb(self, sample_config_data):
         """Test MongoDB database type detection."""
-        sample_config_data["database"]["connection_string"] = "mongodb://user:pass@host:27017/mydb"
+        sample_config_data["database"][
+            "connection_string"
+        ] = "mongodb://user:pass@host:27017/mydb"
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(sample_config_data, f)
             temp_path = f.name
 
@@ -188,9 +216,13 @@ class TestConfigManager:
 
     def test_get_database_type_mongodb_atlas(self, sample_config_data):
         """Test MongoDB Atlas SRV database type detection."""
-        sample_config_data["database"]["connection_string"] = "mongodb+srv://user:pass@cluster.mongodb.net/mydb"
+        sample_config_data["database"][
+            "connection_string"
+        ] = "mongodb+srv://user:pass@cluster.mongodb.net/mydb"
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(sample_config_data, f)
             temp_path = f.name
 
@@ -235,12 +267,12 @@ class TestConfigManager:
         config = ConfigManager(temp_config_file)
 
         # Modify the config file
-        with open(temp_config_file, 'r') as f:
+        with open(temp_config_file, "r") as f:
             config_data = yaml.safe_load(f)
 
         config_data["database"]["query_timeout"] = 60
 
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
 
         # Reload config
@@ -258,12 +290,12 @@ class TestConfigManager:
         """Test deep merging of user config with defaults."""
         # Partial config with only database settings
         partial_config = {
-            "database": {
-                "connection_string": "postgresql://test:test@localhost/test"
-            }
+            "database": {"connection_string": "postgresql://test:test@localhost/test"}
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(partial_config, f)
             temp_path = f.name
 
@@ -271,7 +303,10 @@ class TestConfigManager:
             config = ConfigManager(temp_path)
 
             # Should have custom database connection
-            assert config.database.connection_string == "postgresql://test:test@localhost/test"
+            assert (
+                config.database.connection_string
+                == "postgresql://test:test@localhost/test"
+            )
             # Should have default LLM settings
             assert config.llm.provider == "openai"
             assert config.llm.model == "gpt-4o"
@@ -311,14 +346,18 @@ class TestConfigManagerEdgeCases:
 
     def test_permission_denied_error(self):
         """Test handling of permission denied errors."""
-        with patch("os.path.exists", return_value=True), \
-             patch("builtins.open", side_effect=PermissionError("Permission denied")):
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("builtins.open", side_effect=PermissionError("Permission denied")),
+        ):
             with pytest.raises(ConfigurationError, match="Permission denied"):
                 ConfigManager("/some/file.yaml")
 
     def test_empty_config_file(self):
         """Test handling of empty config file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             f.write("")  # Empty file
             temp_path = f.name
 
@@ -337,17 +376,19 @@ class TestConfigManagerEdgeCases:
             },
             "llm": {
                 "provider": "openai",
-                "model": "gpt-4o"
+                "model": "gpt-4o",
                 # api_key is now read from OPENAI_API_KEY environment variable
-            }
+            },
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(config_data, f)
             temp_path = f.name
 
         try:
-            with patch('os.getenv') as mock_getenv:
+            with patch("os.getenv") as mock_getenv:
                 mock_getenv.return_value = "test-env-key"  # Mock OPENAI_API_KEY
                 config = ConfigManager(temp_path)
             # Should load properly with provided values
@@ -361,7 +402,9 @@ class TestConfigManagerEdgeCases:
         """Test handling of config with unknown fields."""
         sample_config_data["unknown_section"] = {"unknown_field": "value"}
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(sample_config_data, f)
             temp_path = f.name
 
@@ -378,15 +421,19 @@ class TestConfigManagerEdgeCases:
         if "api_key" in sample_config_data["llm"]:
             del sample_config_data["llm"]["api_key"]
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix=_YAML_SUFFIX, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=_YAML_SUFFIX, delete=False
+        ) as f:
             yaml.dump(sample_config_data, f)
             temp_path = f.name
 
         try:
             # Should fail validation due to missing API key for OpenAI (no env var set)
-            with patch('os.getenv') as mock_getenv:
+            with patch("os.getenv") as mock_getenv:
                 mock_getenv.return_value = None  # No OPENAI_API_KEY env var
-                with pytest.raises(ConfigurationError, match="Configuration validation failed"):
+                with pytest.raises(
+                    ConfigurationError, match="Configuration validation failed"
+                ):
                     ConfigManager(temp_path)
         finally:
             os.unlink(temp_path)

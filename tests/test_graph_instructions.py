@@ -26,17 +26,37 @@ class TestGraphInstructions:
 
     def test_all_expected_chart_types_present(self):
         expected = [
-            "bar", "horizontal_bar", "line", "pie", "scatter",
-            "area", "donut", "radar", "heatmap", "bubble",
-            "gauge", "funnel", "treemap", "waterfall", "histogram",
-            "box", "candlestick", "polar", "sankey", "sunburst",
+            "bar",
+            "horizontal_bar",
+            "line",
+            "pie",
+            "scatter",
+            "area",
+            "donut",
+            "radar",
+            "heatmap",
+            "bubble",
+            "gauge",
+            "funnel",
+            "treemap",
+            "waterfall",
+            "histogram",
+            "box",
+            "candlestick",
+            "polar",
+            "sankey",
+            "sunburst",
         ]
         for chart_type in expected:
-            assert chart_type in gi.graph_instructions, f"Missing chart type: {chart_type}"
+            assert (
+                chart_type in gi.graph_instructions
+            ), f"Missing chart type: {chart_type}"
 
     def test_all_instructions_are_strings(self):
         for chart_type, instruction in gi.graph_instructions.items():
-            assert isinstance(instruction, str), f"{chart_type} instruction is not a string"
+            assert isinstance(
+                instruction, str
+            ), f"{chart_type} instruction is not a string"
 
     def test_all_instructions_non_empty(self):
         for chart_type, instruction in gi.graph_instructions.items():
@@ -93,7 +113,9 @@ class TestGraphInstructions:
 
     def test_candlestick_instruction_has_ohlc(self):
         instr = gi.candlestickInstruction
-        assert "open" in instr and "high" in instr and "low" in instr and "close" in instr
+        assert (
+            "open" in instr and "high" in instr and "low" in instr and "close" in instr
+        )
 
     def test_polar_instruction_has_background_color(self):
         assert "backgroundColor" in gi.polarAreaInstruction

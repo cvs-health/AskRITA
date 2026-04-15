@@ -23,19 +23,21 @@ This module tests the new Pydantic model-based API that returns
 ChainOfThoughtsOutput and ClarificationQuestion models.
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
-from askrita.sqlagent.State import WorkflowState
+
+import pytest
+
+from askrita.config_manager import ConfigManager
 from askrita.models.chain_of_thoughts import (
     ChainOfThoughtsOutput,
     ClarificationQuestion,
-    ReasoningSummary,
     ExecutionResult,
-    VisualizationSpec,
+    ReasoningSummary,
     SqlCorrection,
+    VisualizationSpec,
 )
-from askrita.config_manager import ConfigManager
+from askrita.sqlagent.State import WorkflowState
+from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 
 
 @pytest.fixture
@@ -53,7 +55,7 @@ def mock_config():
         "execute_sql": True,
         "format_results": True,
         "choose_visualization": True,
-        "generate_followup_questions": True
+        "generate_followup_questions": True,
     }
     config.llm = Mock()
     config.llm.model = "gpt-4"
@@ -70,10 +72,14 @@ def mock_config():
 @pytest.fixture
 def workflow(mock_config):
     """Create a workflow instance for testing."""
-    with patch('askrita.sqlagent.workflows.SQLAgentWorkflow.DatabaseManager'), \
-         patch('askrita.sqlagent.workflows.SQLAgentWorkflow.LLMManager'), \
-         patch('askrita.sqlagent.workflows.SQLAgentWorkflow.DataFormatter'):
-        workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False)
+    with (
+        patch("askrita.sqlagent.workflows.SQLAgentWorkflow.DatabaseManager"),
+        patch("askrita.sqlagent.workflows.SQLAgentWorkflow.LLMManager"),
+        patch("askrita.sqlagent.workflows.SQLAgentWorkflow.DataFormatter"),
+    ):
+        workflow = SQLAgentWorkflow(
+            mock_config, test_llm_connection=False, test_db_connection=False
+        )
         workflow._compiled_graph = Mock()
         return workflow
 
@@ -90,20 +96,22 @@ class TestChainOfThoughtsOutput:
             sql_valid=True,
             results=[
                 {"region": "North", "sales": 1000},
-                {"region": "South", "sales": 2000}
+                {"region": "South", "sales": 2000},
             ],
             visualization="bar",
             answer="Sales by region: North $1000, South $2000",
-            needs_clarification=False
+            needs_clarification=False,
         )
 
         workflow.query = Mock(return_value=mock_state)
         workflow._last_callback_handler = Mock()
-        workflow._last_callback_handler.get_breadcrumbs = Mock(return_value=[
-            "Analyzed your question",
-            "Generated SQL query",
-            "Executed query against database"
-        ])
+        workflow._last_callback_handler.get_breadcrumbs = Mock(
+            return_value=[
+                "Analyzed your question",
+                "Generated SQL query",
+                "Executed query against database",
+            ]
+        )
 
         result = workflow.query_with_cot("Show me sales by region")
 
@@ -111,7 +119,9 @@ class TestChainOfThoughtsOutput:
         assert isinstance(result, ChainOfThoughtsOutput)
         assert isinstance(result.reasoning, ReasoningSummary)
         assert len(result.reasoning.steps) > 0
-        assert result.sql == "SELECT region, SUM(sales) FROM sales_table GROUP BY region"
+        assert (
+            result.sql == "SELECT region, SUM(sales) FROM sales_table GROUP BY region"
+        )
         assert isinstance(result.result, ExecutionResult)
         assert result.result.row_count == 2
         assert len(result.result.columns) > 0
@@ -125,7 +135,7 @@ class TestChainOfThoughtsOutput:
             question="Show me data",
             needs_clarification=True,
             clarification_prompt="Could you specify which data you want to see?",
-            clarification_questions=["Which columns?", "Which table?"]
+            clarification_questions=["Which columns?", "Which table?"],
         )
 
         workflow.query = Mock(return_value=mock_state)
@@ -142,7 +152,7 @@ class TestChainOfThoughtsOutput:
         # Test with dict results (most common)
         dict_results = [
             {"region": "North", "sales": 1000},
-            {"region": "South", "sales": 2000}
+            {"region": "South", "sales": 2000},
         ]
 
         exec_result = workflow._convert_results_to_execution_result(dict_results)
@@ -165,23 +175,23 @@ class TestChainOfThoughtsOutput:
 
     def test_visualization_spec_conversion(self, workflow):
         """Test conversion of visualization to VisualizationSpec."""
-        from askrita.sqlagent.formatters.DataFormatter import UniversalChartData, ChartDataset, DataPoint
+        from askrita.sqlagent.formatters.DataFormatter import (
+            ChartDataset,
+            DataPoint,
+            UniversalChartData,
+        )
 
         # Create mock chart data with proper DataPoint objects
         chart_data = UniversalChartData(
             type="bar",
             labels=["North", "South"],
-            datasets=[ChartDataset(
-                label="Sales",
-                data=[DataPoint(y=1000), DataPoint(y=2000)]
-            )],
-            title="Sales by Region"
+            datasets=[
+                ChartDataset(label="Sales", data=[DataPoint(y=1000), DataPoint(y=2000)])
+            ],
+            title="Sales by Region",
         )
 
-        mock_state = WorkflowState(
-            visualization="bar",
-            chart_data=chart_data
-        )
+        mock_state = WorkflowState(visualization="bar", chart_data=chart_data)
 
         viz_spec = workflow._convert_visualization_to_spec(mock_state)
 
@@ -197,11 +207,13 @@ class TestSqlCorrection:
         """Test that SqlCorrection is tracked when SQL is corrected."""
         # Mock validate_and_fix_sql to return correction
         workflow.llm_manager = Mock()
-        workflow.llm_manager.invoke_with_structured_output = Mock(return_value=Mock(
-            valid=False,
-            corrected_query="SELECT region, SUM(sales) FROM sales_table GROUP BY region",
-            issues="Fixed syntax error"
-        ))
+        workflow.llm_manager.invoke_with_structured_output = Mock(
+            return_value=Mock(
+                valid=False,
+                corrected_query="SELECT region, SUM(sales) FROM sales_table GROUP BY region",
+                issues="Fixed syntax error",
+            )
+        )
         workflow._get_cached_schema = Mock(return_value="CREATE TABLE sales_table...")
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
@@ -218,7 +230,9 @@ class TestSqlCorrection:
         if "sql_correction" in result:
             correction = result["sql_correction"]
             assert isinstance(correction, SqlCorrection)
-            assert correction.original_sql == "SELECT region SUM(sales) FROM sales_table"
+            assert (
+                correction.original_sql == "SELECT region SUM(sales) FROM sales_table"
+            )
             assert "SUM(sales)" in correction.corrected_sql
             assert len(correction.reason) > 0
 
@@ -226,7 +240,9 @@ class TestSqlCorrection:
 class TestClarificationQuestion:
     """Test ClarificationQuestion model in query_with_cot."""
 
-    def test_query_with_cot_returns_clarification_for_ambiguous_question(self, workflow):
+    def test_query_with_cot_returns_clarification_for_ambiguous_question(
+        self, workflow
+    ):
         """Test that ambiguous questions return ClarificationQuestion."""
         # Mock state requiring clarification
         mock_state = WorkflowState(
@@ -235,8 +251,8 @@ class TestClarificationQuestion:
             clarification_prompt="Could you specify which data you want to see?",
             clarification_questions=[
                 "Which columns or fields do you want to retrieve?",
-                "What conditions or filters should be applied?"
-            ]
+                "What conditions or filters should be applied?",
+            ],
         )
 
         workflow.query = Mock(return_value=mock_state)
@@ -254,7 +270,7 @@ class TestClarificationQuestion:
         """Test ClarificationQuestion Pydantic model directly."""
         clarification = ClarificationQuestion(
             question="Which columns do you want to see?",
-            rationale="Question is ambiguous about which data to retrieve"
+            rationale="Question is ambiguous about which data to retrieve",
         )
 
         assert isinstance(clarification, ClarificationQuestion)
@@ -271,7 +287,7 @@ class TestReasoningSummary:
             "Analyzed your question",
             "Generated SQL query",
             "Executed query against database",
-            "Formatted results"
+            "Formatted results",
         ]
 
         reasoning = ReasoningSummary(steps=breadcrumbs)
@@ -282,7 +298,9 @@ class TestReasoningSummary:
 
     def test_reasoning_summary_max_items(self, workflow):
         """Test that breadcrumbs are limited to max_items."""
-        from askrita.sqlagent.workflows.langgraph_callback_handler import ChainOfThoughtsCallbackHandler
+        from askrita.sqlagent.workflows.langgraph_callback_handler import (
+            ChainOfThoughtsCallbackHandler,
+        )
 
         handler = ChainOfThoughtsCallbackHandler()
         handler._breadcrumbs = [
@@ -291,7 +309,7 @@ class TestReasoningSummary:
             "Step 3",
             "Step 4",
             "Step 5",
-            "Step 6"
+            "Step 6",
         ]
 
         # Get last 5 items
@@ -303,4 +321,3 @@ class TestReasoningSummary:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-

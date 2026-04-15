@@ -15,6 +15,7 @@
 """Tests for SQLAgent functionality."""
 
 from unittest.mock import Mock
+
 from askrita.sqlagent.State import WorkflowState
 
 

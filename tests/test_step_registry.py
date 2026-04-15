@@ -17,20 +17,22 @@
 from askrita.utils.step_registry import (
     StepInfo,
     StepRegistry,
-    get_step_registry,
-    register_step,
-    get_step_type,
     get_reasoning_template,
+    get_step_registry,
+    get_step_type,
+    register_step,
 )
-
 
 # ---------------------------------------------------------------------------
 # StepInfo
 # ---------------------------------------------------------------------------
 
+
 class TestStepInfo:
     def test_create_step_info(self):
-        step = StepInfo(name="my_step", step_type="analysis", description="desc", enabled=True)
+        step = StepInfo(
+            name="my_step", step_type="analysis", description="desc", enabled=True
+        )
         assert step.name == "my_step"
         assert step.step_type == "analysis"
         assert step.enabled is True
@@ -43,6 +45,7 @@ class TestStepInfo:
 # ---------------------------------------------------------------------------
 # StepRegistry
 # ---------------------------------------------------------------------------
+
 
 class TestStepRegistry:
     def _fresh_registry(self):
@@ -64,7 +67,8 @@ class TestStepRegistry:
     def test_register_step_simple(self):
         registry = self._fresh_registry()
         registry.register_step_simple(
-            "simple_step", "validation",
+            "simple_step",
+            "validation",
             reasoning_template={"start": "starting"},
             description="A simple step",
             enabled=True,
@@ -192,6 +196,7 @@ class TestStepRegistry:
 # ---------------------------------------------------------------------------
 # Global registry functions
 # ---------------------------------------------------------------------------
+
 
 class TestGlobalRegistryFunctions:
     def test_get_step_registry_returns_instance(self):

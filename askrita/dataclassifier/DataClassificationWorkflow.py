@@ -471,7 +471,9 @@ Classify as appropriate categories based on the content provided.
                 if column in classification_result:
                     result[column] = classification_result[column]
                 else:
-                    logger.warning(f"Missing '{column}' in classification result for index {index}")
+                    logger.warning(
+                        f"Missing '{column}' in classification result for index {index}"
+                    )
                     result[column] = None
         else:
             for column in analysis_columns:

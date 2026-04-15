@@ -15,14 +15,15 @@
 """Comprehensive tests for schema decorators - targeting 12% -> 60%+."""
 
 from unittest.mock import Mock, patch
+
 from askrita.sqlagent.database.schema_decorators import (
-    BaseSchemaProvider,
-    SchemaDecoratorBuilder,
-    CrossProjectSchemaDecorator,
-    SchemaMetadataDecorator,
-    HybridDescriptionDecorator,
     AutoDescriptionExtractor,
+    BaseSchemaProvider,
+    CrossProjectSchemaDecorator,
     DescriptionMerger,
+    HybridDescriptionDecorator,
+    SchemaDecoratorBuilder,
+    SchemaMetadataDecorator,
 )
 
 
@@ -94,20 +95,20 @@ class TestSchemaDecoratorBuilder:
     def test_chaining(self):
         """Test method chaining."""
         schema = "CREATE TABLE test (id INT)"
-        result = (SchemaDecoratorBuilder(schema)
-                 .with_cross_project_enhancement()
-                 .with_hybrid_descriptions()
-                 .with_metadata()
-                 .with_formatting()
-                 .build())
+        result = (
+            SchemaDecoratorBuilder(schema)
+            .with_cross_project_enhancement()
+            .with_hybrid_descriptions()
+            .with_metadata()
+            .with_formatting()
+            .build()
+        )
 
         assert result is not None
 
     def test_builder_with_formatting_returns_provider(self):
         schema = "CREATE TABLE users (id INT, name TEXT);"
-        provider = (SchemaDecoratorBuilder(schema)
-                    .with_formatting()
-                    .build())
+        provider = SchemaDecoratorBuilder(schema).with_formatting().build()
         out = provider.get_schema(Mock())
         assert isinstance(out, str)
         assert "CREATE TABLE" in out
@@ -187,7 +188,7 @@ class TestAutoDescriptionExtractor:
 
     def test_extract_bigquery_descriptions(self):
         """Test BigQuery description extraction."""
-        with patch('askrita.sqlagent.database.schema_decorators.bigquery'):
+        with patch("askrita.sqlagent.database.schema_decorators.bigquery"):
             mock_client = Mock()
 
             # Mock dataset and tables
@@ -197,18 +198,22 @@ class TestAutoDescriptionExtractor:
             mock_table.description = "Test table description"
             mock_table.schema = [
                 Mock(name="id", description="ID column"),
-                Mock(name="name", description="Name column")
+                Mock(name="name", description="Name column"),
             ]
 
             mock_dataset.list_tables.return_value = [mock_table]
             mock_client.get_dataset.return_value = mock_dataset
             mock_client.get_table.return_value = mock_table
 
-            result = AutoDescriptionExtractor.extract_bigquery_descriptions("project.dataset", mock_client)
+            result = AutoDescriptionExtractor.extract_bigquery_descriptions(
+                "project.dataset", mock_client
+            )
             assert isinstance(result, dict)
 
     def test_non_bq_extractors_return_dict(self):
-        res_pg = AutoDescriptionExtractor.extract_postgresql_descriptions("postgresql://...")
+        res_pg = AutoDescriptionExtractor.extract_postgresql_descriptions(
+            "postgresql://..."
+        )
         res_my = AutoDescriptionExtractor.extract_mysql_descriptions("mysql://...")
         assert isinstance(res_pg, dict)
         assert isinstance(res_my, dict)
@@ -299,7 +304,7 @@ class TestHybridDescriptionDecorator:
 
         business_terms = {
             "customer": "A person who purchases products",
-            "order": "A request to purchase products"
+            "order": "A request to purchase products",
         }
 
         result = decorator._create_business_glossary(business_terms)

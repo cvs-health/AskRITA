@@ -23,12 +23,18 @@ This module tests the clarification system that prompts users for additional
 information when the workflow cannot proceed reliably.
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow, ParseQuestionResponse, TableInfo
-from askrita.sqlagent.State import WorkflowState
+
+import pytest
+
 from askrita.config_manager import ConfigManager
 from askrita.models.chain_of_thoughts import ClarificationQuestion
+from askrita.sqlagent.State import WorkflowState
+from askrita.sqlagent.workflows.SQLAgentWorkflow import (
+    ParseQuestionResponse,
+    SQLAgentWorkflow,
+    TableInfo,
+)
 
 
 @pytest.fixture
@@ -46,7 +52,7 @@ def mock_config():
         "execute_sql": True,
         "format_results": True,
         "choose_visualization": True,
-        "generate_followup_questions": True
+        "generate_followup_questions": True,
     }
     config.llm = Mock()
     config.llm.model = "gpt-4"
@@ -61,9 +67,11 @@ def mock_config():
 @pytest.fixture
 def workflow(mock_config):
     """Create a workflow instance for testing."""
-    with patch('askrita.sqlagent.workflows.SQLAgentWorkflow.DatabaseManager'), \
-         patch('askrita.sqlagent.workflows.SQLAgentWorkflow.LLMManager'), \
-         patch('askrita.sqlagent.workflows.SQLAgentWorkflow.DataFormatter'):
+    with (
+        patch("askrita.sqlagent.workflows.SQLAgentWorkflow.DatabaseManager"),
+        patch("askrita.sqlagent.workflows.SQLAgentWorkflow.LLMManager"),
+        patch("askrita.sqlagent.workflows.SQLAgentWorkflow.DataFormatter"),
+    ):
         workflow = SQLAgentWorkflow(mock_config)
         workflow._compiled_graph = Mock()
         return workflow
@@ -75,13 +83,12 @@ class TestParseQuestionClarification:
     def test_clarification_when_not_relevant(self, workflow):
         """Test that clarification is requested when question is not relevant."""
         # Use actual Pydantic model for LLM response
-        mock_response = ParseQuestionResponse(
-            is_relevant=False,
-            relevant_tables=[]
-        )
+        mock_response = ParseQuestionResponse(is_relevant=False, relevant_tables=[])
 
         workflow.llm_manager = Mock()
-        workflow.llm_manager.invoke_with_structured_output = Mock(return_value=mock_response)
+        workflow.llm_manager.invoke_with_structured_output = Mock(
+            return_value=mock_response
+        )
         workflow._get_cached_schema = Mock(return_value="CREATE TABLE test (id INT);")
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
@@ -90,22 +97,21 @@ class TestParseQuestionClarification:
         result = workflow.parse_question(state)
 
         # Verify clarification is requested
-        assert result.get('needs_clarification') is True
-        assert result.get('clarification_prompt') is not None
-        assert 'relevant database tables' in result.get('clarification_prompt', '')
-        assert isinstance(result.get('clarification_questions'), list)
-        assert len(result.get('clarification_questions', [])) > 0
+        assert result.get("needs_clarification") is True
+        assert result.get("clarification_prompt") is not None
+        assert "relevant database tables" in result.get("clarification_prompt", "")
+        assert isinstance(result.get("clarification_questions"), list)
+        assert len(result.get("clarification_questions", [])) > 0
 
     def test_clarification_when_no_tables_found(self, workflow):
         """Test that clarification is requested when no tables are identified."""
         # Use actual Pydantic model with relevance but no tables
-        mock_response = ParseQuestionResponse(
-            is_relevant=True,
-            relevant_tables=[]
-        )
+        mock_response = ParseQuestionResponse(is_relevant=True, relevant_tables=[])
 
         workflow.llm_manager = Mock()
-        workflow.llm_manager.invoke_with_structured_output = Mock(return_value=mock_response)
+        workflow.llm_manager.invoke_with_structured_output = Mock(
+            return_value=mock_response
+        )
         workflow._get_cached_schema = Mock(return_value="CREATE TABLE test (id INT);")
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
@@ -114,26 +120,25 @@ class TestParseQuestionClarification:
         result = workflow.parse_question(state)
 
         # Verify clarification is requested
-        assert result.get('needs_clarification') is True
-        assert result.get('clarification_prompt') is not None
-        assert 'specific tables' in result.get('clarification_prompt', '')
-        assert isinstance(result.get('clarification_questions'), list)
+        assert result.get("needs_clarification") is True
+        assert result.get("clarification_prompt") is not None
+        assert "specific tables" in result.get("clarification_prompt", "")
+        assert isinstance(result.get("clarification_questions"), list)
 
     def test_no_clarification_when_successful(self, workflow):
         """Test that no clarification is requested when parsing succeeds."""
         # Use actual Pydantic model for successful parsing
         mock_table = TableInfo(
-            table_name="customers",
-            noun_columns=[],
-            relevant_columns=[]
+            table_name="customers", noun_columns=[], relevant_columns=[]
         )
         mock_response = ParseQuestionResponse(
-            is_relevant=True,
-            relevant_tables=[mock_table]
+            is_relevant=True, relevant_tables=[mock_table]
         )
 
         workflow.llm_manager = Mock()
-        workflow.llm_manager.invoke_with_structured_output = Mock(return_value=mock_response)
+        workflow.llm_manager.invoke_with_structured_output = Mock(
+            return_value=mock_response
+        )
         workflow._get_cached_schema = Mock(return_value="CREATE TABLE test (id INT);")
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
@@ -142,7 +147,7 @@ class TestParseQuestionClarification:
         result = workflow.parse_question(state)
 
         # Verify no clarification is requested
-        assert result.get('needs_clarification', False) is False
+        assert result.get("needs_clarification", False) is False
 
 
 class TestGenerateSQLClarification:
@@ -153,7 +158,9 @@ class TestGenerateSQLClarification:
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
         workflow.llm_manager = Mock()
-        workflow.llm_manager.invoke_with_structured_output = Mock(side_effect=Exception("SQL generation failed"))
+        workflow.llm_manager.invoke_with_structured_output = Mock(
+            side_effect=Exception("SQL generation failed")
+        )
         workflow._get_cached_schema = Mock(return_value="CREATE TABLE test (id INT);")
         workflow._validate_sql_safety = Mock()
 
@@ -161,23 +168,25 @@ class TestGenerateSQLClarification:
             question="Show me data",
             parsed_question={"is_relevant": True, "relevant_tables": []},
             unique_nouns=[],
-            retry_count=2  # Multiple retries
+            retry_count=2,  # Multiple retries
         )
 
         result = workflow.generate_sql(state)
 
         # Verify clarification is requested after retries
-        assert result.get('needs_clarification') is True
-        assert result.get('clarification_prompt') is not None
-        assert 'trouble generating' in result.get('clarification_prompt', '')
-        assert isinstance(result.get('clarification_questions'), list)
+        assert result.get("needs_clarification") is True
+        assert result.get("clarification_prompt") is not None
+        assert "trouble generating" in result.get("clarification_prompt", "")
+        assert isinstance(result.get("clarification_questions"), list)
 
     def test_no_clarification_on_first_failure(self, workflow):
         """Test that clarification is NOT requested on first SQL generation failure."""
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
         workflow.llm_manager = Mock()
-        workflow.llm_manager.invoke_with_structured_output = Mock(side_effect=Exception("SQL generation failed"))
+        workflow.llm_manager.invoke_with_structured_output = Mock(
+            side_effect=Exception("SQL generation failed")
+        )
         workflow._get_cached_schema = Mock(return_value="CREATE TABLE test (id INT);")
         workflow._validate_sql_safety = Mock()
 
@@ -185,13 +194,13 @@ class TestGenerateSQLClarification:
             question="Show me data",
             parsed_question={"is_relevant": True, "relevant_tables": []},
             unique_nouns=[],
-            retry_count=0  # First attempt
+            retry_count=0,  # First attempt
         )
 
         result = workflow.generate_sql(state)
 
         # Verify no clarification on first failure
-        assert result.get('needs_clarification', False) is False
+        assert result.get("needs_clarification", False) is False
 
 
 class TestExecuteSQLClarification:
@@ -202,75 +211,75 @@ class TestExecuteSQLClarification:
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
         workflow.db_manager = Mock()
-        workflow.db_manager.execute_query = Mock(side_effect=Exception("Column 'invalid_col' not found"))
+        workflow.db_manager.execute_query = Mock(
+            side_effect=Exception("Column 'invalid_col' not found")
+        )
 
         state = WorkflowState(
-            question="Show me data",
-            sql_query="SELECT invalid_col FROM test"
+            question="Show me data", sql_query="SELECT invalid_col FROM test"
         )
 
         result = workflow.execute_sql(state)
 
         # Verify clarification is requested
-        assert result.get('needs_clarification') is True
-        assert result.get('clarification_prompt') is not None
-        assert "columns or fields don't exist" in result.get('clarification_prompt', '')
-        assert isinstance(result.get('clarification_questions'), list)
+        assert result.get("needs_clarification") is True
+        assert result.get("clarification_prompt") is not None
+        assert "columns or fields don't exist" in result.get("clarification_prompt", "")
+        assert isinstance(result.get("clarification_questions"), list)
 
     def test_clarification_on_syntax_error(self, workflow):
         """Test that clarification is requested on SQL syntax error."""
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
         workflow.db_manager = Mock()
-        workflow.db_manager.execute_query = Mock(side_effect=Exception("Syntax error near 'FROM'"))
-
-        state = WorkflowState(
-            question="Show me data",
-            sql_query="SELECT * FROM"
+        workflow.db_manager.execute_query = Mock(
+            side_effect=Exception("Syntax error near 'FROM'")
         )
+
+        state = WorkflowState(question="Show me data", sql_query="SELECT * FROM")
 
         result = workflow.execute_sql(state)
 
         # Verify clarification is requested
-        assert result.get('needs_clarification') is True
-        assert result.get('clarification_prompt') is not None
-        assert 'syntax error' in result.get('clarification_prompt', '')
+        assert result.get("needs_clarification") is True
+        assert result.get("clarification_prompt") is not None
+        assert "syntax error" in result.get("clarification_prompt", "")
 
     def test_clarification_on_permission_error(self, workflow):
         """Test that clarification is requested on permission/access error."""
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
         workflow.db_manager = Mock()
-        workflow.db_manager.execute_query = Mock(side_effect=Exception("Access denied to table"))
+        workflow.db_manager.execute_query = Mock(
+            side_effect=Exception("Access denied to table")
+        )
 
         state = WorkflowState(
-            question="Show me data",
-            sql_query="SELECT * FROM restricted_table"
+            question="Show me data", sql_query="SELECT * FROM restricted_table"
         )
 
         result = workflow.execute_sql(state)
 
         # Verify clarification is requested
-        assert result.get('needs_clarification') is True
-        assert result.get('clarification_prompt') is not None
-        assert 'permission' in result.get('clarification_prompt', '').lower()
+        assert result.get("needs_clarification") is True
+        assert result.get("clarification_prompt") is not None
+        assert "permission" in result.get("clarification_prompt", "").lower()
 
     def test_no_clarification_on_other_errors(self, workflow):
         """Test that clarification is NOT requested for generic errors."""
         workflow._track_step = Mock(return_value=None)
         workflow._complete_step = Mock()
         workflow.db_manager = Mock()
-        workflow.db_manager.execute_query = Mock(side_effect=Exception("Network timeout"))
-
-        state = WorkflowState(
-            question="Show me data",
-            sql_query="SELECT * FROM test"
+        workflow.db_manager.execute_query = Mock(
+            side_effect=Exception("Network timeout")
         )
+
+        state = WorkflowState(question="Show me data", sql_query="SELECT * FROM test")
 
         result = workflow.execute_sql(state)
 
         # Verify no clarification for generic errors
-        assert result.get('needs_clarification', False) is False
+        assert result.get("needs_clarification", False) is False
 
 
 class TestClarificationStateIntegration:
@@ -282,7 +291,7 @@ class TestClarificationStateIntegration:
             question="test",
             needs_clarification=True,
             clarification_prompt="Please clarify",
-            clarification_questions=["Question 1", "Question 2"]
+            clarification_questions=["Question 1", "Question 2"],
         )
 
         assert state.needs_clarification is True
@@ -295,16 +304,16 @@ class TestClarificationStateIntegration:
             question="test",
             needs_clarification=True,
             clarification_prompt="Please clarify",
-            clarification_questions=["Question 1"]
+            clarification_questions=["Question 1"],
         )
 
         output = state.to_output_dict()
 
-        assert 'needs_clarification' in output
-        assert output['needs_clarification'] is True
-        assert 'clarification_prompt' in output
-        assert 'clarification_questions' in output
-        assert len(output['clarification_questions']) == 1
+        assert "needs_clarification" in output
+        assert output["needs_clarification"] is True
+        assert "clarification_prompt" in output
+        assert "clarification_questions" in output
+        assert len(output["clarification_questions"]) == 1
 
     def test_clarification_converts_to_pydantic_model(self, workflow):
         """Test that clarification state converts to ClarificationQuestion Pydantic model."""
@@ -312,7 +321,7 @@ class TestClarificationStateIntegration:
             question="Show me data",
             needs_clarification=True,
             clarification_prompt="Could you specify which data you want to see?",
-            clarification_questions=["Which columns?", "Which table?"]
+            clarification_questions=["Which columns?", "Which table?"],
         )
 
         # Use to_chain_of_thoughts_output to convert

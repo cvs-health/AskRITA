@@ -19,17 +19,18 @@
 """Tests for SQLAgentWorkflow pure-logic methods (no live LLM/DB needed)."""
 
 import os
-import pytest
 from unittest.mock import MagicMock, patch
 
-from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
-from askrita.sqlagent.State import WorkflowState
-from askrita.exceptions import ValidationError
+import pytest
 
+from askrita.exceptions import ValidationError
+from askrita.sqlagent.State import WorkflowState
+from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def openai_env():
@@ -75,11 +76,24 @@ def _make_workflow():
     mock_data_formatter = MagicMock()
     mock_compiled_graph = MagicMock()
 
-    with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.LLMManager", return_value=mock_llm):
-        with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.DatabaseManager", return_value=mock_db_manager):
-            with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.DataFormatter", return_value=mock_data_formatter):
-                with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.create_pii_detector", return_value=None):
-                    with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.StateGraph") as mock_sg:
+    with patch(
+        "askrita.sqlagent.workflows.SQLAgentWorkflow.LLMManager", return_value=mock_llm
+    ):
+        with patch(
+            "askrita.sqlagent.workflows.SQLAgentWorkflow.DatabaseManager",
+            return_value=mock_db_manager,
+        ):
+            with patch(
+                "askrita.sqlagent.workflows.SQLAgentWorkflow.DataFormatter",
+                return_value=mock_data_formatter,
+            ):
+                with patch(
+                    "askrita.sqlagent.workflows.SQLAgentWorkflow.create_pii_detector",
+                    return_value=None,
+                ):
+                    with patch(
+                        "askrita.sqlagent.workflows.SQLAgentWorkflow.StateGraph"
+                    ) as mock_sg:
                         mock_sg.return_value.compile.return_value = mock_compiled_graph
                         workflow = SQLAgentWorkflow(
                             config_manager=mock_config,
@@ -123,6 +137,7 @@ def _make_state(**kwargs):
 # ---------------------------------------------------------------------------
 # _convert_results_to_execution_result
 # ---------------------------------------------------------------------------
+
 
 class TestConvertResultsToExecutionResult:
     def test_empty_results(self):
@@ -170,6 +185,7 @@ class TestConvertResultsToExecutionResult:
 # _convert_visualization_to_spec
 # ---------------------------------------------------------------------------
 
+
 class TestConvertVisualizationToSpec:
     def test_no_chart_data_returns_table(self):
         wf = _make_workflow()
@@ -196,6 +212,7 @@ class TestConvertVisualizationToSpec:
 # to_chain_of_thoughts_output
 # ---------------------------------------------------------------------------
 
+
 class TestToChainOfThoughtsOutput:
     def test_needs_clarification_returns_clarification_question(self):
         wf = _make_workflow()
@@ -206,6 +223,7 @@ class TestToChainOfThoughtsOutput:
         )
         result = wf.to_chain_of_thoughts_output(state)
         from askrita.models.chain_of_thoughts import ClarificationQuestion
+
         assert isinstance(result, ClarificationQuestion)
         assert result.question == "Please clarify your question"
         assert result.rationale == "What time period?"
@@ -219,6 +237,7 @@ class TestToChainOfThoughtsOutput:
         )
         result = wf.to_chain_of_thoughts_output(state)
         from askrita.models.chain_of_thoughts import ClarificationQuestion
+
         assert isinstance(result, ClarificationQuestion)
         assert result.rationale == "Additional information needed"
 
@@ -232,6 +251,7 @@ class TestToChainOfThoughtsOutput:
         )
         result = wf.to_chain_of_thoughts_output(state)
         from askrita.models.chain_of_thoughts import ChainOfThoughtsOutput
+
         assert isinstance(result, ChainOfThoughtsOutput)
         assert result.sql == "SELECT SUM(revenue) FROM sales"
         assert result.result.row_count == 1
@@ -242,6 +262,7 @@ class TestToChainOfThoughtsOutput:
         state = _make_state(answer="Some answer", results=[])
         result = wf.to_chain_of_thoughts_output(state)
         from askrita.models.chain_of_thoughts import ChainOfThoughtsOutput
+
         assert isinstance(result, ChainOfThoughtsOutput)
         assert len(result.reasoning.steps) > 0
 
@@ -252,6 +273,7 @@ class TestToChainOfThoughtsOutput:
         state = _make_state(answer="Some answer", results=[])
         result = wf.to_chain_of_thoughts_output(state, callback_handler=handler)
         from askrita.models.chain_of_thoughts import ChainOfThoughtsOutput
+
         assert isinstance(result, ChainOfThoughtsOutput)
         assert result.reasoning.steps == ["Step 1", "Step 2"]
 
@@ -263,6 +285,7 @@ class TestToChainOfThoughtsOutput:
         state = _make_state(answer="Some answer", results=[])
         result = wf.to_chain_of_thoughts_output(state)
         from askrita.models.chain_of_thoughts import ChainOfThoughtsOutput
+
         assert isinstance(result, ChainOfThoughtsOutput)
         assert result.reasoning.steps == ["A", "B"]
 
@@ -270,6 +293,7 @@ class TestToChainOfThoughtsOutput:
 # ---------------------------------------------------------------------------
 # chat() validation
 # ---------------------------------------------------------------------------
+
 
 class TestChatValidation:
     def test_empty_messages_raises_validation_error(self):
@@ -310,6 +334,7 @@ class TestChatValidation:
 # ---------------------------------------------------------------------------
 # _should_continue_workflow
 # ---------------------------------------------------------------------------
+
 
 class TestShouldContinueWorkflow:
     def test_no_clarification_returns_continue(self):
@@ -352,6 +377,7 @@ class TestShouldContinueWorkflow:
 # ---------------------------------------------------------------------------
 # _should_retry_sql_generation
 # ---------------------------------------------------------------------------
+
 
 class TestShouldRetrySqlGeneration:
     def test_needs_clarification_returns_end(self):
@@ -396,6 +422,7 @@ class TestShouldRetrySqlGeneration:
 # _summarize_conversation_context
 # ---------------------------------------------------------------------------
 
+
 class TestSummarizeConversationContext:
     def test_single_message_returns_empty(self):
         wf = _make_workflow()
@@ -405,10 +432,15 @@ class TestSummarizeConversationContext:
 
     def test_two_messages_includes_context(self):
         wf = _make_workflow()
-        wf.config.get_conversation_context_settings = MagicMock(return_value={"max_history_messages": 6})
+        wf.config.get_conversation_context_settings = MagicMock(
+            return_value={"max_history_messages": 6}
+        )
         messages = [
             {"role": "user", "content": "Show me sales"},
-            {"role": "assistant", "content": "Here are your sales numbers for last month"},
+            {
+                "role": "assistant",
+                "content": "Here are your sales numbers for last month",
+            },
             {"role": "user", "content": "What about revenue?"},
         ]
         result = wf._summarize_conversation_context(messages)
@@ -416,7 +448,9 @@ class TestSummarizeConversationContext:
 
     def test_sales_content_detected(self):
         wf = _make_workflow()
-        wf.config.get_conversation_context_settings = MagicMock(return_value={"max_history_messages": 6})
+        wf.config.get_conversation_context_settings = MagicMock(
+            return_value={"max_history_messages": 6}
+        )
         messages = [
             {"role": "user", "content": "show me something"},
             {"role": "assistant", "content": "Here are your sales data by region"},
@@ -427,7 +461,9 @@ class TestSummarizeConversationContext:
 
     def test_revenue_content_detected(self):
         wf = _make_workflow()
-        wf.config.get_conversation_context_settings = MagicMock(return_value={"max_history_messages": 6})
+        wf.config.get_conversation_context_settings = MagicMock(
+            return_value={"max_history_messages": 6}
+        )
         messages = [
             {"role": "user", "content": "show me something"},
             {"role": "assistant", "content": "Total revenue is $1,000,000"},
@@ -438,7 +474,9 @@ class TestSummarizeConversationContext:
 
     def test_previous_user_question_included(self):
         wf = _make_workflow()
-        wf.config.get_conversation_context_settings = MagicMock(return_value={"max_history_messages": 6})
+        wf.config.get_conversation_context_settings = MagicMock(
+            return_value={"max_history_messages": 6}
+        )
         messages = [
             {"role": "user", "content": "What is the revenue?"},
             {"role": "assistant", "content": "Revenue is $1M"},
@@ -449,7 +487,9 @@ class TestSummarizeConversationContext:
 
     def test_no_assistant_messages_returns_empty_or_previous_question(self):
         wf = _make_workflow()
-        wf.config.get_conversation_context_settings = MagicMock(return_value={"max_history_messages": 6})
+        wf.config.get_conversation_context_settings = MagicMock(
+            return_value={"max_history_messages": 6}
+        )
         messages = [
             {"role": "user", "content": "First question"},
             {"role": "user", "content": "Second question"},
@@ -463,13 +503,16 @@ class TestSummarizeConversationContext:
 # get_cache_status
 # ---------------------------------------------------------------------------
 
+
 class TestGetCacheStatus:
     def test_returns_dict_with_expected_keys(self):
         wf = _make_workflow()
-        wf.config.get_schema_cache_info = MagicMock(return_value={
-            "enabled": False,
-            "cached": False,
-        })
+        wf.config.get_schema_cache_info = MagicMock(
+            return_value={
+                "enabled": False,
+                "cached": False,
+            }
+        )
         wf.config.database.schema_refresh_interval = 3600
         wf._workflow_schema_cache = None
         wf._workflow_schema_cache_time = None
@@ -480,6 +523,7 @@ class TestGetCacheStatus:
 
     def test_workflow_cache_has_age_when_set(self):
         from datetime import datetime, timedelta
+
         wf = _make_workflow()
         wf.config.get_schema_cache_info = MagicMock(return_value={})
         wf.config.database.schema_refresh_interval = 3600
@@ -498,6 +542,7 @@ class TestGetCacheStatus:
 # will fail with AttributeError; we only test the early-exit path where
 # pii_detector is None (returns {} before any step.complete call).
 # ---------------------------------------------------------------------------
+
 
 class TestPiiDetectionStep:
     def test_no_pii_detector_with_mocked_step(self):
@@ -575,6 +620,7 @@ class TestPiiDetectionStep:
 # format_results step - early-exit paths
 # ---------------------------------------------------------------------------
 
+
 class TestFormatResultsEarlyExits:
     def test_step_disabled_returns_disabled_message(self):
         wf = _make_workflow()
@@ -617,6 +663,7 @@ class TestFormatResultsEarlyExits:
 # ---------------------------------------------------------------------------
 # execute_sql step - early-exit paths
 # ---------------------------------------------------------------------------
+
 
 class TestExecuteSqlEarlyExits:
     def test_step_disabled_returns_empty(self):
@@ -670,6 +717,7 @@ class TestExecuteSqlEarlyExits:
         wf = _make_workflow()
         wf.config.is_step_enabled = MagicMock(return_value=True)
         from askrita.exceptions import DatabaseError
+
         wf.db_manager.execute_query = MagicMock(side_effect=DatabaseError("db crashed"))
         state = _make_state(sql_query="SELECT 1")
         result = wf.execute_sql(state)
@@ -680,6 +728,7 @@ class TestExecuteSqlEarlyExits:
 # ---------------------------------------------------------------------------
 # choose_visualization step - early-exit paths
 # ---------------------------------------------------------------------------
+
 
 class TestChooseVisualizationEarlyExits:
     def test_step_disabled_returns_none(self):
@@ -701,6 +750,7 @@ class TestChooseVisualizationEarlyExits:
 # ---------------------------------------------------------------------------
 # generate_followup_questions step - early-exit paths
 # ---------------------------------------------------------------------------
+
 
 class TestGenerateFollowupQuestionsEarlyExits:
     def test_step_disabled_returns_empty(self):
@@ -729,9 +779,11 @@ class TestGenerateFollowupQuestionsEarlyExits:
 # _get_cached_schema
 # ---------------------------------------------------------------------------
 
+
 class TestGetCachedSchema:
     def test_uses_workflow_cache_when_valid(self):
         from datetime import datetime
+
         wf = _make_workflow()
         wf._workflow_schema_cache = "CREATE TABLE sales (id INT);"
         wf._workflow_schema_cache_time = datetime.now()
@@ -745,7 +797,9 @@ class TestGetCachedSchema:
         wf._workflow_schema_cache = None
         wf._workflow_schema_cache_time = None
         wf.config.database.cache_schema = False  # caching disabled, just fetches
-        wf.db_manager.get_schema = MagicMock(return_value="CREATE TABLE orders (id INT);")
+        wf.db_manager.get_schema = MagicMock(
+            return_value="CREATE TABLE orders (id INT);"
+        )
         result = wf._get_cached_schema()
         assert result == "CREATE TABLE orders (id INT);"
 
@@ -755,7 +809,9 @@ class TestGetCachedSchema:
         wf._workflow_schema_cache_time = None
         wf.config.database.cache_schema = True
         wf.config.database.schema_refresh_interval = 3600
-        wf.db_manager.get_schema = MagicMock(return_value="CREATE TABLE orders (id INT);")
+        wf.db_manager.get_schema = MagicMock(
+            return_value="CREATE TABLE orders (id INT);"
+        )
         result = wf._get_cached_schema()
         assert result == "CREATE TABLE orders (id INT);"
         # With caching enabled, should also cache it
@@ -763,6 +819,7 @@ class TestGetCachedSchema:
 
     def test_fetches_schema_when_cache_expired(self):
         from datetime import datetime, timedelta
+
         wf = _make_workflow()
         wf._workflow_schema_cache = "OLD SCHEMA"
         wf._workflow_schema_cache_time = datetime.now() - timedelta(seconds=7200)
@@ -777,12 +834,15 @@ class TestGetCachedSchema:
 # _validate_sql_safety
 # ---------------------------------------------------------------------------
 
+
 class TestValidateSqlSafety:
     def test_valid_select_passes(self):
         wf = _make_workflow()
-        wf.config.get_sql_safety_settings = MagicMock(return_value={
-            "allowed_query_types": ["SELECT", "WITH"],
-        })
+        wf.config.get_sql_safety_settings = MagicMock(
+            return_value={
+                "allowed_query_types": ["SELECT", "WITH"],
+            }
+        )
         # Should not raise (specific column, not SELECT *)
         wf._validate_sql_safety("SELECT id, revenue FROM sales")
 
@@ -803,33 +863,41 @@ class TestValidateSqlSafety:
 
     def test_drop_statement_raises_validation_error(self):
         wf = _make_workflow()
-        wf.config.get_sql_safety_settings = MagicMock(return_value={
-            "allowed_query_types": ["SELECT", "WITH"],
-        })
+        wf.config.get_sql_safety_settings = MagicMock(
+            return_value={
+                "allowed_query_types": ["SELECT", "WITH"],
+            }
+        )
         with pytest.raises(ValidationError):
             wf._validate_sql_safety("DROP TABLE sales")
 
     def test_with_cte_passes(self):
         wf = _make_workflow()
-        wf.config.get_sql_safety_settings = MagicMock(return_value={
-            "allowed_query_types": ["SELECT", "WITH"],
-        })
+        wf.config.get_sql_safety_settings = MagicMock(
+            return_value={
+                "allowed_query_types": ["SELECT", "WITH"],
+            }
+        )
         # Should not raise (CTE with specific columns)
         wf._validate_sql_safety("WITH cte AS (SELECT id FROM t) SELECT id FROM cte")
 
     def test_line_comment_stripped_before_check(self):
         wf = _make_workflow()
-        wf.config.get_sql_safety_settings = MagicMock(return_value={
-            "allowed_query_types": ["SELECT", "WITH"],
-        })
+        wf.config.get_sql_safety_settings = MagicMock(
+            return_value={
+                "allowed_query_types": ["SELECT", "WITH"],
+            }
+        )
         # Line comment should be stripped, leaving valid SELECT
         wf._validate_sql_safety("-- DROP TABLE\nSELECT 1")
 
     def test_block_comment_stripped_before_check(self):
         wf = _make_workflow()
-        wf.config.get_sql_safety_settings = MagicMock(return_value={
-            "allowed_query_types": ["SELECT", "WITH"],
-        })
+        wf.config.get_sql_safety_settings = MagicMock(
+            return_value={
+                "allowed_query_types": ["SELECT", "WITH"],
+            }
+        )
         # Block comment stripped, leaving SELECT
         wf._validate_sql_safety("/* DROP TABLE */ SELECT 1")
 
@@ -837,6 +905,7 @@ class TestValidateSqlSafety:
 # ---------------------------------------------------------------------------
 # choose_and_format_visualization step - early-exit paths
 # ---------------------------------------------------------------------------
+
 
 class TestChooseAndFormatVisualizationEarlyExits:
     def test_step_disabled_returns_none_visualization(self):
@@ -860,6 +929,7 @@ class TestChooseAndFormatVisualizationEarlyExits:
 # generate_sql step - early-exit paths
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateSqlEarlyExits:
     def test_step_disabled_returns_empty_sql(self):
         wf = _make_workflow()
@@ -878,7 +948,10 @@ class TestGenerateSqlEarlyExits:
         wf.config.is_step_enabled = MagicMock(return_value=True)
         state = _make_state(
             question="Who is the CEO?",
-            parsed_question={"is_relevant": False, "relevance_reason": "Not about data"},
+            parsed_question={
+                "is_relevant": False,
+                "relevance_reason": "Not about data",
+            },
             unique_nouns=[],
             execution_error=None,
             retry_count=0,
@@ -890,6 +963,7 @@ class TestGenerateSqlEarlyExits:
 # ---------------------------------------------------------------------------
 # backward compatibility methods
 # ---------------------------------------------------------------------------
+
 
 class TestBackwardCompatibility:
     def test_run_delegates_to_query(self):
@@ -908,6 +982,7 @@ class TestBackwardCompatibility:
 # ---------------------------------------------------------------------------
 # _parse_schema_to_dict
 # ---------------------------------------------------------------------------
+
 
 class TestParseSchemaToDict:
     def test_empty_schema_returns_empty_tables(self):

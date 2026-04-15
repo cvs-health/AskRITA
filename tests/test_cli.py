@@ -18,14 +18,13 @@
 
 """Tests for CLI functionality."""
 
-import pytest
 import json
-from unittest.mock import Mock, patch
 from argparse import Namespace
+from unittest.mock import Mock, patch
 
-from askrita.cli import (
-    setup_config, run_interactive, run_query, run_config_test, main
-)
+import pytest
+
+from askrita.cli import main, run_config_test, run_interactive, run_query, setup_config
 from askrita.sqlagent.State import WorkflowState
 
 
@@ -35,9 +34,10 @@ class TestSetupConfig:
     def test_setup_config_success(self, temp_config_file):
         """Test successful configuration setup."""
         from pathlib import Path
+
         resolved_path = str(Path(temp_config_file).resolve())
 
-        with patch('askrita.cli.ConfigManager') as mock_config_class:
+        with patch("askrita.cli.ConfigManager") as mock_config_class:
             mock_config = Mock()
             mock_config.validate_config.return_value = True
             mock_config.config_path = resolved_path
@@ -49,7 +49,7 @@ class TestSetupConfig:
             mock_config._config_data = {
                 "logging": {
                     "level": "INFO",
-                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                 }
             }
             mock_config_class.return_value = mock_config
@@ -62,7 +62,7 @@ class TestSetupConfig:
 
     def test_setup_config_validation_failure(self, temp_config_file):
         """Test configuration setup with validation failure."""
-        with patch('askrita.cli.ConfigManager') as mock_config_class:
+        with patch("askrita.cli.ConfigManager") as mock_config_class:
             mock_config = Mock()
             mock_config.validate_config.return_value = False
             mock_config_class.return_value = mock_config
@@ -81,8 +81,10 @@ class TestSetupConfig:
 
     def test_setup_config_generic_error(self, temp_config_file):
         """Test configuration setup with generic error."""
-        with patch('askrita.cli.ConfigManager') as mock_config_class, \
-             patch('sys.exit') as mock_exit:
+        with (
+            patch("askrita.cli.ConfigManager") as mock_config_class,
+            patch("sys.exit") as mock_exit,
+        ):
 
             mock_config_class.side_effect = Exception("Generic error")
 
@@ -98,11 +100,13 @@ class TestRunInteractive:
         """Test successful interactive session."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.input') as mock_input, \
-             patch('builtins.print') as mock_print, \
-             patch('sys.exit'):
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.input") as mock_input,
+            patch("builtins.print") as mock_print,
+            patch("sys.exit"),
+        ):
 
             # Setup mocks
             mock_config = Mock()
@@ -111,7 +115,11 @@ class TestRunInteractive:
             mock_workflow = Mock()
             mock_workflow.db_manager.test_connection.return_value = True
             mock_workflow.llm_manager.test_connection.return_value = True
-            mock_workflow.query.return_value = WorkflowState(answer="Top customers: Customer A, Customer B", visualization="bar", visualization_reason="Bar chart is good for comparisons")
+            mock_workflow.query.return_value = WorkflowState(
+                answer="Top customers: Customer A, Customer B",
+                visualization="bar",
+                visualization_reason="Bar chart is good for comparisons",
+            )
             mock_workflow_class.return_value = mock_workflow
 
             # Simulate user input sequence: question -> exit
@@ -123,16 +131,20 @@ class TestRunInteractive:
             mock_workflow.query.assert_called_once_with("What are the top customers?")
 
             # Verify appropriate messages were printed
-            mock_print.assert_any_call("✅ All connections successful. Ready for questions!\n")
+            mock_print.assert_any_call(
+                "✅ All connections successful. Ready for questions!\n"
+            )
             mock_print.assert_any_call("👋 Goodbye!")
 
     def test_run_interactive_database_connection_failure(self, temp_config_file):
         """Test interactive mode with database connection failure."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.print'):
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.print"),
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -150,9 +162,11 @@ class TestRunInteractive:
         """Test interactive mode with LLM connection failure."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.print'):
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.print"),
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -171,10 +185,12 @@ class TestRunInteractive:
         """Test interactive mode with empty input."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.input') as mock_input, \
-             patch('builtins.print'):
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.input") as mock_input,
+            patch("builtins.print"),
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -196,10 +212,12 @@ class TestRunInteractive:
         """Test interactive mode with keyboard interrupt."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.input') as mock_input, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.input") as mock_input,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -220,10 +238,12 @@ class TestRunInteractive:
         """Test interactive mode with query processing error."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.input') as mock_input, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.input") as mock_input,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -249,14 +269,14 @@ class TestRunQuery:
     def test_run_query_success_text_format(self, temp_config_file):
         """Test successful direct query with text format."""
         args = Namespace(
-            config=temp_config_file,
-            question="What are the top customers?",
-            format=None
+            config=temp_config_file, question="What are the top customers?", format=None
         )
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_config.workflow.output_format = "text"
@@ -265,7 +285,11 @@ class TestRunQuery:
             mock_workflow = Mock()
             mock_workflow.db_manager.test_connection.return_value = True
             mock_workflow.llm_manager.test_connection.return_value = True
-            mock_workflow.query.return_value = WorkflowState(answer="Top customers: Customer A, Customer B", visualization="bar", visualization_reason="Bar chart is good for comparisons")
+            mock_workflow.query.return_value = WorkflowState(
+                answer="Top customers: Customer A, Customer B",
+                visualization="bar",
+                visualization_reason="Bar chart is good for comparisons",
+            )
             mock_workflow_class.return_value = mock_workflow
 
             run_query(args)
@@ -280,12 +304,14 @@ class TestRunQuery:
         args = Namespace(
             config=temp_config_file,
             question="What are the top customers?",
-            format="json"
+            format="json",
         )
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -293,7 +319,11 @@ class TestRunQuery:
             mock_workflow = Mock()
             mock_workflow.db_manager.test_connection.return_value = True
             mock_workflow.llm_manager.test_connection.return_value = True
-            mock_workflow.query.return_value = WorkflowState(answer="Top customers: Customer A, Customer B", visualization="bar", visualization_reason="Bar chart is good for comparisons")
+            mock_workflow.query.return_value = WorkflowState(
+                answer="Top customers: Customer A, Customer B",
+                visualization="bar",
+                visualization_reason="Bar chart is good for comparisons",
+            )
             mock_workflow_class.return_value = mock_workflow
 
             run_query(args)
@@ -307,7 +337,10 @@ class TestRunQuery:
             # Verify expected fields are present
             assert parsed_output["answer"] == "Top customers: Customer A, Customer B"
             assert parsed_output["visualization"] == "bar"
-            assert parsed_output["visualization_reason"] == "Bar chart is good for comparisons"
+            assert (
+                parsed_output["visualization_reason"]
+                == "Bar chart is good for comparisons"
+            )
             assert parsed_output["retry_count"] == 0
 
     def test_run_query_success_yaml_format(self, temp_config_file):
@@ -315,12 +348,14 @@ class TestRunQuery:
         args = Namespace(
             config=temp_config_file,
             question="What are the top customers?",
-            format="yaml"
+            format="yaml",
         )
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -328,7 +363,9 @@ class TestRunQuery:
             mock_workflow = Mock()
             mock_workflow.db_manager.test_connection.return_value = True
             mock_workflow.llm_manager.test_connection.return_value = True
-            mock_workflow.query.return_value = WorkflowState(answer="Top customers: Customer A, Customer B", visualization="bar")
+            mock_workflow.query.return_value = WorkflowState(
+                answer="Top customers: Customer A, Customer B", visualization="bar"
+            )
             mock_workflow_class.return_value = mock_workflow
 
             run_query(args)
@@ -339,13 +376,13 @@ class TestRunQuery:
     def test_run_query_database_connection_failure(self, temp_config_file):
         """Test direct query with database connection failure."""
         args = Namespace(
-            config=temp_config_file,
-            question="What are the sales?",
-            format=None
+            config=temp_config_file, question="What are the sales?", format=None
         )
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -362,13 +399,13 @@ class TestRunQuery:
     def test_run_query_llm_connection_failure(self, temp_config_file):
         """Test direct query with LLM connection failure."""
         args = Namespace(
-            config=temp_config_file,
-            question="What are the sales?",
-            format=None
+            config=temp_config_file, question="What are the sales?", format=None
         )
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -386,14 +423,14 @@ class TestRunQuery:
     def test_run_query_keyboard_interrupt(self, temp_config_file):
         """Test direct query with keyboard interrupt."""
         args = Namespace(
-            config=temp_config_file,
-            question="What are the sales?",
-            format=None
+            config=temp_config_file, question="What are the sales?", format=None
         )
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('sys.exit') as mock_exit:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("sys.exit") as mock_exit,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -411,14 +448,14 @@ class TestRunQuery:
     def test_run_query_exception(self, temp_config_file):
         """Test direct query with exception."""
         args = Namespace(
-            config=temp_config_file,
-            question="What are the sales?",
-            format=None
+            config=temp_config_file, question="What are the sales?", format=None
         )
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('sys.exit') as mock_exit:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("sys.exit") as mock_exit,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -441,10 +478,12 @@ class TestRunConfigTest:
         """Test successful configuration test."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.DatabaseManager') as mock_db_class, \
-             patch('askrita.cli.LLMManager') as mock_llm_class, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.DatabaseManager") as mock_db_class,
+            patch("askrita.cli.LLMManager") as mock_llm_class,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_config.config_path = temp_config_file
@@ -467,7 +506,11 @@ class TestRunConfigTest:
             # Setup database manager mock
             mock_db_manager = Mock()
             mock_db_manager.test_connection.return_value = True
-            mock_db_manager.get_table_names.return_value = ["customers", "orders", "products"]
+            mock_db_manager.get_table_names.return_value = [
+                "customers",
+                "orders",
+                "products",
+            ]
             mock_db_class.return_value = mock_db_manager
 
             # Setup LLM manager mock
@@ -487,9 +530,11 @@ class TestRunConfigTest:
         """Test configuration test with database failure."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.DatabaseManager') as mock_db_class, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.DatabaseManager") as mock_db_class,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_config.config_path = temp_config_file
@@ -521,10 +566,12 @@ class TestRunConfigTest:
         """Test configuration test with LLM failure."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.DatabaseManager') as mock_db_class, \
-             patch('askrita.cli.LLMManager') as mock_llm_class, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.DatabaseManager") as mock_db_class,
+            patch("askrita.cli.LLMManager") as mock_llm_class,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_config.config_path = temp_config_file
@@ -563,10 +610,12 @@ class TestMainFunction:
 
     def test_main_interactive_command(self):
         """Test main function with interactive command."""
-        test_args = ['askrita', 'interactive', '--config', 'test.yaml']
+        test_args = ["askrita", "interactive", "--config", "test.yaml"]
 
-        with patch('sys.argv', test_args), \
-             patch('askrita.cli.run_interactive') as mock_run_interactive:
+        with (
+            patch("sys.argv", test_args),
+            patch("askrita.cli.run_interactive") as mock_run_interactive,
+        ):
 
             main()
 
@@ -574,10 +623,12 @@ class TestMainFunction:
 
     def test_main_query_command(self):
         """Test main function with query command."""
-        test_args = ['askrita', 'query', 'What are the sales?', '--format', 'json']
+        test_args = ["askrita", "query", "What are the sales?", "--format", "json"]
 
-        with patch('sys.argv', test_args), \
-             patch('askrita.cli.run_query') as mock_run_query:
+        with (
+            patch("sys.argv", test_args),
+            patch("askrita.cli.run_query") as mock_run_query,
+        ):
 
             main()
 
@@ -585,10 +636,12 @@ class TestMainFunction:
 
     def test_main_test_command(self):
         """Test main function with test command."""
-        test_args = ['askrita', 'test', '--config', 'test.yaml']
+        test_args = ["askrita", "test", "--config", "test.yaml"]
 
-        with patch('sys.argv', test_args), \
-             patch('askrita.cli.run_config_test') as mock_run_config_test:
+        with (
+            patch("sys.argv", test_args),
+            patch("askrita.cli.run_config_test") as mock_run_config_test,
+        ):
 
             main()
 
@@ -596,9 +649,9 @@ class TestMainFunction:
 
     def test_main_no_command(self):
         """Test main function with no command."""
-        test_args = ['askrita']
+        test_args = ["askrita"]
 
-        with patch('sys.argv', test_args):
+        with patch("sys.argv", test_args):
             with pytest.raises(SystemExit) as exc_info:
                 main()
 
@@ -606,11 +659,13 @@ class TestMainFunction:
 
     def test_main_verbose_logging(self):
         """Test main function with verbose logging enabled."""
-        test_args = ['askrita', 'test', '--verbose']
+        test_args = ["askrita", "test", "--verbose"]
 
-        with patch('sys.argv', test_args), \
-             patch('askrita.cli.run_config_test'), \
-             patch('logging.getLogger') as mock_get_logger:
+        with (
+            patch("sys.argv", test_args),
+            patch("askrita.cli.run_config_test"),
+            patch("logging.getLogger") as mock_get_logger,
+        ):
 
             mock_logger = Mock()
             mock_get_logger.return_value = mock_logger
@@ -625,18 +680,17 @@ class TestCLIEdgeCases:
 
     def test_setup_config_logging_configuration(self, temp_config_file):
         """Test that logging is properly configured from config."""
-        with patch('askrita.cli.ConfigManager') as mock_config_class, \
-             patch('logging.basicConfig') as mock_logging_config:
+        with (
+            patch("askrita.cli.ConfigManager") as mock_config_class,
+            patch("logging.basicConfig") as mock_logging_config,
+        ):
 
             mock_config = Mock()
             mock_config.validate_config.return_value = True
             mock_config.config_path = temp_config_file
             mock_config.environment = "production"
             mock_config._config_data = {
-                "logging": {
-                    "level": "DEBUG",
-                    "format": "%(levelname)s - %(message)s"
-                }
+                "logging": {"level": "DEBUG", "format": "%(levelname)s - %(message)s"}
             }
             mock_config.database.connection_string = "postgresql://user:pass@host/db"
             mock_config.get_database_type.return_value = "PostgreSQL"
@@ -654,10 +708,12 @@ class TestCLIEdgeCases:
         """Test interactive mode displaying visualization recommendations."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.input') as mock_input, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.input") as mock_input,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_setup_config.return_value = mock_config
@@ -665,7 +721,11 @@ class TestCLIEdgeCases:
             mock_workflow = Mock()
             mock_workflow.db_manager.test_connection.return_value = True
             mock_workflow.llm_manager.test_connection.return_value = True
-            mock_workflow.query.return_value = WorkflowState(answer="Sales data", visualization="line", visualization_reason="Line chart shows trends over time")
+            mock_workflow.query.return_value = WorkflowState(
+                answer="Sales data",
+                visualization="line",
+                visualization_reason="Line chart shows trends over time",
+            )
             mock_workflow_class.return_value = mock_workflow
 
             mock_input.side_effect = ["Show sales trends", "exit"]
@@ -680,9 +740,11 @@ class TestCLIEdgeCases:
         """Test configuration test when API key is missing."""
         args = Namespace(config=temp_config_file)
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('builtins.print') as mock_print, \
-             patch('os.getenv') as mock_getenv:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("builtins.print") as mock_print,
+            patch("os.getenv") as mock_getenv,
+        ):
 
             mock_config = Mock()
             mock_config.config_path = temp_config_file
@@ -711,19 +773,22 @@ class TestCLIEdgeCases:
             mock_print.assert_called()  # Just verify that print was called
             print_calls = [str(call) for call in mock_print.call_args_list]
             # Should have some configuration-related output
-            assert any("Configuration" in call or "config" in call.lower() for call in print_calls)
+            assert any(
+                "Configuration" in call or "config" in call.lower()
+                for call in print_calls
+            )
 
     def test_run_query_with_no_visualization(self, temp_config_file):
         """Test direct query when no visualization is recommended."""
         args = Namespace(
-            config=temp_config_file,
-            question="What is the count?",
-            format=None
+            config=temp_config_file, question="What is the count?", format=None
         )
 
-        with patch('askrita.cli.setup_config') as mock_setup_config, \
-             patch('askrita.cli.SQLAgentWorkflow') as mock_workflow_class, \
-             patch('builtins.print') as mock_print:
+        with (
+            patch("askrita.cli.setup_config") as mock_setup_config,
+            patch("askrita.cli.SQLAgentWorkflow") as mock_workflow_class,
+            patch("builtins.print") as mock_print,
+        ):
 
             mock_config = Mock()
             mock_config.workflow.output_format = "text"
@@ -741,5 +806,9 @@ class TestCLIEdgeCases:
             mock_print.assert_any_call("Answer: Count is 42")
             # Should not print visualization lines
             calls = [call.args for call in mock_print.call_args_list]
-            viz_calls = [call for call in calls if any("Recommended Visualization" in str(arg) for arg in call)]
+            viz_calls = [
+                call
+                for call in calls
+                if any("Recommended Visualization" in str(arg) for arg in call)
+            ]
             assert len(viz_calls) == 0

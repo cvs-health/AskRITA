@@ -57,8 +57,8 @@ except ImportError:
 
 # Excel chart type mapping
 _CHART_TYPE_MAP = {
-    "bar": "column",         # Excel calls vertical bars "column"
-    "horizontal_bar": "bar", # Excel calls horizontal bars "bar"
+    "bar": "column",  # Excel calls vertical bars "column"
+    "horizontal_bar": "bar",  # Excel calls horizontal bars "bar"
     "line": "line",
     "area": "area",
     "scatter": "scatter",
@@ -71,33 +71,51 @@ def _setup_workbook_formats(workbook, settings: ExportSettings) -> dict:
     """Create and return all xlsxwriter cell formats needed for the workbook."""
     primary_color = _rgb_to_hex(settings.brand_primary_color)
     return {
-        "title": workbook.add_format({
-            "bold": True,
-            "font_size": 18,
-            "font_color": primary_color,
-            "align": "left",
-            "valign": "vcenter",
-        }),
-        "header": workbook.add_format({
-            "bold": True,
-            "font_size": 12,
-            "bg_color": primary_color,
-            "font_color": "white",
-            "align": "center",
-            "valign": "vcenter",
-            "border": 1,
-        }),
-        "data": workbook.add_format({"align": "left", "valign": "vcenter", "border": 1}),
-        "number": workbook.add_format({
-            "align": "right", "valign": "vcenter", "border": 1, "num_format": "#,##0",
-        }),
-        "decimal": workbook.add_format({
-            "align": "right", "valign": "vcenter", "border": 1, "num_format": "#,##0.00",
-        }),
+        "title": workbook.add_format(
+            {
+                "bold": True,
+                "font_size": 18,
+                "font_color": primary_color,
+                "align": "left",
+                "valign": "vcenter",
+            }
+        ),
+        "header": workbook.add_format(
+            {
+                "bold": True,
+                "font_size": 12,
+                "bg_color": primary_color,
+                "font_color": "white",
+                "align": "center",
+                "valign": "vcenter",
+                "border": 1,
+            }
+        ),
+        "data": workbook.add_format(
+            {"align": "left", "valign": "vcenter", "border": 1}
+        ),
+        "number": workbook.add_format(
+            {
+                "align": "right",
+                "valign": "vcenter",
+                "border": 1,
+                "num_format": "#,##0",
+            }
+        ),
+        "decimal": workbook.add_format(
+            {
+                "align": "right",
+                "valign": "vcenter",
+                "border": 1,
+                "num_format": "#,##0.00",
+            }
+        ),
     }
 
 
-def _write_worksheet_meta(data_ws, workbook, output_state, settings, formats, start_row: int) -> int:
+def _write_worksheet_meta(
+    data_ws, workbook, output_state, settings, formats, start_row: int
+) -> int:
     """Write title, question, answer, and optional SQL to worksheet. Returns updated start_row."""
     data_ws.write("A1", settings.title, formats["title"])
     if output_state.question:
@@ -106,7 +124,9 @@ def _write_worksheet_meta(data_ws, workbook, output_state, settings, formats, st
         data_ws.write("A4", "Answer:", workbook.add_format({"bold": True}))
         data_ws.write("B4", output_state.answer)
     if settings.include_sql and output_state.sql_query:
-        data_ws.write(f"A{start_row}", "SQL Query:", workbook.add_format({"bold": True}))
+        data_ws.write(
+            f"A{start_row}", "SQL Query:", workbook.add_format({"bold": True})
+        )
         data_ws.write(
             f"A{start_row + 1}",
             output_state.sql_query,
@@ -127,14 +147,18 @@ def _extract_fallback_headers(results: list, output_state) -> List[str]:
     fallback_headers = [f"Column_{i + 1}" for i in range(len(results[0]))]
     sql_query = output_state.sql_query or ""
     if sql_query:
-        select_match = re.search(r"SELECT\s+(.*?)\s+FROM", sql_query, re.IGNORECASE | re.DOTALL)
+        select_match = re.search(
+            r"SELECT\s+(.*?)\s+FROM", sql_query, re.IGNORECASE | re.DOTALL
+        )
         if select_match:
             columns = [
                 col.strip().split(" AS ")[-1].split(".")[-1].strip('`"[]')
                 for col in select_match.group(1).split(",")
             ]
             if len(columns) == len(results[0]):
-                logger.info(f"Extracted {len(columns)} column names from SQL query: {columns}")
+                logger.info(
+                    f"Extracted {len(columns)} column names from SQL query: {columns}"
+                )
                 return columns
     return fallback_headers
 
@@ -149,9 +173,15 @@ def _write_cell_value(data_ws, row: int, col: int, value, formats: dict) -> None
         data_ws.write(row, col, value, formats["data"])
 
 
-def _get_cell_value(row_data, col_idx: int, fallback_headers: List[str], headers: List[str]):
+def _get_cell_value(
+    row_data, col_idx: int, fallback_headers: List[str], headers: List[str]
+):
     """Retrieve a cell value from a result row using the appropriate key or index."""
-    key = fallback_headers[col_idx] if col_idx < len(fallback_headers) else headers[col_idx]
+    key = (
+        fallback_headers[col_idx]
+        if col_idx < len(fallback_headers)
+        else headers[col_idx]
+    )
     if isinstance(row_data, dict):
         return row_data.get(key)
     if col_idx < len(row_data):
@@ -214,7 +244,9 @@ def _first_column_header(chart_data, fallback_headers: List[str]) -> str:
 def _value_column_headers(chart_data) -> List[str]:
     """Return labels for value columns from dataset labels or Y-axis label."""
     if chart_data.datasets:
-        return [ds.label or chart_data.yAxisLabel or "Value" for ds in chart_data.datasets]
+        return [
+            ds.label or chart_data.yAxisLabel or "Value" for ds in chart_data.datasets
+        ]
     if chart_data.yAxisLabel:
         return [chart_data.yAxisLabel]
     return []
@@ -237,7 +269,9 @@ def _generate_table_headers_from_chart_data(
     if not chart_data or not results:
         return fallback_headers
 
-    headers = [_first_column_header(chart_data, fallback_headers)] + _value_column_headers(chart_data)
+    headers = [
+        _first_column_header(chart_data, fallback_headers)
+    ] + _value_column_headers(chart_data)
 
     # If header count mismatches result columns, rebuild using chart metadata
     if isinstance(results[0], dict):
@@ -278,7 +312,9 @@ def create_excel_export(output_state: WorkflowState, settings: ExportSettings) -
         formats = _setup_workbook_formats(workbook, settings)
         data_ws = workbook.add_worksheet("Data")
 
-        start_row = _write_worksheet_meta(data_ws, workbook, output_state, settings, formats, 6)
+        start_row = _write_worksheet_meta(
+            data_ws, workbook, output_state, settings, formats, 6
+        )
 
         results = output_state.results or []
         headers: List[str] = []
@@ -295,12 +331,23 @@ def create_excel_export(output_state: WorkflowState, settings: ExportSettings) -
                 logger.info(f"Using fallback headers: {headers}")
 
             start_row = _write_data_table_content(
-                data_ws, workbook, results, headers, fallback_headers, start_row, formats
+                data_ws,
+                workbook,
+                results,
+                headers,
+                fallback_headers,
+                start_row,
+                formats,
             )
 
             if output_state.chart_data:
                 _add_excel_chart(
-                    workbook, data_ws, output_state.chart_data, headers, results, start_row
+                    workbook,
+                    data_ws,
+                    output_state.chart_data,
+                    headers,
+                    results,
+                    start_row,
                 )
 
         if output_state.followup_questions:
@@ -312,7 +359,9 @@ def create_excel_export(output_state: WorkflowState, settings: ExportSettings) -
 
         workbook.close()
         excel_buffer.seek(0)
-        logger.info(f"✅ Excel export created successfully: {len(excel_buffer.getvalue()):,} bytes")
+        logger.info(
+            f"✅ Excel export created successfully: {len(excel_buffer.getvalue()):,} bytes"
+        )
         return excel_buffer.getvalue()
 
     except Exception as e:
@@ -358,11 +407,13 @@ def _add_pie_chart(
         val_col = _col_to_excel(data_start_col + 1)
         end_row = data_start_row + n - 1
         primary_chart = workbook.add_chart({"type": "pie"})
-        primary_chart.add_series({
-            "categories": f"=Data!${cat_col}${data_start_row}:${cat_col}${end_row}",
-            "values": f"=Data!${val_col}${data_start_row}:${val_col}${end_row}",
-            "data_labels": {"percentage": True},
-        })
+        primary_chart.add_series(
+            {
+                "categories": f"=Data!${cat_col}${data_start_row}:${cat_col}${end_row}",
+                "values": f"=Data!${val_col}${data_start_row}:${val_col}${end_row}",
+                "data_labels": {"percentage": True},
+            }
+        )
         primary_chart.set_title({"name": chart_data.title or "Pie Chart"})
         primary_chart.set_size({"width": 720, "height": 400})
         worksheet.insert_chart(f"A{data_start_row + len(results) + 3}", primary_chart)
@@ -379,17 +430,27 @@ def _find_value_columns(datasets, headers: List[str]) -> List[int]:
         matched = False
         for idx, header in enumerate(headers):
             header_lower = header.lower()
-            if label and idx not in value_cols and (
-                label in header_lower
-                or header_lower in label
-                or any(word in header_lower for word in label.split() if len(word) > 3)
-                or any(word in label for word in header_lower.split() if len(word) > 3)
+            if (
+                label
+                and idx not in value_cols
+                and (
+                    label in header_lower
+                    or header_lower in label
+                    or any(
+                        word in header_lower for word in label.split() if len(word) > 3
+                    )
+                    or any(
+                        word in label for word in header_lower.split() if len(word) > 3
+                    )
+                )
             ):
                 value_cols.append(idx)
                 matched = True
                 break
         if not matched:
-            logger.warning(f"Could not match dataset label '{dataset.label}' to any column")
+            logger.warning(
+                f"Could not match dataset label '{dataset.label}' to any column"
+            )
     return value_cols
 
 
@@ -430,70 +491,105 @@ def _combine_multi_axis_charts(
         second_col = value_cols[secondary_series_idx]
         header_row = data_start_row - 1
         sec_col_letter = _col_to_excel(second_col)
-        secondary_chart.add_series({
-            "name": f"=Data!${sec_col_letter}${header_row}",
-            "categories": categories_range,
-            "values": f"=Data!${sec_col_letter}${data_start_row}:${sec_col_letter}${data_end_row}",
-            "y2_axis": True,
-            "marker": {"type": "automatic"},
-        })
+        secondary_chart.add_series(
+            {
+                "name": f"=Data!${sec_col_letter}${header_row}",
+                "categories": categories_range,
+                "values": f"=Data!${sec_col_letter}${data_start_row}:${sec_col_letter}${data_end_row}",
+                "y2_axis": True,
+                "marker": {"type": "automatic"},
+            }
+        )
         col_name = headers[second_col] if second_col < len(headers) else "unknown"
-        logger.info(f"✅ Added secondary series: {col_name} (y2_axis=True, header at row {header_row})")
+        logger.info(
+            f"✅ Added secondary series: {col_name} (y2_axis=True, header at row {header_row})"
+        )
 
     primary_chart.combine(secondary_chart)
 
     if len(y_axes) >= 1:
-        primary_chart.set_y_axis({"name": getattr(y_axes[0], "label", None) or "Primary Axis"})
+        primary_chart.set_y_axis(
+            {"name": getattr(y_axes[0], "label", None) or "Primary Axis"}
+        )
     if len(y_axes) >= 2:
-        primary_chart.set_y2_axis({"name": getattr(y_axes[1], "label", None) or "Secondary Axis"})
+        primary_chart.set_y2_axis(
+            {"name": getattr(y_axes[1], "label", None) or "Secondary Axis"}
+        )
 
 
-def _resolve_value_columns(datasets, headers: List[str], has_secondary_axis: bool) -> List[int]:
+def _resolve_value_columns(
+    datasets, headers: List[str], has_secondary_axis: bool
+) -> List[int]:
     """Return value column indices, falling back to positional indices if fuzzy match fails."""
     value_cols = _find_value_columns(datasets, headers)
     if not value_cols or (has_secondary_axis and len(value_cols) < len(datasets)):
-        logger.warning(f"Fuzzy matching found {len(value_cols)} columns but need {len(datasets)}. Using column indices.")
+        logger.warning(
+            f"Fuzzy matching found {len(value_cols)} columns but need {len(datasets)}. Using column indices."
+        )
         logger.warning(f"Headers: {headers}, Length: {len(headers)}")
         value_cols = list(range(1, len(headers)))
         logger.warning(f"After fallback, value_cols = {value_cols}")
     return value_cols
 
 
-def _add_primary_series(primary_chart, value_cols: List[int], categories_range: str,
-                        data_start_row: int, data_end_row: int, headers: List[str]) -> None:
+def _add_primary_series(
+    primary_chart,
+    value_cols: List[int],
+    categories_range: str,
+    data_start_row: int,
+    data_end_row: int,
+    headers: List[str],
+) -> None:
     """Add the first data series to the primary chart."""
     if not value_cols:
         return
     first_col = value_cols[0]
     header_row = data_start_row - 1
     col_letter = _col_to_excel(first_col)
-    primary_chart.add_series({
-        "name": f"=Data!${col_letter}${header_row}",
-        "categories": categories_range,
-        "values": f"=Data!${col_letter}${data_start_row}:${col_letter}${data_end_row}",
-        "data_labels": {"value": False},
-    })
-    logger.info(f"✅ Added primary series: {headers[first_col] if first_col < len(headers) else 'unknown'} (header at row {header_row})")
+    primary_chart.add_series(
+        {
+            "name": f"=Data!${col_letter}${header_row}",
+            "categories": categories_range,
+            "values": f"=Data!${col_letter}${data_start_row}:${col_letter}${data_end_row}",
+            "data_labels": {"value": False},
+        }
+    )
+    logger.info(
+        f"✅ Added primary series: {headers[first_col] if first_col < len(headers) else 'unknown'} (header at row {header_row})"
+    )
 
 
-def _add_remaining_series(primary_chart, value_cols: List[int], categories_range: str,
-                          data_start_row: int, data_end_row: int) -> None:
+def _add_remaining_series(
+    primary_chart,
+    value_cols: List[int],
+    categories_range: str,
+    data_start_row: int,
+    data_end_row: int,
+) -> None:
     """Add extra series to a single-axis primary chart."""
     header_row = data_start_row - 1
     for col_idx in value_cols[1:]:
         col_letter = _col_to_excel(col_idx)
-        primary_chart.add_series({
-            "name": f"=Data!${col_letter}${header_row}",
-            "categories": categories_range,
-            "values": f"=Data!${col_letter}${data_start_row}:${col_letter}${data_end_row}",
-        })
+        primary_chart.add_series(
+            {
+                "name": f"=Data!${col_letter}${header_row}",
+                "categories": categories_range,
+                "values": f"=Data!${col_letter}${data_start_row}:${col_letter}${data_end_row}",
+            }
+        )
 
 
 def _configure_chart_appearance(
-    primary_chart, chart_data, headers: List[str], category_col: int, has_secondary_axis: bool
+    primary_chart,
+    chart_data,
+    headers: List[str],
+    category_col: int,
+    has_secondary_axis: bool,
 ) -> None:
     """Set title, axis labels, legend, and size on the primary chart."""
-    x_label = chart_data.xAxisLabel or (headers[category_col] if headers else "Categories")
+    x_label = chart_data.xAxisLabel or (
+        headers[category_col] if headers else "Categories"
+    )
     primary_chart.set_title({"name": chart_data.title or "Data Visualization"})
     primary_chart.set_x_axis({"name": x_label})
     if not has_secondary_axis and chart_data.yAxisLabel:
@@ -529,12 +625,16 @@ def _add_excel_chart(
             logger.warning("No datasets in chart_data, skipping chart")
             return
 
-        logger.debug(f"Chart data: type={chart_type}, datasets={len(datasets)}, labels={len(chart_data.labels or [])}")
+        logger.debug(
+            f"Chart data: type={chart_type}, datasets={len(datasets)}, labels={len(chart_data.labels or [])}"
+        )
 
         excel_chart_type = _CHART_TYPE_MAP.get(chart_type, "column")
 
         if chart_type == "pie":
-            _add_pie_chart(workbook, worksheet, chart_data, headers, results, data_start_row)
+            _add_pie_chart(
+                workbook, worksheet, chart_data, headers, results, data_start_row
+            )
             return
 
         y_axes = chart_data.yAxes or []
@@ -545,26 +645,59 @@ def _add_excel_chart(
         primary_chart = workbook.add_chart({"type": excel_chart_type})
         data_end_row = data_start_row + len(results) - 1
 
-        logger.info(f"📊 Chart data ranges: start_row={data_start_row}, end_row={data_end_row}, total_rows={len(results)}")
-        logger.info(f"📊 Categories column: {category_col} ({headers[category_col] if category_col < len(headers) else 'unknown'})")
-        logger.info(f"📊 Value columns: {value_cols} ({[headers[i] for i in value_cols if i < len(headers)]})")
+        logger.info(
+            f"📊 Chart data ranges: start_row={data_start_row}, end_row={data_end_row}, total_rows={len(results)}"
+        )
+        logger.info(
+            f"📊 Categories column: {category_col} ({headers[category_col] if category_col < len(headers) else 'unknown'})"
+        )
+        logger.info(
+            f"📊 Value columns: {value_cols} ({[headers[i] for i in value_cols if i < len(headers)]})"
+        )
 
         cat_col_letter = _col_to_excel(category_col)
-        categories_range = f"=Data!${cat_col_letter}${data_start_row}:${cat_col_letter}${data_end_row}"
+        categories_range = (
+            f"=Data!${cat_col_letter}${data_start_row}:${cat_col_letter}${data_end_row}"
+        )
 
-        _add_primary_series(primary_chart, value_cols, categories_range, data_start_row, data_end_row, headers)
+        _add_primary_series(
+            primary_chart,
+            value_cols,
+            categories_range,
+            data_start_row,
+            data_end_row,
+            headers,
+        )
 
         if has_secondary_axis and len(value_cols) > 1:
             _combine_multi_axis_charts(
-                workbook, primary_chart, datasets, value_cols, y_axes,
-                excel_chart_type, categories_range, data_start_row, data_end_row, headers,
+                workbook,
+                primary_chart,
+                datasets,
+                value_cols,
+                y_axes,
+                excel_chart_type,
+                categories_range,
+                data_start_row,
+                data_end_row,
+                headers,
             )
         else:
-            _add_remaining_series(primary_chart, value_cols, categories_range, data_start_row, data_end_row)
+            _add_remaining_series(
+                primary_chart,
+                value_cols,
+                categories_range,
+                data_start_row,
+                data_end_row,
+            )
 
-        _configure_chart_appearance(primary_chart, chart_data, headers, category_col, has_secondary_axis)
+        _configure_chart_appearance(
+            primary_chart, chart_data, headers, category_col, has_secondary_axis
+        )
         worksheet.insert_chart(f"A{data_end_row + 3}", primary_chart)
-        logger.info(f"✅ Excel chart added: {chart_type}, multi-axis: {has_secondary_axis}")
+        logger.info(
+            f"✅ Excel chart added: {chart_type}, multi-axis: {has_secondary_axis}"
+        )
 
     except Exception as e:
         logger.error(f"Failed to add Excel chart: {e}")

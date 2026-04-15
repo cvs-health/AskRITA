@@ -19,15 +19,16 @@
 """Tests for SQLAgentWorkflow helper methods (no live LLM/DB needed)."""
 
 import os
-import pytest
 from unittest.mock import MagicMock, patch
 
-from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
+import pytest
 
+from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def openai_env():
@@ -73,11 +74,24 @@ def _make_workflow():
     mock_data_formatter = MagicMock()
     mock_compiled_graph = MagicMock()
 
-    with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.LLMManager", return_value=mock_llm):
-        with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.DatabaseManager", return_value=mock_db_manager):
-            with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.DataFormatter", return_value=mock_data_formatter):
-                with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.create_pii_detector", return_value=None):
-                    with patch("askrita.sqlagent.workflows.SQLAgentWorkflow.StateGraph") as mock_sg:
+    with patch(
+        "askrita.sqlagent.workflows.SQLAgentWorkflow.LLMManager", return_value=mock_llm
+    ):
+        with patch(
+            "askrita.sqlagent.workflows.SQLAgentWorkflow.DatabaseManager",
+            return_value=mock_db_manager,
+        ):
+            with patch(
+                "askrita.sqlagent.workflows.SQLAgentWorkflow.DataFormatter",
+                return_value=mock_data_formatter,
+            ):
+                with patch(
+                    "askrita.sqlagent.workflows.SQLAgentWorkflow.create_pii_detector",
+                    return_value=None,
+                ):
+                    with patch(
+                        "askrita.sqlagent.workflows.SQLAgentWorkflow.StateGraph"
+                    ) as mock_sg:
                         mock_sg.return_value.compile.return_value = mock_compiled_graph
                         workflow = SQLAgentWorkflow(
                             config_manager=mock_config,
@@ -98,6 +112,7 @@ def _make_workflow():
 # ---------------------------------------------------------------------------
 # _get_database_type
 # ---------------------------------------------------------------------------
+
 
 class TestGetDatabaseType:
     def test_bigquery(self):
@@ -171,6 +186,7 @@ class TestGetDatabaseType:
 # _get_cast_to_string_syntax
 # ---------------------------------------------------------------------------
 
+
 class TestGetCastToStringSyntax:
     def test_explicit_config_cast_type(self):
         wf = _make_workflow()
@@ -203,6 +219,7 @@ class TestGetCastToStringSyntax:
 # ---------------------------------------------------------------------------
 # _track_step and _complete_step
 # ---------------------------------------------------------------------------
+
 
 class TestTrackStep:
     def test_track_step_no_tracker_no_crash(self):
@@ -241,8 +258,10 @@ class TestTrackStep:
 
     def test_track_step_progress_callback_error_ignored(self):
         wf = _make_workflow()
+
         def bad_cb(data):
             raise RuntimeError("callback error")
+
         wf.progress_callback = bad_cb
         wf._cot_tracker = None
         wf._reasoning_templates = {}
@@ -320,6 +339,7 @@ class TestCompleteStep:
         wf._complete_step("parse_question")
         assert len(events) == 1
         from askrita.sqlagent.progress_tracker import ProgressStatus
+
         assert events[0].status == ProgressStatus.COMPLETED
 
     def test_complete_step_error_progress_callback(self):
@@ -330,12 +350,14 @@ class TestCompleteStep:
         wf._reasoning_templates = {}
         wf._complete_step("parse_question", error="something failed")
         from askrita.sqlagent.progress_tracker import ProgressStatus
+
         assert events[0].status == ProgressStatus.FAILED
 
 
 # ---------------------------------------------------------------------------
 # _notify_cot_listeners
 # ---------------------------------------------------------------------------
+
 
 class TestNotifyCotListeners:
     def test_no_listeners_no_crash(self):
@@ -354,8 +376,10 @@ class TestNotifyCotListeners:
     def test_listener_error_doesnt_stop_others(self):
         wf = _make_workflow()
         good_events = []
+
         def bad_listener(e):
             raise RuntimeError("bad")
+
         wf._cot_listeners = [bad_listener, good_events.append]
         wf._notify_cot_listeners({"event_type": "test"})
         assert len(good_events) == 1
@@ -364,6 +388,7 @@ class TestNotifyCotListeners:
 # ---------------------------------------------------------------------------
 # register/unregister/clear CoT listeners
 # ---------------------------------------------------------------------------
+
 
 class TestCotListenerManagement:
     def test_register_listener(self):
@@ -402,6 +427,7 @@ class TestCotListenerManagement:
 # _finalize_cot
 # ---------------------------------------------------------------------------
 
+
 class TestFinalizeCot:
     def test_no_tracker_returns_none(self):
         wf = _make_workflow()
@@ -427,5 +453,7 @@ class TestFinalizeCot:
         wf._cot_tracker = tracker
         wf._cot_listeners = []
         result = wf._finalize_cot(True, "answer")
-        tracker.finalize_workflow.assert_called_once_with(success=True, final_answer="answer")
+        tracker.finalize_workflow.assert_called_once_with(
+            success=True, final_answer="answer"
+        )
         assert result is not None

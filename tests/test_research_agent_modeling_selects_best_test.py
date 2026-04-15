@@ -71,11 +71,9 @@ def test_modeling_uses_best_test_not_last():
 
     state = ResearchWorkflowState(
         hypothesis="Medicare vs Commercial using ltr by member_type",
-        collected_data={"query_1": {"data": [{"x": 1}]}}
+        collected_data={"query_1": {"data": [{"x": 1}]}},
     )
     update = agent._modeling(state)
 
     assert update["key_metrics"]["test_name"] == "Welch's t-test"
     assert update["key_metrics"]["p_value"] == 0.01
-
-

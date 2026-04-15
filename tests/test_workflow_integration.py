@@ -18,8 +18,10 @@
 
 """Integration tests for SQLAgentWorkflow to improve coverage."""
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
+
 from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLAgentWorkflow
 
 
@@ -28,14 +30,22 @@ class TestWorkflowIntegration:
 
     def test_workflow_query_success_path(self, mock_config):
         """Test successful query execution through workflow."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             # Setup mocks
             mock_db = Mock()
-            mock_db.get_schema.return_value = "CREATE TABLE test (id INT, name VARCHAR(100))"
+            mock_db.get_schema.return_value = (
+                "CREATE TABLE test (id INT, name VARCHAR(100))"
+            )
             mock_db.execute_query.return_value = [{"id": 1, "name": "Test"}]
             mock_db_class.return_value = mock_db
 
@@ -49,7 +59,12 @@ class TestWorkflowIntegration:
             mock_formatter_class.return_value = mock_formatter
 
             # Create workflow
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
 
@@ -59,10 +74,16 @@ class TestWorkflowIntegration:
 
     def test_workflow_preload_schema(self, mock_config):
         """Test schema preloading during initialization."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             mock_db = Mock()
             mock_db.get_schema.return_value = "CREATE TABLE test (id INT)"
@@ -74,7 +95,12 @@ class TestWorkflowIntegration:
             mock_formatter = Mock()
             mock_formatter_class.return_value = mock_formatter
 
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
             workflow.preload_schema()
@@ -85,10 +111,16 @@ class TestWorkflowIntegration:
 
     def test_workflow_structured_schema_parsing(self, mock_config):
         """Test structured schema parsing."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             mock_db = Mock()
             mock_db.get_schema.return_value = """
@@ -110,7 +142,12 @@ class TestWorkflowIntegration:
             mock_formatter = Mock()
             mock_formatter_class.return_value = mock_formatter
 
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
 
@@ -128,10 +165,16 @@ class TestWorkflowStepMethods:
 
     def test_parse_question_step(self, mock_config):
         """Test parse_question step."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             mock_db = Mock()
             mock_db.get_schema.return_value = "CREATE TABLE test (id INT)"
@@ -139,22 +182,30 @@ class TestWorkflowStepMethods:
 
             mock_llm = Mock()
             # Mock structured output for parse_question
-            from askrita.sqlagent.workflows.SQLAgentWorkflow import ParseQuestionResponse
+            from askrita.sqlagent.workflows.SQLAgentWorkflow import (
+                ParseQuestionResponse,
+            )
+
             mock_llm.invoke_with_structured_output.return_value = ParseQuestionResponse(
-                is_relevant=True,
-                relevant_tables=[]
+                is_relevant=True, relevant_tables=[]
             )
             mock_llm_class.return_value = mock_llm
 
             mock_formatter = Mock()
             mock_formatter_class.return_value = mock_formatter
 
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
 
             # Test parse_question - use WorkflowState object instead of dict
             from askrita.sqlagent.State import WorkflowState
+
             state = WorkflowState(question="What is the total count?")
             result = workflow.parse_question(state)
 
@@ -164,10 +215,16 @@ class TestWorkflowStepMethods:
 
     def test_generate_sql_step(self, mock_config):
         """Test generate_sql step."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             mock_db = Mock()
             mock_db.get_schema.return_value = "CREATE TABLE test (id INT, value INT)"
@@ -175,26 +232,35 @@ class TestWorkflowStepMethods:
 
             mock_llm = Mock()
             # Mock structured output for SQL generation
-            from askrita.sqlagent.workflows.SQLAgentWorkflow import SQLGenerationResponse
+            from askrita.sqlagent.workflows.SQLAgentWorkflow import (
+                SQLGenerationResponse,
+            )
+
             mock_llm.invoke_with_structured_output.return_value = SQLGenerationResponse(
                 sql_query="SELECT COUNT(*) FROM test",
-                sql_reason="Count all rows in test table"
+                sql_reason="Count all rows in test table",
             )
             mock_llm_class.return_value = mock_llm
 
             mock_formatter = Mock()
             mock_formatter_class.return_value = mock_formatter
 
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
 
             # Test generate_sql - use WorkflowState object instead of dict
             from askrita.sqlagent.State import WorkflowState
+
             state = WorkflowState(
                 question="What is the count?",
                 parsed_question={"is_relevant": True, "relevant_tables": []},
-                unique_nouns=[]
+                unique_nouns=[],
             )
             result = workflow.generate_sql(state)
 
@@ -206,10 +272,16 @@ class TestWorkflowStepMethods:
 
     def test_execute_sql_step(self, mock_config):
         """Test execute_sql step."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             mock_db = Mock()
             mock_db.get_schema.return_value = "CREATE TABLE test (id INT)"
@@ -222,15 +294,20 @@ class TestWorkflowStepMethods:
             mock_formatter = Mock()
             mock_formatter_class.return_value = mock_formatter
 
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
 
             # Test execute_sql - use WorkflowState object instead of dict
             from askrita.sqlagent.State import WorkflowState
+
             state = WorkflowState(
-                sql_query="SELECT COUNT(*) as count FROM test",
-                sql_valid=True
+                sql_query="SELECT COUNT(*) as count FROM test", sql_valid=True
             )
             result = workflow.execute_sql(state)
 
@@ -241,10 +318,16 @@ class TestWorkflowStepMethods:
 
     def test_choose_visualization_step(self, mock_config):
         """Test choose_visualization step."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             mock_db = Mock()
             mock_db.get_schema.return_value = "CREATE TABLE test (id INT)"
@@ -252,25 +335,34 @@ class TestWorkflowStepMethods:
 
             mock_llm = Mock()
             # Mock structured output for visualization choice
-            from askrita.sqlagent.workflows.SQLAgentWorkflow import VisualizationResponse
+            from askrita.sqlagent.workflows.SQLAgentWorkflow import (
+                VisualizationResponse,
+            )
+
             mock_llm.invoke_with_structured_output.return_value = VisualizationResponse(
                 visualization="bar",
-                visualization_reason="Bar chart is best for comparing values"
+                visualization_reason="Bar chart is best for comparing values",
             )
             mock_llm_class.return_value = mock_llm
 
             mock_formatter = Mock()
             mock_formatter_class.return_value = mock_formatter
 
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
 
             # Test choose_visualization - use WorkflowState object instead of dict
             from askrita.sqlagent.State import WorkflowState
+
             state = WorkflowState(
                 question="Show me sales by region",
-                results=[{"region": "North", "sales": 1000}]
+                results=[{"region": "North", "sales": 1000}],
             )
             result = workflow.choose_visualization(state)
 
@@ -285,10 +377,16 @@ class TestWorkflowHelperMethods:
 
     def test_get_cached_schema(self, mock_config):
         """Test schema caching mechanism."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             mock_db = Mock()
             mock_db.get_schema.return_value = "CREATE TABLE test (id INT)"
@@ -300,7 +398,12 @@ class TestWorkflowHelperMethods:
             mock_formatter = Mock()
             mock_formatter_class.return_value = mock_formatter
 
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
 
@@ -316,10 +419,16 @@ class TestWorkflowHelperMethods:
 
     def test_validate_sql_safety(self, mock_config):
         """Test SQL safety validation."""
-        with patch('askrita.sqlagent.database.DatabaseManager.DatabaseManager', create=True) as mock_db_class, \
-             patch('askrita.utils.LLMManager.LLMManager', create=True) as mock_llm_class, \
-             patch('askrita.sqlagent.formatters.DataFormatter.DataFormatter', create=True) as mock_formatter_class, \
-             patch.object(SQLAgentWorkflow, '_create_workflow'):
+        with (
+            patch(
+                "askrita.sqlagent.database.DatabaseManager.DatabaseManager", create=True
+            ) as mock_db_class,
+            patch("askrita.utils.LLMManager.LLMManager", create=True) as mock_llm_class,
+            patch(
+                "askrita.sqlagent.formatters.DataFormatter.DataFormatter", create=True
+            ) as mock_formatter_class,
+            patch.object(SQLAgentWorkflow, "_create_workflow"),
+        ):
 
             mock_db = Mock()
             mock_db.get_schema.return_value = "CREATE TABLE test (id INT)"
@@ -339,14 +448,22 @@ class TestWorkflowHelperMethods:
                 "allow_select_star": False,
             }
 
-            workflow = SQLAgentWorkflow(mock_config, test_llm_connection=False, test_db_connection=False, init_schema_cache=False)
+            workflow = SQLAgentWorkflow(
+                mock_config,
+                test_llm_connection=False,
+                test_db_connection=False,
+                init_schema_cache=False,
+            )
             workflow.db_manager = mock_db
             workflow.llm_manager = mock_llm
 
             # Test safe SQL with specific columns
-            workflow._validate_sql_safety("SELECT id, name FROM test")  # Should not raise
+            workflow._validate_sql_safety(
+                "SELECT id, name FROM test"
+            )  # Should not raise
 
             # Test unsafe SQL (DROP)
             from askrita.exceptions import ValidationError
+
             with pytest.raises(ValidationError):
                 workflow._validate_sql_safety("DROP TABLE test")

@@ -108,7 +108,9 @@ class ChainOfThoughtsStep:
             self.details = StepDetails(**details)
             logger.debug(f"Converted dict to StepDetails for step '{self.step_name}'")
         except Exception as e:
-            logger.warning(f"Failed to validate details as StepDetails: {e}. Using raw dict.")
+            logger.warning(
+                f"Failed to validate details as StepDetails: {e}. Using raw dict."
+            )
             if isinstance(self.details, dict):
                 self.details.update(details)
             else:

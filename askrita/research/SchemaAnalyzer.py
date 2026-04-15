@@ -757,16 +757,20 @@ class SchemaAnalyzer:
         for table_name in report.high_value_tables:
             table = report.tables[table_name]
             high_value_cols = [
-                col.name for col in table.columns.values() if col.research_potential == "high"
+                col.name
+                for col in table.columns.values()
+                if col.research_potential == "high"
             ]
-            lines.extend([
-                f"📊 {table_name.upper()}",
-                f"   Type: {table.entity_type.title()}",
-                f"   Columns: {len(table.columns)}",
-                f"   High-value columns: {', '.join(high_value_cols[:5])}",
-                f"   Row estimate: {table.row_count_estimate or 'Unknown'}",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"📊 {table_name.upper()}",
+                    f"   Type: {table.entity_type.title()}",
+                    f"   Columns: {len(table.columns)}",
+                    f"   High-value columns: {', '.join(high_value_cols[:5])}",
+                    f"   Row estimate: {table.row_count_estimate or 'Unknown'}",
+                    "",
+                ]
+            )
         return lines
 
     def _render_table_detail_section(self, table_name: str, table) -> list:
@@ -781,7 +785,9 @@ class SchemaAnalyzer:
         col_types: dict = {}
         for col in table.columns.values():
             col_types[col.statistical_type] = col_types.get(col.statistical_type, 0) + 1
-        lines.append(f"   Column Types: {', '.join(f'{c} {t}' for t, c in col_types.items())}")
+        lines.append(
+            f"   Column Types: {', '.join(f'{c} {t}' for t, c in col_types.items())}"
+        )
         if table.primary_keys:
             lines.append(f"   Primary Keys: {', '.join(table.primary_keys)}")
         if table.foreign_keys:
@@ -797,11 +803,13 @@ class SchemaAnalyzer:
         """Render the research recommendations section."""
         lines = ["💡 RESEARCH RECOMMENDATIONS:", "-" * 50]
         for rec in report.recommended_analyses:
-            lines.extend([
-                f"🎯 {rec['category'].upper()}",
-                f"   Description: {rec['description']}",
-                f"   Confidence: {rec.get('confidence', 'medium').title()}",
-            ])
+            lines.extend(
+                [
+                    f"🎯 {rec['category'].upper()}",
+                    f"   Description: {rec['description']}",
+                    f"   Confidence: {rec.get('confidence', 'medium').title()}",
+                ]
+            )
             if "tables" in rec:
                 lines.append(f"   Focus Tables: {', '.join(rec['tables'])}")
             if "suggested_analyses" in rec:
@@ -822,7 +830,8 @@ class SchemaAnalyzer:
             f"📐 Data Model: {report.data_model_type.title()}",
             f"🎯 Research Readiness: {report.research_readiness.title()}",
             "",
-            "📋 ANALYSIS STEPS PERFORMED:", "-" * 50,
+            "📋 ANALYSIS STEPS PERFORMED:",
+            "-" * 50,
         ]
         for i, step in enumerate(report.analysis_steps, 1):
             report_lines.append(f"{i:2}. {step}")
@@ -843,7 +852,9 @@ class SchemaAnalyzer:
             top_types = sorted(
                 report.data_type_distribution.items(), key=lambda x: x[1], reverse=True
             )[:5]
-            report_lines.append(f"🏷️  Data Types: {', '.join(f'{t}: {c}' for t, c in top_types)}")
+            report_lines.append(
+                f"🏷️  Data Types: {', '.join(f'{t}: {c}' for t, c in top_types)}"
+            )
         report_lines.append("")
 
         if report.suggested_relationships:
@@ -857,14 +868,16 @@ class SchemaAnalyzer:
         if report.recommended_analyses:
             report_lines.extend(self._render_recommendations_section(report))
 
-        report_lines.extend([
-            "=" * 80,
-            "🎯 NEXT STEPS:",
-            "1. Focus on high-value tables for initial research",
-            "2. Design hypotheses using identified relationships",
-            "3. Start with recommended analysis types",
-            "4. Use sample queries to explore column distributions",
-            "5. Validate data quality before proceeding with analysis",
-            "=" * 80,
-        ])
+        report_lines.extend(
+            [
+                "=" * 80,
+                "🎯 NEXT STEPS:",
+                "1. Focus on high-value tables for initial research",
+                "2. Design hypotheses using identified relationships",
+                "3. Start with recommended analysis types",
+                "4. Use sample queries to explore column distributions",
+                "5. Validate data quality before proceeding with analysis",
+                "=" * 80,
+            ]
+        )
         return "\n".join(report_lines)

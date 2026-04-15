@@ -19,13 +19,13 @@
 """Tests for token_utils to boost coverage."""
 
 from askrita.utils.token_utils import (
+    estimate_messages_token_count,
+    estimate_token_count,
     get_model_context_limit,
     get_safe_context_limit,
-    estimate_token_count,
-    estimate_messages_token_count,
-    truncate_text_to_tokens,
+    optimize_context_for_model,
     truncate_list_to_tokens,
-    optimize_context_for_model
+    truncate_text_to_tokens,
 )
 
 
@@ -35,28 +35,28 @@ class TestTokenUtils:
     def test_get_model_context_limit_known_models(self):
         """Test getting context limits for known models."""
         # Test GPT-4
-        limit = get_model_context_limit('gpt-4')
+        limit = get_model_context_limit("gpt-4")
         assert limit > 0
         assert limit >= 8000  # GPT-4 has at least 8k context
 
         # Test GPT-4o
-        limit = get_model_context_limit('gpt-4o')
+        limit = get_model_context_limit("gpt-4o")
         assert limit > 0
 
         # Test GPT-3.5
-        limit = get_model_context_limit('gpt-3.5-turbo')
+        limit = get_model_context_limit("gpt-3.5-turbo")
         assert limit > 0
 
     def test_get_model_context_limit_unknown_model(self):
         """Test getting context limit for unknown model."""
-        limit = get_model_context_limit('unknown-model-12345')
+        limit = get_model_context_limit("unknown-model-12345")
         assert limit > 0  # Should return default
         assert limit >= 4000  # Default should be reasonable
 
     def test_get_safe_context_limit(self):
         """Test getting safe context limit."""
-        limit = get_safe_context_limit('gpt-4')
-        full_limit = get_model_context_limit('gpt-4')
+        limit = get_safe_context_limit("gpt-4")
+        full_limit = get_model_context_limit("gpt-4")
         assert limit < full_limit  # Safe limit should be less than full
         assert limit > 0
 
@@ -78,12 +78,9 @@ class TestTokenUtils:
 
     def test_estimate_messages_token_count(self):
         """Test token counting for messages."""
-        from langchain_core.messages import HumanMessage, AIMessage
+        from langchain_core.messages import AIMessage, HumanMessage
 
-        messages = [
-            HumanMessage(content="Hello"),
-            AIMessage(content="Hi there!")
-        ]
+        messages = [HumanMessage(content="Hello"), AIMessage(content="Hi there!")]
 
         count = estimate_messages_token_count(messages)
         assert count > 0
@@ -100,7 +97,9 @@ class TestTokenUtils:
     def test_truncate_text_to_tokens_with_truncation_middle(self):
         """Test truncation from middle when text exceeds limit."""
         # Create a long text
-        long_text = "This is the beginning. " + "Middle content. " * 100 + " This is the end."
+        long_text = (
+            "This is the beginning. " + "Middle content. " * 100 + " This is the end."
+        )
         max_tokens = 20  # Small limit to force truncation
 
         result = truncate_text_to_tokens(long_text, max_tokens, truncate_from="middle")
@@ -141,7 +140,9 @@ class TestTokenUtils:
 
         # Should not exceed rough token limit (this is an estimate)
         estimated_tokens = estimate_token_count(result)
-        assert estimated_tokens <= max_tokens * 2  # Allow some buffer for estimation errors
+        assert (
+            estimated_tokens <= max_tokens * 2
+        )  # Allow some buffer for estimation errors
 
     def test_truncate_list_to_tokens_custom_separator(self):
         """Test truncating list with custom separator."""
@@ -166,13 +167,13 @@ class TestTokenUtils:
             unique_nouns=[],
             question=question,
             parsed_question={},
-            model_name=model_name
+            model_name=model_name,
         )
 
         assert isinstance(result, dict)
-        assert 'schema' in result
-        assert 'question' in result
-        assert result['question'] == question
+        assert "schema" in result
+        assert "question" in result
+        assert result["question"] == question
 
     def test_optimize_context_for_model_with_nouns(self):
         """Test context optimization with unique nouns."""
@@ -186,22 +187,19 @@ class TestTokenUtils:
             unique_nouns=unique_nouns,
             question=question,
             parsed_question={},
-            model_name=model_name
+            model_name=model_name,
         )
 
         assert isinstance(result, dict)
-        assert 'schema' in result
-        assert 'unique_nouns' in result
-        assert result['unique_nouns'] == unique_nouns
+        assert "schema" in result
+        assert "unique_nouns" in result
+        assert result["unique_nouns"] == unique_nouns
 
     def test_optimize_context_for_model_with_parsed_question(self):
         """Test context optimization with parsed question."""
         schema = "CREATE TABLE users (id INT, name VARCHAR(100))"
         question = "How many users are there?"
-        parsed_question = {
-            "is_relevant": True,
-            "relevant_tables": ["users"]
-        }
+        parsed_question = {"is_relevant": True, "relevant_tables": ["users"]}
         model_name = "gpt-4"
 
         result = optimize_context_for_model(
@@ -209,12 +207,12 @@ class TestTokenUtils:
             unique_nouns=[],
             question=question,
             parsed_question=parsed_question,
-            model_name=model_name
+            model_name=model_name,
         )
 
         assert isinstance(result, dict)
-        assert 'parsed_question' in result
-        assert result['parsed_question'] == parsed_question
+        assert "parsed_question" in result
+        assert result["parsed_question"] == parsed_question
 
     def test_optimize_context_for_model_large_schema(self):
         """Test context optimization with large schema that needs truncation."""
@@ -228,17 +226,17 @@ class TestTokenUtils:
             unique_nouns=[],
             question=question,
             parsed_question={},
-            model_name=model_name
+            model_name=model_name,
         )
 
         assert isinstance(result, dict)
-        assert 'schema' in result
+        assert "schema" in result
 
         # Schema should be truncated
-        assert len(result['schema']) < len(large_schema)
+        assert len(result["schema"]) < len(large_schema)
 
         # But question should remain unchanged
-        assert result['question'] == question
+        assert result["question"] == question
 
     def test_optimize_context_for_model_with_additional_context(self):
         """Test context optimization with additional context."""
@@ -253,13 +251,13 @@ class TestTokenUtils:
             question=question,
             parsed_question={},
             model_name=model_name,
-            additional_context=additional_context
+            additional_context=additional_context,
         )
 
         assert isinstance(result, dict)
         # additional_context is merged at top-level
-        assert 'notes' in result
-        assert result['notes'] == additional_context['notes']
+        assert "notes" in result
+        assert result["notes"] == additional_context["notes"]
 
 
 class TestTokenUtilsEdgeCases:
@@ -312,10 +310,10 @@ class TestTokenUtilsEdgeCases:
             unique_nouns=[],
             question="test",
             parsed_question={},
-            model_name="gpt-4"
+            model_name="gpt-4",
         )
         assert isinstance(result, dict)
-        assert result['schema'] == ""
+        assert result["schema"] == ""
 
         # Very large schema that needs truncation
         large_schema = "CREATE TABLE test (col INT);\n" * 10000
@@ -324,8 +322,8 @@ class TestTokenUtilsEdgeCases:
             unique_nouns=[],
             question="test",
             parsed_question={},
-            model_name="gpt-3.5-turbo"  # Smaller context
+            model_name="gpt-3.5-turbo",  # Smaller context
         )
         assert isinstance(result, dict)
         # Schema should be truncated
-        assert len(result['schema']) < len(large_schema)
+        assert len(result["schema"]) < len(large_schema)
