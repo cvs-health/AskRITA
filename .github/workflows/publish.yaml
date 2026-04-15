@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: lint-pub-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
+          key: lint-pub-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
 
       - name: Install dev dependencies
         run: poetry install --only dev
@@ -76,7 +76,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: security-pub-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
+          key: security-pub-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
 
       - name: Install dev dependencies
         run: poetry install --only dev
@@ -123,7 +123,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: test-pub-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+          key: test-pub-v2-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
 
       - name: Install dependencies
         run: poetry install --with test --extras exports
@@ -197,7 +197,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: build-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
+          key: build-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
 
       - name: Install dependencies (main + extras)
         run: poetry install --only main --extras exports
