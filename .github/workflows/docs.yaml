@@ -37,9 +37,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: docs-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
+          key: docs-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
           restore-keys: |
-            docs-${{ runner.os }}-py3.14-
+            docs-v2-${{ runner.os }}-py3.14-
 
       - name: Install documentation dependencies
         run: poetry install --only main,docs --extras exports
