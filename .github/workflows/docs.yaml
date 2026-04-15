@@ -45,12 +45,14 @@ jobs:
         run: poetry install --only main,docs --extras exports
 
       - name: Setup Pages
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v4
 
       - name: Build documentation (strict – fail on warnings)
         run: poetry run mkdocs build --strict
 
       - name: Upload artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./site"
