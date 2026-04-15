@@ -145,6 +145,9 @@ pytest = ">=7.0.0"
 pytest-cov = ">=4.0.0"
 pytest-mock = ">=3.8.0"
 
+[tool.poetry.group.examples]
+optional = true
+
 [tool.poetry.group.examples.dependencies]
 tabulate = ">=0.9.0"
 pygraphviz = ">=1.10"

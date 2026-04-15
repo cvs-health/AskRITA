@@ -1,0 +1,32 @@
+# GitHub CODEOWNERS File
+# ---------------------
+# This file defines the individuals or teams that are responsible for the code 
+# in this repository. When someone opens a pull request that modifies code 
+# that you own, you will automatically be requested for a review.
+#
+# Location: .github/CODEOWNERS
+# Syntax:   [pattern] [@owner1] [@owner2]
+
+# 📝 Global Owners
+# These users will be requested for review for all changes by default.
+* @smannathan
+
+# 📂 Component-Specific Owners
+
+# Core Library Logic
+/askrita/ @smannathan
+
+# Security & CI/CD Infrastructure
+/.github/workflows/ @smannathan
+/scripts/ @smannathan
+
+# Documentation
+/docs/ @smannathan
+/*.md @smannathan
+
+# Database Strategies
+/askrita/sqlagent/database/ @smannathan
+
+# Examples & Benchmarks
+/benchmarks/ @smannathan
+/example-configs/ @smannathan
