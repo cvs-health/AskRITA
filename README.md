@@ -34,21 +34,6 @@ Go beyond simple text-to-SQL. Ask RITA is an LLM-powered analytics framework tha
 >
 > **The database user's granted permissions are the only reliable boundary between AskRITA and your data.**
 
-## 🆕 **What's New in v0.13.0**
-
-- 🧠 **Research Agent — Real Statistical Tests**: scipy-powered hypothesis testing replaces LLM-generated statistics
-  - Auto-selects Pearson vs Spearman correlation based on Shapiro-Wilk normality test
-  - Tukey HSD post-hoc pairwise comparisons after significant ANOVA
-  - Bonferroni correction across multiple tests in a single research run
-  - `analyze_hypothesis_data()` auto-routes to the correct test family based on column types
-- ⚡ **Research Agent — Parallel Evidence Execution**: Evidence queries now execute concurrently via `ThreadPoolExecutor` — wall time ≈ max(query_times) instead of sum
-- 🏗️ **Research Agent — Architecture Separation**: SQL Agent generates SQL only; Research Agent executes queries directly via `db_manager`
-- 🐛 **Bug Fixes**: Thread-safety for parallel queries, aggregated data detection, Bonferroni-aware confidence scoring, schema decorator recursion storm fix
-
-**Previous Release (v0.12.2):**
-
-- 🛡️ **SQL Prompt Injection Prevention**: Defence-in-depth protection against malicious inputs
-- 🔧 **SonarQube Fixes**: S2737, S3776, S1481, S1135, S1871
 
 ## 🚀 **Four Powerful Workflows**
 
