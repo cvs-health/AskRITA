@@ -77,7 +77,6 @@ markdown_extensions:
 nav:
   - Home:
       - index.md
-  - PyPI Repository 📦: https://pypi.org/project/askrita/
   - Getting Started:
         - Installation: installation.md
         - Usage Examples & API: usage-examples.md
