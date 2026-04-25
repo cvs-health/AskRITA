@@ -172,6 +172,12 @@ jobs:
           path: coverage-${{ matrix.python-version }}.xml
           retention-days: 7
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage-${{ matrix.python-version }}.xml
+
   # ─────────────────────────────────────────────
   # Build validation: verify the package builds
   # ─────────────────────────────────────────────
