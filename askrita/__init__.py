@@ -14,7 +14,7 @@
 
 """AskRITA - Reasoning Interface for Text-to-Analytics - Natural language SQL and NoSQL query framework powered by LangChain and LLMs."""
 
-__version__ = "0.13.13"
+__version__ = "0.13.14"
 __author__ = "AskRITA Contributors"
 __description__ = "AskRITA - Reasoning Interface for Text-to-Analytics - Natural language SQL and NoSQL query framework powered by LangChain and LLMs"
 

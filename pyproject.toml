@@ -74,7 +74,7 @@ exclude_lines = [
 
 [tool.poetry]
 name = "askrita"
-version = "0.13.13"
+version = "0.13.14"
 description = "Reasoning Interface for Text-to-Analytics (RITA) - Natural language SQL and NoSQL (MongoDB) query interface powered by LangChain and LLMs"
 authors = ["AskRITA Contributors"]
 readme = "README.md"

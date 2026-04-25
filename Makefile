@@ -47,6 +47,7 @@ test:
 
 security:
 	poetry run bandit -r askrita -ll -ii
+	poetry run python -m pip install --upgrade pip
 	poetry run pip-audit
 
 # ─────────────
