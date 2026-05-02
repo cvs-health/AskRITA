@@ -19,8 +19,10 @@
 
 Go beyond simple text-to-SQL. Ask RITA is an LLM-powered analytics framework that generates queries, runs scipy-backed statistical tests, conducts CRISP-DM research workflows, classifies data, and visualizes results — across SQL and NoSQL databases — from a single natural-language question.
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/askrita.svg)](https://pypi.org/project/askrita/)
 [![PyPI version](https://badge.fury.io/py/askrita.svg)](https://pypi.org/project/askrita/)
+[![Codecov](https://codecov.io/gh/cvs-health/askRITA/graph/badge.svg)](https://codecov.io/gh/cvs-health/askRITA)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 > **🔒 IMPORTANT — Read-Only Database Access Required**
