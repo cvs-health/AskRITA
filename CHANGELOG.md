@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.13.14] - 2026-05-02
+
+### Changed
+- chore: update dependencies and enforce Python 3.10+ requirement in poetry.lock
+- chore: upgrade pip in security Makefile target and CI workflow
+
 ## [0.13.13] - 2026-04-15
 
 ### Added
