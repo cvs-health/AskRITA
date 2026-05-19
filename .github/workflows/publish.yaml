@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python 3.14
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.14"
 
@@ -35,7 +35,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .venv
           key: lint-pub-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
@@ -60,10 +60,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python 3.14
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.14"
 
@@ -74,7 +74,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .venv
           key: security-pub-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
@@ -89,7 +89,7 @@ jobs:
         run: poetry run pip-audit
 
       - name: Trivy repository scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: 'fs'
           ignore-unfixed: true
@@ -115,10 +115,10 @@ jobs:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -129,7 +129,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .venv
           key: test-pub-v2-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
@@ -155,7 +155,7 @@ jobs:
     needs: [test]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -200,10 +200,10 @@ jobs:
     environment: pypi  # maps to the PyPI Trusted Publisher environment in repo settings
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python 3.14
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.14"
 
@@ -214,7 +214,7 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .venv
           key: build-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
@@ -241,7 +241,7 @@ jobs:
           askrita --help >/dev/null
 
       - name: Upload build artifacts (for audit trail)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-${{ github.ref_name }}
           path: dist/
