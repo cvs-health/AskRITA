@@ -87,55 +87,55 @@ packages = [{include = "askrita"}]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.15"
-langchain-core = ">=1.0.0"
-langchain-community = ">=0.4.1"
-langchain-openai = ">=1.0.0"
-langchain-google-vertexai = ">=3.0.0"
-langchain-aws = ">=1.0.0"
-langgraph = ">=1.0.0"
+langchain-core = ">=1.4.7"
+langchain-community = ">=0.4.2"
+langchain-openai = ">=1.3.2"
+langchain-google-vertexai = ">=3.2.4"
+langchain-aws = ">=1.5.1"
+langgraph = ">=1.2.5"
 langchain-mongodb = "^0.11.0"
-sqlalchemy = ">=2.0.0"
+sqlalchemy = ">=2.0.51"
 psycopg2-binary = ">=2.9.0"
-pymysql = ">=1.1.0"
-sqlalchemy-bigquery = ">=1.10.0"
-snowflake-sqlalchemy = ">=1.7.7"
+pymysql = ">=1.2.0"
+sqlalchemy-bigquery = ">=1.17.0"
+snowflake-sqlalchemy = ">=1.10.1"
 google-cloud-bigquery = ">=3.10.0"
 azure-identity = ">=1.15.0"
 pandas = ">=2.0.0"
-db-dtypes = ">=1.0.0"
+db-dtypes = ">=1.7.0"
 pyarrow = ">=21.0.0"
-snowflake-connector-python = ">=3.18.0"
+snowflake-connector-python = ">=4.6.0"
 
-requests = ">=2.30.0"
+requests = ">=2.34.2"
 pyyaml = ">=6.0.0"
-pydantic = ">=2.0.0"
-mcp = ">=1.0.0"
-starlette = ">=0.49.1"  # Floor pin: CVE ReDoS vulnerability in starlette < 0.49.1 (transitive via mcp)
+pydantic = ">=2.13.4"
+mcp = ">=1.27.2"
+starlette = ">=1.3.1"  # Floor pin: CVE ReDoS vulnerability in starlette < 0.49.1 (transitive via mcp)
 presidio-analyzer = { version = ">=2.2.360", python = "<3.14" }  # PHI/PII detection and privacy protection
 
 # Optional export dependencies
 python-pptx = ">=0.6.21"
-reportlab = ">=4.0.0"
-matplotlib = ">=3.7.0"
+reportlab = ">=4.5.1"
+matplotlib = ">=3.11.0"
 xlsxwriter = ">=3.0.0"
 scipy = "^1.16.3"
 
 
 [tool.poetry.group.dev.dependencies]
-pytest = ">=7.0.0"
+pytest = ">=9.1.0"
 pytest-cov = ">=4.0.0"
 pytest-mock = ">=3.8.0"
-black = ">=22.0.0"
+black = ">=26.5.1"
 isort = ">=5.10.0"
 flake8 = ">=5.0.0"
-mypy = ">=0.991"
-types-requests = ">=2.25.0"
-types-pyyaml = ">=6.0.0"
+mypy = ">=2.1.0"
+types-requests = ">=2.33.0.20260518"
+types-pyyaml = ">=6.0.12.20260518"
 pre-commit = ">=2.20.0"
 bandit = ">=1.7.0"
-pip-audit = ">=2.5.0"
-ipython = ">=7.30.0"
-tox = ">=3.25.0"
+pip-audit = ">=2.10.1"
+ipython = ">=9.14.1"
+tox = ">=4.55.1"
 bump2version = ">=1.0.1"
 
 [tool.poetry.group.docs.dependencies]
@@ -145,7 +145,7 @@ termynal = ">=0.12.0"
 mkdocstrings = {extras = ["python"], version = ">=0.20.0"}
 
 [tool.poetry.group.test.dependencies]
-pytest = ">=7.0.0"
+pytest = ">=9.1.0"
 pytest-cov = ">=4.0.0"
 pytest-mock = ">=3.8.0"
 
