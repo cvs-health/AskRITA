@@ -27,8 +27,8 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install dev dependencies
-        run: poetry install --only dev
+      - name: Install application and development dependencies
+        run: poetry install --with dev
 
       - name: Create Bandit canary fixture
         run: |

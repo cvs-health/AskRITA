@@ -35,7 +35,7 @@ from setuptools import find_packages, setup
 # Read version and metadata from pyproject.toml via Poetry
 setup(
     name="askrita",
-    version="0.13.14",
+    version="0.13.15",
     packages=find_packages(),
     python_requires=">=3.11,<3.15",
     install_requires=[

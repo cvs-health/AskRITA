@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.13.15] - 2026-09-14
+
+### Changed
+- Refreshed the locked production, development, and documentation dependencies.
+- CI and release security scans now install application dependencies, and release tests
+  validate dependency consistency before publishing.
+
 ## [0.13.14] - 2026-05-02
 
 ### Changed
@@ -1866,4 +1873,4 @@ None - Fully backward compatible
 - Modular architecture with dependency injection
 - Built-in health checks and validation
 - Poetry-based dependency management and packaging
-- Custom SSL certificate support for corporate environments 
+- Custom SSL certificate support for corporate environments
