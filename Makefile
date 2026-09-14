@@ -26,7 +26,7 @@ install:
 
 dev-install:
 	@echo "Note: Requires system headers (graphviz-dev) for pygraphviz."
-	poetry install --with test,examples --extras exports
+	poetry install --with test --extras exports,examples
 
 # ─────────────
 # Quality gates

@@ -45,8 +45,8 @@ jobs:
           restore-keys: |
             lint-v2-${{ runner.os }}-py3.14-
 
-      - name: Install dev dependencies
-        run: poetry install --only dev
+      - name: Install application and development dependencies
+        run: poetry install --with dev
 
       - name: Black – enforce formatting
         run: poetry run black --check --diff askrita tests
@@ -89,8 +89,8 @@ jobs:
           restore-keys: |
             security-v2-${{ runner.os }}-py3.14-
 
-      - name: Install dev dependencies
-        run: poetry install --only dev
+      - name: Install application and development dependencies
+        run: poetry install --with dev
 
       - name: Bandit – SAST scan (high severity threshold)
         run: poetry run bandit -r askrita -ll -ii

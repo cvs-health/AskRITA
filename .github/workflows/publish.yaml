@@ -40,8 +40,8 @@ jobs:
           path: .venv
           key: lint-pub-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
 
-      - name: Install dev dependencies
-        run: poetry install --only dev
+      - name: Install application and development dependencies
+        run: poetry install --with dev
 
       - name: Black check
         run: poetry run black --check askrita tests
@@ -79,8 +79,8 @@ jobs:
           path: .venv
           key: security-pub-v2-${{ runner.os }}-py3.14-${{ hashFiles('poetry.lock') }}
 
-      - name: Install dev dependencies
-        run: poetry install --only dev
+      - name: Install application and development dependencies
+        run: poetry install --with dev
 
       - name: Bandit SAST scan
         run: poetry run bandit -r askrita -ll -ii
@@ -136,6 +136,9 @@ jobs:
 
       - name: Install dependencies
         run: poetry install --with test --extras exports
+
+      - name: Run dependency validation
+        run: poetry run python scripts/validate_dependencies.py
 
       - name: Run tests with coverage (80% threshold enforced)
         run: >
